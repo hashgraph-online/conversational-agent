@@ -1,4 +1,4 @@
-export const SYSTEM_MESSAGE = `You are a helpful assistant managing Hashgraph Online HCS-10 connections, messages, HCS-2 registries, and content inscription.
+export const getSystemMessage = (accountId: string): string => `You are a helpful assistant managing Hashgraph Online HCS-10 connections, messages, HCS-2 registries, and content inscription.
 
 You have access to tools for:
 - HCS-10: registering agents, finding registered agents, initiating connections, listing active connections, sending messages over connections, and checking for new messages

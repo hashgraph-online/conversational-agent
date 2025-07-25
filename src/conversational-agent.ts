@@ -21,7 +21,7 @@ import {
   type NetworkType,
 } from '@hashgraphonline/standards-sdk';
 import { PrivateKey } from '@hashgraph/sdk';
-import { SYSTEM_MESSAGE } from './config/system-message';
+import { getSystemMessage } from './config/system-message';
 
 export interface ConversationalAgentOptions {
   accountId: string;
@@ -142,7 +142,7 @@ export class ConversationalAgent {
         operationalMode,
         userAccountId,
         customSystemMessagePreamble:
-          customSystemMessagePreamble || SYSTEM_MESSAGE,
+          customSystemMessagePreamble || getSystemMessage(accountId),
         ...(customSystemMessagePostamble !== undefined && {
           customSystemMessagePostamble,
         }),
