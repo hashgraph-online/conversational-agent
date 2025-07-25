@@ -1,0 +1,1 @@
+export { HCS10Plugin } from './HCS10Plugin';
