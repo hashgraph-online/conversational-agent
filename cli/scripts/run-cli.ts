@@ -70,7 +70,8 @@ function build() {
  */
 function runCli() {
 	const projectRoot = join(__dirname, '..', '..');
-	const child = spawn('node', [distPath, ...process.argv.slice(2)], {
+	const sourcePath = join(cliRoot, 'source', 'cli.tsx');
+	const child = spawn('npx', ['tsx', sourcePath, ...process.argv.slice(2)], {
 		stdio: 'inherit',
 		env: {
 			...process.env,
@@ -100,16 +101,11 @@ async function hasDependencies() {
  */
 async function main() {
 	try {
-		// Install dependencies if needed
 		if (!(await hasDependencies())) {
 			await installDeps();
 		}
 
-		// Build if needed
-		if (!(await isBuilt())) {
-			await build();
-		}
-
+		// Skip building and run source files directly with tsx
 		runCli();
 	} catch (error) {
 		console.error('❌ Error:', error.message);

@@ -2,7 +2,6 @@ import { describe, test, expect, beforeEach, vi } from 'vitest';
 import { OpenConvAIPlugin } from '../../src';
 import { Logger } from '@hashgraphonline/standards-sdk';
 
-// Mock the HCS10Builder to prevent actual client initialization
 vi.mock('@hashgraphonline/standards-agent-kit', async () => {
   const actual = await vi.importActual('@hashgraphonline/standards-agent-kit');
   return {
@@ -19,11 +18,10 @@ vi.mock('@hashgraphonline/standards-agent-kit', async () => {
  * Unit tests for OpenConvAIPlugin
  */
 describe('OpenConvAIPlugin Unit Tests', () => {
-  let mockHederaKit: any;
+    let mockHederaKit: any;
   let mockContext: any;
-  
+
   beforeEach(() => {
-    // Mock HederaAgentKit
     mockHederaKit = {
       client: {
         network: { toString: () => 'testnet' }
@@ -37,7 +35,6 @@ describe('OpenConvAIPlugin Unit Tests', () => {
       operationalMode: 'directExecution'
     };
 
-    // Mock plugin context
     mockContext = {
       kit: mockHederaKit,
       logger: new Logger({ module: 'test' }),
@@ -53,10 +50,10 @@ describe('OpenConvAIPlugin Unit Tests', () => {
       const plugin = new OpenConvAIPlugin();
       
       expect(plugin).toBeDefined();
-      expect(plugin.name).toBe('OpenConvAI Standards Agent Kit Plugin');
+      expect(plugin.name).toBe('HCS-10 Plugin');
       expect(plugin.description).toContain('HCS-10');
-      expect(plugin.id).toBe('openconvai-standards-agent-kit');
-      expect(plugin.namespace).toBe('openconvai');
+      expect(plugin.id).toBe('hcs-10');
+      expect(plugin.namespace).toBe('hcs10');
     });
 
     test('Plugin initializes tools when hederaKit is provided', async () => {
@@ -71,9 +68,9 @@ describe('OpenConvAIPlugin Unit Tests', () => {
       const tools = plugin.getTools();
       
       expect(tools).toBeDefined();
-      expect(tools.length).toBe(11); // All 11 HCS10 tools
+      expect(tools.length).toBe(11);
       expect(mockContext.logger.info).toHaveBeenCalledWith(
-        'OpenConvAI Standards Agent Kit Plugin initialized successfully'
+        'HCS-10 Plugin initialized successfully'
       );
     });
 
@@ -90,7 +87,7 @@ describe('OpenConvAIPlugin Unit Tests', () => {
       
       expect(tools.length).toBe(0);
       expect(mockContext.logger.warn).toHaveBeenCalledWith(
-        'HederaKit not found in context. OpenConvAI tools will not be available.'
+        'HederaKit not found in context. HCS-10 tools will not be available.'
       );
     });
 
@@ -245,7 +242,7 @@ describe('OpenConvAIPlugin Unit Tests', () => {
       await plugin.initialize(mockContext);
       
       expect(mockContext.logger.error).toHaveBeenCalledWith(
-        'Failed to initialize OpenConvAI plugin:',
+        'Failed to initialize HCS-10 plugin:',
         expect.any(Error)
       );
       
@@ -274,7 +271,7 @@ describe('OpenConvAIPlugin Unit Tests', () => {
       // Verify cleanup
       expect(plugin.getTools().length).toBe(0);
       expect(mockContext.logger.info).toHaveBeenCalledWith(
-        'OpenConvAI Standards Agent Kit Plugin cleaned up'
+        'HCS-10 Plugin cleaned up'
       );
     });
   });

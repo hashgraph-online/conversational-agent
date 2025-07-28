@@ -2,7 +2,7 @@
 import React from 'react';
 import {render} from 'ink';
 import meow from 'meow';
-import App from './app.js';
+import App from './app';
 
 const cli = meow(
 	`
@@ -52,11 +52,13 @@ const cli = meow(
 	},
 );
 
-render(
+const {waitUntilExit} = render(
 	<App
 		accountId={cli.flags.accountId}
 		privateKey={cli.flags.privateKey}
 		network={cli.flags.network as 'testnet' | 'mainnet'}
 		openAIApiKey={cli.flags.openaiApiKey}
-	/>,
+	/>
 );
+
+waitUntilExit().then(() => process.exit(0));

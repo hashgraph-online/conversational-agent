@@ -1,0 +1,18 @@
+{
+  "mcpServers": {
+    "filesystem": {
+      "name": "filesystem",
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "."],
+      "transport": "stdio",
+      "autoConnect": true,
+      "additionalContext": "This server provides access to files and directories in the current working directory. When users refer to 'current directory', 'this folder', or 'here', they mean the directory where the agent is running. IMPORTANT: The MCP filesystem tools can only read text files. For binary files like images (.png, .jpg, etc), you cannot read them through MCP filesystem. Instead, for inscribing images in the current directory, use the inscribeFromFile tool directly with the relative path (e.g., 'Hashgraph-Online.png' not './Hashgraph-Online.png').",
+      "toolDescriptions": {
+        "list_directory": "Use this tool when users ask about files in the 'current directory', 'working directory', 'this folder', or want to know 'what files are here'.",
+        "read_file": "Use this tool to read TEXT files only. This tool cannot read binary files like images. For inscribing images, use inscribeFromFile with the file path instead.",
+        "search_files": "Use this tool when users ask to 'find' or 'search for' files in the current directory or its subdirectories.",
+        "get_file_info": "Use this tool when users ask about file details, size, or metadata for files in the current directory."
+      }
+    }
+  }
+}

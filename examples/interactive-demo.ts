@@ -87,7 +87,6 @@ async function promptUserToSelectAgent(
 async function initialize() {
   console.log('Initializing ConversationalAgent Demo...');
   try {
-    // Load Environment Variables
     const operatorId = process.env.HEDERA_OPERATOR_ID!;
     const operatorKey = process.env.HEDERA_OPERATOR_KEY!;
     const network = process.env.HEDERA_NETWORK || 'testnet';

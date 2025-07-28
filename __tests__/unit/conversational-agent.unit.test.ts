@@ -2,7 +2,10 @@ import { describe, test, expect, beforeEach, vi, Mock } from 'vitest';
 import { ConversationalAgent } from '../../src';
 import { HederaMirrorNode, Logger } from '@hashgraphonline/standards-sdk';
 import { PrivateKey } from '@hashgraph/sdk';
-import { HederaConversationalAgent } from 'hedera-agent-kit';
+import { createAgent } from '../../src/agent-factory';
+
+let mockPrivateKey: any;
+let mockAgent: any;
 
 vi.mock('@hashgraphonline/standards-sdk');
 vi.mock('@hashgraph/sdk');
@@ -10,11 +13,23 @@ vi.mock('hedera-agent-kit', async () => {
   const actual = await vi.importActual('hedera-agent-kit');
   return {
     ...actual,
-    ServerSigner: vi.fn(),
-    HederaConversationalAgent: vi.fn(),
+    ServerSigner: vi.fn().mockImplementation(() => ({
+      getAccountId: () => ({ toString: () => '0.0.12345' }),
+      getNetwork: () => 'testnet',
+      getOperatorPrivateKey: () => mockPrivateKey,
+    })),
+    HederaAgentKit: vi.fn().mockImplementation(function(this: any) {
+      this.initialize = vi.fn().mockResolvedValue(undefined);
+      this.getAggregatedLangChainTools = vi.fn().mockReturnValue([]);
+      this.operationalMode = 'returnBytes';
+    }),
     getAllHederaCorePlugins: vi.fn(() => [])
   };
 });
+
+vi.mock('../../src/agent-factory', () => ({
+  createAgent: vi.fn(() => mockAgent)
+}));
 
 /**
  * Unit tests for ConversationalAgent
@@ -22,16 +37,27 @@ vi.mock('hedera-agent-kit', async () => {
 describe('ConversationalAgent Unit Tests', () => {
   let mockMirrorNode: any;
   let mockLogger: any;
-  let mockPrivateKey: any;
-  let mockConversationalAgent: any;
 
   beforeEach(() => {
     vi.clearAllMocks();
 
+    mockPrivateKey = {
+      toString: () => 'mock-private-key-instance'
+    };
+
+    mockAgent = {
+      boot: vi.fn().mockResolvedValue(undefined),
+      chat: vi.fn().mockResolvedValue({
+        output: 'Agent response',
+        intermediateSteps: []
+      })
+    };
+
     mockLogger = {
       info: vi.fn(),
       warn: vi.fn(),
-      error: vi.fn()
+      error: vi.fn(),
+      debug: vi.fn()
     };
 
     mockMirrorNode = {
@@ -40,23 +66,10 @@ describe('ConversationalAgent Unit Tests', () => {
       })
     };
 
-    mockPrivateKey = {
-      toString: () => 'mock-private-key-instance'
-    };
-
-    mockConversationalAgent = {
-      initialize: vi.fn().mockResolvedValue(undefined),
-      processMessage: vi.fn().mockResolvedValue({
-        output: 'Agent response',
-        intermediateSteps: []
-      })
-    };
-
     (Logger as unknown as Mock).mockImplementation(() => mockLogger);
     (HederaMirrorNode as unknown as Mock).mockImplementation(() => mockMirrorNode);
     (PrivateKey.fromStringED25519 as Mock) = vi.fn().mockReturnValue(mockPrivateKey);
     (PrivateKey.fromStringECDSA as Mock) = vi.fn().mockReturnValue(mockPrivateKey);
-    (HederaConversationalAgent as unknown as Mock).mockImplementation(() => mockConversationalAgent);
   });
 
   describe('Initialization', () => {
@@ -85,7 +98,7 @@ describe('ConversationalAgent Unit Tests', () => {
 
       expect(mockMirrorNode.requestAccount).toHaveBeenCalledWith('0.0.12345');
       expect(PrivateKey.fromStringED25519).toHaveBeenCalledWith('mock-private-key');
-      expect(mockConversationalAgent.initialize).toHaveBeenCalled();
+      expect(mockAgent.boot).toHaveBeenCalled();
     });
 
     test('Initializes with ECDSA key', async () => {
@@ -114,10 +127,11 @@ describe('ConversationalAgent Unit Tests', () => {
 
       await agent.initialize();
 
-      const agentCall = (HederaConversationalAgent as unknown as Mock).mock.calls[0];
-      expect(agentCall[1].openAIModelName).toBe('gpt-4o');
-      expect(agentCall[1].verbose).toBe(false);
-      expect(agentCall[1].operationalMode).toBe('autonomous');
+      const createAgentCall = (createAgent as unknown as Mock).mock.calls[0];
+      
+      expect(createAgentCall[0].framework).toBe('langchain');
+      expect(createAgentCall[0].execution?.operationalMode).toBe('autonomous');
+      expect(createAgentCall[0].debug?.verbose).toBe(false);
     });
 
     test('Throws error when required parameters are missing', async () => {
@@ -159,9 +173,9 @@ describe('ConversationalAgent Unit Tests', () => {
 
       const response = await agent.processMessage('Find all AI agents');
 
-      expect(mockConversationalAgent.processMessage).toHaveBeenCalledWith(
+      expect(mockAgent.chat).toHaveBeenCalledWith(
         'Find all AI agents',
-        []
+        { messages: [] }
       );
       expect(response.output).toBe('Agent response');
     });
@@ -182,9 +196,15 @@ describe('ConversationalAgent Unit Tests', () => {
 
       await agent.processMessage('Find agents', chatHistory);
 
-      expect(mockConversationalAgent.processMessage).toHaveBeenCalledWith(
+      const expectedMessages = chatHistory.map(msg => 
+        msg.type === 'human' 
+          ? expect.objectContaining({ content: msg.content })
+          : expect.objectContaining({ content: msg.content })
+      );
+
+      expect(mockAgent.chat).toHaveBeenCalledWith(
         'Find agents',
-        chatHistory
+        { messages: expectedMessages }
       );
     });
 
@@ -196,7 +216,7 @@ describe('ConversationalAgent Unit Tests', () => {
       });
 
       await expect(agent.processMessage('Test')).rejects.toThrow(
-        'ConversationalAgent not initialized. Call initialize() first.'
+        'Agent not initialized. Call initialize() first.'
       );
     });
   });
@@ -211,12 +231,12 @@ describe('ConversationalAgent Unit Tests', () => {
 
       await agent.initialize();
 
-      const agentCall = (HederaConversationalAgent as unknown as Mock).mock.calls[0];
-      const plugins = agentCall[1].pluginConfig.plugins;
+      const createAgentCall = (createAgent as unknown as Mock).mock.calls[0];
+      const plugins = createAgentCall[0].extensions?.plugins;
       
       expect(plugins).toBeDefined();
       expect(plugins.length).toBeGreaterThan(0);
-      expect(plugins[0]).toBe(agent.getPlugin());
+      expect(plugins).toContain(agent.getPlugin());
     });
 
     test('State manager is passed to plugin config', async () => {
@@ -228,10 +248,9 @@ describe('ConversationalAgent Unit Tests', () => {
 
       await agent.initialize();
 
-      const agentCall = (HederaConversationalAgent as unknown as Mock).mock.calls[0];
-      const appConfig = agentCall[1].pluginConfig.appConfig;
-      
-      expect(appConfig.stateManager).toBe(agent.getStateManager());
+      const hcs10Plugin = agent.getPlugin();
+      expect(hcs10Plugin.appConfig).toBeDefined();
+      expect(hcs10Plugin.appConfig.stateManager).toBe(agent.getStateManager());
     });
   });
 
@@ -244,7 +263,7 @@ describe('ConversationalAgent Unit Tests', () => {
       });
 
       expect(() => agent.getConversationalAgent()).toThrow(
-        'ConversationalAgent not initialized. Call initialize() first.'
+        'Agent not initialized. Call initialize() first.'
       );
     });
 
@@ -258,7 +277,7 @@ describe('ConversationalAgent Unit Tests', () => {
       await agent.initialize();
 
       const hederaAgent = agent.getConversationalAgent();
-      expect(hederaAgent).toBe(mockConversationalAgent);
+      expect(hederaAgent).toBe(mockAgent);
     });
   });
 
@@ -272,9 +291,10 @@ describe('ConversationalAgent Unit Tests', () => {
 
       await agent.initialize();
 
-      const agentCall = (HederaConversationalAgent as unknown as Mock).mock.calls[0];
-      const systemMessage = agentCall[1].customSystemMessagePreamble;
+      const createAgentCall = (createAgent as unknown as Mock).mock.calls[0];
+      const systemMessage = createAgentCall[0].messaging?.systemPreamble;
       
+      expect(systemMessage).toBeDefined();
       expect(systemMessage).toContain('0.0.12345');
       expect(systemMessage).toContain('HCS-10');
       expect(systemMessage).toContain('registering agents');
@@ -293,7 +313,129 @@ describe('ConversationalAgent Unit Tests', () => {
 
       await agent.initialize();
 
-      expect(HederaMirrorNode).toHaveBeenCalledWith('mainnet', expect.any(Object));
+      expect(HederaMirrorNode).toHaveBeenCalledWith('mainnet');
+    });
+  });
+
+  describe('Tool Filtering', () => {
+    test('Applies custom tool filter to remove specific tools', async () => {
+      const toolFilter = (tool: { name: string; namespace?: string }) => {
+        return !tool.name.includes('unwanted');
+      };
+
+      const agent = new ConversationalAgent({
+        accountId: '0.0.12345',
+        privateKey: 'mock-private-key',
+        openAIApiKey: 'sk-test',
+        toolFilter
+      });
+
+      await agent.initialize();
+
+      const createAgentCall = (createAgent as unknown as Mock).mock.calls[0];
+      const toolPredicate = createAgentCall[0].filtering?.toolPredicate;
+      
+      expect(toolPredicate).toBeDefined();
+      expect(toolPredicate({ name: 'wanted-tool' })).toBe(true);
+      expect(toolPredicate({ name: 'unwanted-tool' })).toBe(false);
+    });
+
+    test('Tool filter works alongside hardcoded hedera-account-transfer-hbar filter', async () => {
+      const toolFilter = (tool: { name: string; namespace?: string }) => {
+        return tool.namespace !== 'restricted';
+      };
+
+      const agent = new ConversationalAgent({
+        accountId: '0.0.12345',
+        privateKey: 'mock-private-key',
+        openAIApiKey: 'sk-test',
+        toolFilter
+      });
+
+      await agent.initialize();
+
+      const createAgentCall = (createAgent as unknown as Mock).mock.calls[0];
+      const toolPredicate = createAgentCall[0].filtering?.toolPredicate;
+      
+      expect(toolPredicate({ name: 'hedera-account-transfer-hbar' })).toBe(false);
+      
+      expect(toolPredicate({ name: 'hedera-account-transfer-hbar', namespace: 'allowed' })).toBe(false);
+      
+      expect(toolPredicate({ name: 'some-tool', namespace: 'restricted' })).toBe(false);
+      expect(toolPredicate({ name: 'some-tool', namespace: 'allowed' })).toBe(true);
+    });
+
+    test('Tool filter can be undefined and defaults to allowing all tools except hardcoded ones', async () => {
+      const agent = new ConversationalAgent({
+        accountId: '0.0.12345',
+        privateKey: 'mock-private-key',
+        openAIApiKey: 'sk-test'
+      });
+
+      await agent.initialize();
+
+      const createAgentCall = (createAgent as unknown as Mock).mock.calls[0];
+      const toolPredicate = createAgentCall[0].filtering?.toolPredicate;
+      
+      expect(toolPredicate).toBeDefined();
+      expect(toolPredicate({ name: 'hedera-account-transfer-hbar' })).toBe(false);
+      expect(toolPredicate({ name: 'any-other-tool' })).toBe(true);
+      expect(toolPredicate({ name: 'another-tool', namespace: 'any' })).toBe(true);
+    });
+
+    test('Tool filter receives proper tool structure with name and namespace', async () => {
+      const capturedTools: Array<{ name: string; namespace?: string }> = [];
+      
+      const toolFilter = (tool: { name: string; namespace?: string }) => {
+        capturedTools.push(tool);
+        return true;
+      };
+
+      const agent = new ConversationalAgent({
+        accountId: '0.0.12345',
+        privateKey: 'mock-private-key',
+        openAIApiKey: 'sk-test',
+        toolFilter
+      });
+
+      await agent.initialize();
+
+      const createAgentCall = (createAgent as unknown as Mock).mock.calls[0];
+      const toolPredicate = createAgentCall[0].filtering?.toolPredicate;
+      
+      toolPredicate({ name: 'test-tool' });
+      toolPredicate({ name: 'namespaced-tool', namespace: 'test-ns' });
+      
+      expect(capturedTools).toHaveLength(2);
+      expect(capturedTools[0]).toEqual({ name: 'test-tool' });
+      expect(capturedTools[1]).toEqual({ name: 'namespaced-tool', namespace: 'test-ns' });
+    });
+
+    test('Complex tool filter with multiple conditions', async () => {
+      const toolFilter = (tool: { name: string; namespace?: string }) => {
+        if (tool.name.includes('test')) return false;
+        if (tool.namespace === 'dev') return false;
+        if (tool.namespace && !['production', 'stable'].includes(tool.namespace)) return false;
+        return true;
+      };
+
+      const agent = new ConversationalAgent({
+        accountId: '0.0.12345',
+        privateKey: 'mock-private-key',
+        openAIApiKey: 'sk-test',
+        toolFilter
+      });
+
+      await agent.initialize();
+
+      const createAgentCall = (createAgent as unknown as Mock).mock.calls[0];
+      const toolPredicate = createAgentCall[0].filtering?.toolPredicate;
+      
+      expect(toolPredicate({ name: 'test-tool', namespace: 'production' })).toBe(false);
+      expect(toolPredicate({ name: 'good-tool', namespace: 'dev' })).toBe(false);
+      expect(toolPredicate({ name: 'good-tool', namespace: 'beta' })).toBe(false);
+      expect(toolPredicate({ name: 'good-tool', namespace: 'production' })).toBe(true);
+      expect(toolPredicate({ name: 'good-tool' })).toBe(true);
     });
   });
 });

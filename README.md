@@ -137,6 +137,7 @@ When using `returnBytes` mode:
 - **TypeScript Support**: Full type definitions for all components
 - **State Management**: Integrated state management for agent operations
 - **CLI Interface**: Beautiful terminal interface for interactive agent communication
+- **MCP Support**: Extend agent capabilities with Model Context Protocol servers
 
 ## Available Tools
 
@@ -469,7 +470,85 @@ const agent = new HederaConversationalAgent(signer, {
 - [Conversational Agent Documentation](https://hashgraphonline.com/docs/libraries/conversational-agent/)
 - [Standards Agent Kit Documentation](https://hashgraphonline.com/docs/libraries/standards-agent-kit/)
 - [HCS Standards Documentation](https://hcs-improvement-proposals.pages.dev/docs/standards)
+- [MCP Integration Guide](./docs/MCP_INTEGRATION.md)
 - [GitHub Repository](https://github.com/hashgraph-online/conversational-agent)
+
+## Contributing
+
+We welcome contributions from the community! Whether you're fixing bugs, adding features, or creating new plugins, your contributions help make the Conversational Agent better for everyone.
+
+### Contributing a Plugin
+
+If you've created a plugin that extends the Conversational Agent's capabilities, we'd love to include it in the repository. Here's how:
+
+1. **Fork the Repository**
+   ```bash
+   git clone https://github.com/hashgraph-online/conversational-agent.git
+   cd conversational-agent
+   pnpm install
+   ```
+
+2. **Create Your Plugin**
+   - Place your plugin in `src/plugins/community/[your-plugin-name]/`
+   - Follow the plugin structure outlined in the [Plugin Development Guide](docs/PLUGIN_DEVELOPMENT.md)
+   - Include comprehensive tests in `src/plugins/community/[your-plugin-name]/__tests__/`
+   - Add documentation in `src/plugins/community/[your-plugin-name]/README.md`
+
+3. **Plugin Requirements**
+   - Must extend `BasePlugin` from hedera-agent-kit
+   - Include clear tool descriptions for AI understanding
+   - Add proper error handling and validation
+   - Follow TypeScript best practices
+   - Include unit tests with >80% coverage
+   - Document all configuration options
+   - Add usage examples
+
+4. **Submit a Pull Request**
+   - Create a feature branch: `git checkout -b feature/add-[plugin-name]-plugin`
+   - Commit your changes with clear messages
+   - Push to your fork and create a PR
+   - Include a description of what your plugin does and why it's useful
+   - Link to any relevant HCS standards or documentation
+
+### Plugin Review Process
+
+1. **Code Review**: Maintainers will review your code for quality, security, and adherence to standards
+2. **Testing**: All tests must pass, and the plugin must work with the latest agent version
+3. **Documentation**: Clear documentation and examples are required
+4. **Integration**: Once approved, your plugin will be added to the community plugins directory
+
+### Example Plugin Structure
+
+```
+src/plugins/community/your-plugin/
+├── index.ts              # Main plugin export
+├── YourPlugin.ts         # Plugin implementation
+├── tools/               # Tool implementations
+│   ├── YourTool1.ts
+│   └── YourTool2.ts
+├── __tests__/           # Test files
+│   ├── YourPlugin.test.ts
+│   └── tools/
+│       ├── YourTool1.test.ts
+│       └── YourTool2.test.ts
+├── README.md            # Plugin documentation
+└── package.json         # Plugin metadata (optional)
+```
+
+### General Contribution Guidelines
+
+- **Code Style**: Follow the existing code style and linting rules
+- **Commits**: Use clear, descriptive commit messages
+- **Documentation**: Update relevant documentation for any changes
+- **Tests**: Add tests for new functionality
+- **Issues**: Open an issue before working on major changes
+
+### Getting Help
+
+- Join our [Discord community](https://discord.gg/hashgraphonline) for discussions
+- Check existing issues and PRs before starting work
+- Ask questions in the #development channel
+- Review the [HCS Standards](https://hcs-improvement-proposals.pages.dev/docs/standards) for protocol details
 
 ## License
 

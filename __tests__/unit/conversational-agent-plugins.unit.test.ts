@@ -1,25 +1,38 @@
-import { describe, test, expect, vi, beforeEach } from 'vitest';
+import { describe, test, expect, vi, beforeEach, Mock } from 'vitest';
 import { ConversationalAgent } from '../../src';
-import { BasePlugin } from 'hedera-agent-kit';
+import { BasePlugin, HederaConversationalAgent } from 'hedera-agent-kit';
 import type { GenericPluginContext } from 'hedera-agent-kit';
 
-// Mock hedera-agent-kit modules
+let mockAgent: any;
+
 vi.mock('hedera-agent-kit', async () => {
   const actual = await vi.importActual('hedera-agent-kit');
   return {
     ...actual,
     ServerSigner: vi.fn().mockImplementation(() => ({
       getAccountId: () => ({ toString: () => '0.0.12345' }),
+      getNetwork: () => 'testnet',
     })),
-    HederaConversationalAgent: vi.fn().mockImplementation(function(this: any, signer: any, config: any) {
-      this.config = config;
+    HederaAgentKit: vi.fn().mockImplementation(function(this: any) {
       this.initialize = vi.fn().mockResolvedValue(undefined);
-      this.processMessage = vi.fn().mockResolvedValue({
-        output: 'Test response',
-        transactionId: '0.0.12345@1234567890.123',
-      });
+      this.getAggregatedLangChainTools = vi.fn().mockReturnValue([]);
+      this.operationalMode = 'returnBytes';
     }),
-    getAllHederaCorePlugins: vi.fn().mockReturnValue([]),
+    HederaConversationalAgent: vi.fn(),
+    getAllHederaCorePlugins: vi.fn().mockReturnValue([
+      { id: 'hedera-token-service', name: 'Hedera Token Service Plugin' },
+      { id: 'hedera-consensus-service', name: 'Hedera Consensus Service Plugin' },
+      { id: 'hedera-account', name: 'Hedera Account Plugin' },
+      { id: 'hedera-smart-contract-service', name: 'Hedera Smart Contract Service Plugin' },
+      { id: 'hedera-network', name: 'Hedera Network Plugin' }
+    ]),
+    TokenUsageCallbackHandler: vi.fn().mockImplementation(function(this: any) {
+      this.getLatestTokenUsage = vi.fn().mockReturnValue(null);
+      this.getTotalTokenUsage = vi.fn().mockReturnValue({ promptTokens: 0, completionTokens: 0, totalTokens: 0 });
+      this.getTokenUsageHistory = vi.fn().mockReturnValue([]);
+      this.reset = vi.fn();
+    }),
+    calculateTokenCostSync: vi.fn().mockReturnValue({ totalCost: 0 }),
   };
 });
 
@@ -36,7 +49,6 @@ vi.mock('@hashgraphonline/standards-agent-kit', async () => {
   };
 });
 
-// Mock HederaMirrorNode
 vi.mock('@hashgraphonline/standards-sdk', async () => {
   const actual = await vi.importActual('@hashgraphonline/standards-sdk');
   return {
@@ -49,12 +61,15 @@ vi.mock('@hashgraphonline/standards-sdk', async () => {
   };
 });
 
-// Mock @hashgraph/sdk
 vi.mock('@hashgraph/sdk', () => ({
   PrivateKey: {
     fromStringED25519: vi.fn().mockReturnValue('mock-private-key-instance'),
     fromStringECDSA: vi.fn().mockReturnValue('mock-private-key-instance'),
   },
+}));
+
+vi.mock('../../src/agent-factory', () => ({
+  createAgent: vi.fn(() => mockAgent)
 }));
 
 /**
@@ -64,9 +79,28 @@ describe('ConversationalAgent Plugin Support', () => {
   const mockAccountId = '0.0.12345';
   const mockPrivateKey = '302e020100300506032b657004220420a689b974df063cc7e19fd4ddeaf6dd412b5efec4e4a3cee7f181d29d40b3fc1e';
   const mockOpenAIKey = 'sk-test-key';
+  let mockConversationalAgent: any;
 
   beforeEach(() => {
     vi.clearAllMocks();
+    
+    mockAgent = {
+      boot: vi.fn().mockResolvedValue(undefined),
+      chat: vi.fn().mockResolvedValue({
+        output: 'Test response',
+        intermediateSteps: []
+      })
+    };
+    
+    mockConversationalAgent = {
+      initialize: vi.fn().mockResolvedValue(undefined),
+      processMessage: vi.fn().mockResolvedValue({
+        output: 'Test response',
+        transactionId: '0.0.12345@1234567890.123',
+      })
+    };
+    
+    (HederaConversationalAgent as unknown as Mock).mockImplementation(() => mockConversationalAgent);
   });
 
   // Create a mock plugin
@@ -103,19 +137,21 @@ describe('ConversationalAgent Plugin Support', () => {
 
     await agent.initialize();
 
-    // Get the HederaConversationalAgent mock instance
-    const { HederaConversationalAgent } = await import('hedera-agent-kit');
-    const lastCall = (HederaConversationalAgent as any).mock.calls[(HederaConversationalAgent as any).mock.calls.length - 1];
-    const config = lastCall[1];
+    // Get the createAgent mock instance
+    const { createAgent } = await import('../../src/agent-factory');
+    const createAgentCall = (createAgent as unknown as Mock).mock.calls[0];
+    const config = createAgentCall[0];
     
     // Check that the config includes our additional plugin
-    expect(config.pluginConfig.plugins).toHaveLength(2); // OpenConvAI + MockPlugin (getAllHederaCorePlugins returns empty array in mock)
+    expect(config.extensions?.plugins).toBeDefined();
+    expect(config.extensions.plugins.length).toBeGreaterThan(0);
     
-    // Verify OpenConvAI plugin is first
-    expect(config.pluginConfig.plugins[0].id).toBe('openconvai-standards-agent-kit');
+    // Find HCS-10 plugin
+    const hcs10Plugin = config.extensions.plugins.find((p: any) => p.id === 'hcs-10');
+    expect(hcs10Plugin).toBeDefined();
     
-    // Verify our mock plugin is second
-    expect(config.pluginConfig.plugins[1]).toBe(mockPlugin);
+    // Verify our mock plugin is included
+    expect(config.extensions.plugins).toContain(mockPlugin);
   });
 
   test('ConversationalAgent works with custom state manager', async () => {
@@ -137,13 +173,18 @@ describe('ConversationalAgent Plugin Support', () => {
     // Verify the custom state manager is used
     expect(agent.getStateManager()).toBe(customStateManager);
     
-    // Get the HederaConversationalAgent mock instance
-    const { HederaConversationalAgent } = await import('hedera-agent-kit');
-    const lastCall = (HederaConversationalAgent as any).mock.calls[(HederaConversationalAgent as any).mock.calls.length - 1];
-    const config = lastCall[1];
+    // Get the createAgent mock instance
+    const { createAgent } = await import('../../src/agent-factory');
+    const createAgentCall = (createAgent as unknown as Mock).mock.calls[0];
+    const config = createAgentCall[0];
     
-    // Check that the config includes our custom state manager
-    expect(config.pluginConfig.appConfig.stateManager).toBe(customStateManager);
+    // Verify the state manager is used correctly
+    expect(agent.getStateManager()).toBe(customStateManager);
+    
+    // The plugin should get configured with the state manager after initialization
+    const hcs10Plugin = agent.getPlugin();
+    expect(hcs10Plugin.appConfig).toBeDefined();
+    expect(hcs10Plugin.appConfig.stateManager).toBe(customStateManager);
   });
 
   test('ConversationalAgent passes optional configuration correctly', async () => {
@@ -166,19 +207,19 @@ describe('ConversationalAgent Plugin Support', () => {
 
     await agent.initialize();
 
-    // Get the HederaConversationalAgent mock instance
-    const { HederaConversationalAgent } = await import('hedera-agent-kit');
-    const lastCall = (HederaConversationalAgent as any).mock.calls[(HederaConversationalAgent as any).mock.calls.length - 1];
-    const config = lastCall[1];
+    // Get the createAgent mock instance
+    const { createAgent } = await import('../../src/agent-factory');
+    const createAgentCall = (createAgent as unknown as Mock).mock.calls[0];
+    const config = createAgentCall[0];
     
     // Verify all optional configs are passed correctly
-    expect(config.operationalMode).toBe('returnBytes');
-    expect(config.userAccountId).toBe('0.0.99999');
-    expect(config.customSystemMessagePreamble).toBe(customPreamble);
-    expect(config.customSystemMessagePostamble).toBe(customPostamble);
-    expect(config.scheduleUserTransactionsInBytesMode).toBe(true);
-    expect(config.disableLogging).toBe(true);
-    expect(config.verbose).toBe(true);
+    expect(config.execution?.operationalMode).toBe('returnBytes');
+    expect(config.execution?.userAccountId).toBe('0.0.99999');
+    expect(config.messaging?.systemPreamble).toBe(customPreamble);
+    expect(config.messaging?.systemPostamble).toBe(customPostamble);
+    expect(config.execution?.scheduleUserTransactions).toBe(true);
+    expect(config.debug?.silent).toBe(true);
+    expect(config.debug?.verbose).toBe(true);
   });
 
   test('ConversationalAgent uses default system message when no custom preamble provided', async () => {
@@ -191,13 +232,14 @@ describe('ConversationalAgent Plugin Support', () => {
 
     await agent.initialize();
 
-    // Get the HederaConversationalAgent mock instance
-    const { HederaConversationalAgent } = await import('hedera-agent-kit');
-    const lastCall = (HederaConversationalAgent as any).mock.calls[(HederaConversationalAgent as any).mock.calls.length - 1];
-    const config = lastCall[1];
+    // Get the createAgent mock instance
+    const { createAgent } = await import('../../src/agent-factory');
+    const createAgentCall = (createAgent as unknown as Mock).mock.calls[0];
+    const config = createAgentCall[0];
     
     // Verify default system message is used
-    expect(config.customSystemMessagePreamble).toContain('You are a helpful assistant managing Hedera HCS-10 connections');
-    expect(config.customSystemMessagePreamble).toContain(mockAccountId);
+    expect(config.messaging?.systemPreamble).toBeDefined();
+    expect(config.messaging.systemPreamble).toContain('You are a helpful assistant managing Hashgraph Online HCS-10 connections');
+    expect(config.messaging.systemPreamble).toContain(mockAccountId);
   });
 });
