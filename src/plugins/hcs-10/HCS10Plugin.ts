@@ -46,7 +46,9 @@ export class HCS10Plugin extends BasePlugin {
 
     try {
       this.stateManager =
-        (context.stateManager as IStateManager) || new OpenConvaiState();
+        (context.stateManager as IStateManager) || 
+        (context.config.stateManager as IStateManager) ||
+        new OpenConvaiState();
 
       this.initializeTools();
 

@@ -1,6 +1,6 @@
 {
   "name": "@hashgraphonline/conversational-agent",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "type": "module",
   "main": "./dist/cjs/index.cjs",
   "module": "./dist/esm/index.js",
@@ -86,7 +86,7 @@
   },
   "dependencies": {
     "@hashgraph/sdk": "^2.69.0",
-    "@hashgraphonline/standards-agent-kit": "0.2.105",
+    "@hashgraphonline/standards-agent-kit": "file:.yalc/@hashgraphonline/standards-agent-kit",
     "@hashgraphonline/standards-sdk": "^0.0.156",
     "@langchain/core": "^0.3.66",
     "@langchain/openai": "^0.6.3",
