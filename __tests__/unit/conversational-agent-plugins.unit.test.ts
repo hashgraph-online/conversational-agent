@@ -36,7 +36,6 @@ vi.mock('hedera-agent-kit', async () => {
   };
 });
 
-// Mock the HCS10Builder to prevent actual client initialization
 vi.mock('@hashgraphonline/standards-agent-kit', async () => {
   const actual = await vi.importActual('@hashgraphonline/standards-agent-kit');
   return {
@@ -103,7 +102,6 @@ describe('ConversationalAgent Plugin Support', () => {
     (HederaConversationalAgent as unknown as Mock).mockImplementation(() => mockConversationalAgent);
   });
 
-  // Create a mock plugin
   class MockPlugin extends BasePlugin {
     id = 'mock-plugin';
     name = 'Mock Plugin';
@@ -137,20 +135,16 @@ describe('ConversationalAgent Plugin Support', () => {
 
     await agent.initialize();
 
-    // Get the createAgent mock instance
     const { createAgent } = await import('../../src/agent-factory');
     const createAgentCall = (createAgent as unknown as Mock).mock.calls[0];
     const config = createAgentCall[0];
     
-    // Check that the config includes our additional plugin
     expect(config.extensions?.plugins).toBeDefined();
     expect(config.extensions.plugins.length).toBeGreaterThan(0);
     
-    // Find HCS-10 plugin
     const hcs10Plugin = config.extensions.plugins.find((p: any) => p.id === 'hcs-10');
     expect(hcs10Plugin).toBeDefined();
     
-    // Verify our mock plugin is included
     expect(config.extensions.plugins).toContain(mockPlugin);
   });
 
@@ -170,18 +164,14 @@ describe('ConversationalAgent Plugin Support', () => {
 
     await agent.initialize();
 
-    // Verify the custom state manager is used
     expect(agent.getStateManager()).toBe(customStateManager);
     
-    // Get the createAgent mock instance
     const { createAgent } = await import('../../src/agent-factory');
     const createAgentCall = (createAgent as unknown as Mock).mock.calls[0];
     const config = createAgentCall[0];
     
-    // Verify the state manager is used correctly
     expect(agent.getStateManager()).toBe(customStateManager);
     
-    // The plugin should get configured with the state manager after initialization
     const hcs10Plugin = agent.getPlugin();
     expect(hcs10Plugin.appConfig).toBeDefined();
     expect(hcs10Plugin.appConfig.stateManager).toBe(customStateManager);
@@ -207,12 +197,10 @@ describe('ConversationalAgent Plugin Support', () => {
 
     await agent.initialize();
 
-    // Get the createAgent mock instance
     const { createAgent } = await import('../../src/agent-factory');
     const createAgentCall = (createAgent as unknown as Mock).mock.calls[0];
     const config = createAgentCall[0];
     
-    // Verify all optional configs are passed correctly
     expect(config.execution?.operationalMode).toBe('returnBytes');
     expect(config.execution?.userAccountId).toBe('0.0.99999');
     expect(config.messaging?.systemPreamble).toBe(customPreamble);
@@ -232,12 +220,10 @@ describe('ConversationalAgent Plugin Support', () => {
 
     await agent.initialize();
 
-    // Get the createAgent mock instance
     const { createAgent } = await import('../../src/agent-factory');
     const createAgentCall = (createAgent as unknown as Mock).mock.calls[0];
     const config = createAgentCall[0];
     
-    // Verify default system message is used
     expect(config.messaging?.systemPreamble).toBeDefined();
     expect(config.messaging.systemPreamble).toContain('You are a helpful assistant managing Hashgraph Online HCS-10 connections');
     expect(config.messaging.systemPreamble).toContain(mockAccountId);

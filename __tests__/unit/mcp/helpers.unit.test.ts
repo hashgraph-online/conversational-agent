@@ -13,6 +13,11 @@ describe('MCP Helpers', () => {
         args: ['-y', '@modelcontextprotocol/server-filesystem', '/tmp/test'],
         transport: 'stdio',
         autoConnect: true,
+        additionalContext: 'This server provides access to files and directories in the current working directory.',
+        toolDescriptions: {
+          list_directory: 'Use this tool when users ask about files in the "current directory" or "working directory".',
+          read_file: 'Use this tool when users ask to see or check files in the current directory.',
+        },
       });
     });
 

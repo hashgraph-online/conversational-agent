@@ -72,10 +72,14 @@ export class LangChainAgent extends BaseAgent {
     }
 
     try {
+      this.logger.info('LangChainAgent.chat called with:', { message, contextLength: context?.messages?.length || 0 });
+      
       const result = await this.executor.invoke({
         input: message,
         chat_history: context?.messages || [],
       });
+
+      this.logger.info('LangChainAgent executor result:', result);
 
       let response: ChatResponse = {
         output: result.output || '',
@@ -109,8 +113,10 @@ export class LangChainAgent extends BaseAgent {
         }
       }
 
+      this.logger.info('LangChainAgent.chat returning response:', response);
       return response;
     } catch (error) {
+      this.logger.error('LangChainAgent.chat error:', error);
       return this.handleError(error);
     }
   }

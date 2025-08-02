@@ -116,7 +116,6 @@ describe('AI Providers Unit Tests', () => {
 
   describe('Provider Interfaces', () => {
     test('VercelAIProvider interface has correct structure', () => {
-      // This is a compile-time test - if it compiles, the interface is correct
       const mockVercelProvider: import('../../src/providers').VercelAIProvider = {
         generate: vi.fn(),
         stream: vi.fn(),
@@ -129,7 +128,6 @@ describe('AI Providers Unit Tests', () => {
     });
 
     test('BAMLProvider interface has correct structure', () => {
-      // This is a compile-time test - if it compiles, the interface is correct
       const mockBAMLProvider: import('../../src/providers').BAMLProvider = {
         generate: vi.fn(),
         stream: vi.fn(),
@@ -142,7 +140,6 @@ describe('AI Providers Unit Tests', () => {
     });
 
     test('AIProvider base interface has correct structure', () => {
-      // This is a compile-time test - if it compiles, the interface is correct
       const mockAIProvider: import('../../src/providers').AIProvider = {
         generate: vi.fn(),
       };

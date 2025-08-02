@@ -119,7 +119,6 @@ describe('OpenConvAIPlugin Unit Tests', () => {
       mockContext.logger.error = vi.fn();
       await plugin.initialize(mockContext);
       
-      // Verify tools were created (which means builder was created)
       const tools = plugin.getTools();
       const registerTool = tools.find(t => t.name === 'register_agent');
       
@@ -185,7 +184,6 @@ describe('OpenConvAIPlugin Unit Tests', () => {
         'list_unapproved_connection_requests'
       ];
       
-      // Verify we have all expected tools
       expectedTools.forEach(toolName => {
         const tool = tools.find(t => t.name === toolName);
         expect(tool).toBeDefined();
@@ -229,7 +227,6 @@ describe('OpenConvAIPlugin Unit Tests', () => {
     test('Plugin handles initialization errors gracefully', async () => {
       const plugin = new OpenConvAIPlugin();
       
-      // Mock the initializeTools method to throw an error
       const originalInitTools = (plugin as any).initializeTools;
       (plugin as any).initializeTools = vi.fn().mockImplementation(() => {
         throw new Error('Test error during tool initialization');
@@ -246,7 +243,6 @@ describe('OpenConvAIPlugin Unit Tests', () => {
         expect.any(Error)
       );
       
-      // Restore original method
       (plugin as any).initializeTools = originalInitTools;
     });
   });
@@ -261,14 +257,11 @@ describe('OpenConvAIPlugin Unit Tests', () => {
       
       await plugin.initialize(mockContext);
       
-      // Verify tools exist before cleanup
       expect(plugin.getTools().length).toBe(11);
       expect(plugin.getStateManager()).toBeDefined();
       
-      // Cleanup
       await plugin.cleanup();
       
-      // Verify cleanup
       expect(plugin.getTools().length).toBe(0);
       expect(mockContext.logger.info).toHaveBeenCalledWith(
         'HCS-10 Plugin cleaned up'

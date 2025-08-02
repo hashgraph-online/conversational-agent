@@ -118,7 +118,6 @@ describe('Agent Factory Unit Tests', () => {
       const agent = createAgent(config);
       expect(agent).toBeInstanceOf(LangChainAgent);
       
-      // Verify config was passed correctly
       expect(agent['config'].ai?.apiKey).toBe('test-key');
       expect(agent['config'].ai?.modelName).toBe('gpt-4o');
       expect(agent['config'].ai?.temperature).toBe(0.7);
@@ -198,7 +197,6 @@ describe('Agent Factory Unit Tests', () => {
       const agent = createAgent(config);
       expect(agent).toBeInstanceOf(LangChainAgent);
       
-      // Verify all config properties were passed
       expect(agent['config'].execution?.mode).toBe('bytes');
       expect(agent['config'].execution?.operationalMode).toBe('returnBytes');
       expect(agent['config'].execution?.userAccountId).toBe('0.0.54321');
@@ -238,7 +236,6 @@ describe('Agent Factory Unit Tests', () => {
         ai: { apiKey: 'test' },
       };
 
-      // Should not throw when framework is omitted
       expect(() => createAgent(config)).not.toThrow();
     });
 

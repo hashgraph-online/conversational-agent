@@ -33,10 +33,7 @@ describe('Plugin Component Integration Tests', () => {
         verbose: false,
       });
 
-      // Test that initialize completes successfully
       await agent.initialize();
-
-      // Verify components are initialized
       expect(agent.getPlugin()).toBeDefined();
       expect(agent.getStateManager()).toBeDefined();
       expect(agent.getConversationalAgent()).toBeDefined();
@@ -52,7 +49,6 @@ describe('Plugin Component Integration Tests', () => {
         return;
       }
 
-      // First get the key type from mirror node
       const mirrorNode = new HederaMirrorNode('testnet', logger);
       const accountInfo = await mirrorNode.requestAccount(accountId);
       const keyType = accountInfo?.key?._type || '';
@@ -73,7 +69,6 @@ describe('Plugin Component Integration Tests', () => {
 
       const plugin = new OpenConvAIPlugin();
 
-      // Real context with actual HederaKit
       const context = {
         logger,
         config: {
@@ -81,7 +76,6 @@ describe('Plugin Component Integration Tests', () => {
         },
       };
 
-      // Initialize plugin with real HederaKit
       await plugin.initialize(context as any);
 
       const tools = plugin.getTools();
@@ -93,7 +87,6 @@ describe('Plugin Component Integration Tests', () => {
       expect(toolNames).toContain('list_connections');
       expect(toolNames).toContain('send_message_to_connection');
 
-      // Verify the builder was created with real client
       const stateManager = plugin.getStateManager();
       expect(stateManager).toBeDefined();
     }, 30000);

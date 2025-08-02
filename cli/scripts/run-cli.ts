@@ -105,7 +105,6 @@ async function main() {
 			await installDeps();
 		}
 
-		// Skip building and run source files directly with tsx
 		runCli();
 	} catch (error) {
 		console.error('❌ Error:', error.message);

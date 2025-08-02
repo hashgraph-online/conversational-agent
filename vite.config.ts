@@ -58,7 +58,6 @@ function getFileName(format: BuildFormat): (fmt: string) => string {
 }
 
 function isExternalDependency(id: string, format: BuildFormat): boolean {
-  // For UMD builds, externalize the main dependencies
   if (format === 'umd') {
     return EXTERNAL_DEPENDENCIES.some(
       (dep) => id === dep || id.startsWith(`${dep}/`)

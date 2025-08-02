@@ -20,6 +20,7 @@ import {
   RetrieveProfileTool,
   ListUnapprovedConnectionRequestsTool,
 } from '@hashgraphonline/standards-agent-kit';
+import { HCS10Client } from '@hashgraphonline/standards-sdk';
 
 export class HCS10Plugin extends BasePlugin {
   id = 'hcs-10';
@@ -32,6 +33,7 @@ export class HCS10Plugin extends BasePlugin {
 
   private stateManager?: IStateManager;
   private tools: HederaTool[] = [];
+  appConfig?: Record<string, unknown>;
 
   override async initialize(context: GenericPluginContext): Promise<void> {
     await super.initialize(context);
@@ -46,20 +48,69 @@ export class HCS10Plugin extends BasePlugin {
 
     try {
       this.stateManager =
-        (context.stateManager as IStateManager) || 
+        (context.stateManager as IStateManager) ||
         (context.config.stateManager as IStateManager) ||
+        (this.appConfig?.stateManager as IStateManager) ||
         new OpenConvaiState();
+
+      const accountId = hederaKit.signer.getAccountId().toString();
+      let inboundTopicId = '';
+      let outboundTopicId = '';
+
+      try {
+        const privateKey = hederaKit.signer.getOperatorPrivateKey().toString();
+
+        const hcs10Client = new HCS10Client({
+          network: hederaKit.network as 'mainnet' | 'testnet',
+          operatorId: accountId,
+          operatorPrivateKey: privateKey,
+          logLevel: 'error',
+        });
+
+        const profileResponse = await hcs10Client.retrieveProfile(accountId);
+        if (profileResponse.success && profileResponse.topicInfo) {
+          inboundTopicId = profileResponse.topicInfo.inboundTopic;
+          outboundTopicId = profileResponse.topicInfo.outboundTopic;
+        }
+      } catch (profileError) {
+        this.context.logger.warn(
+          'Could not retrieve profile topics:',
+          profileError
+        );
+      }
+
+      this.stateManager.setCurrentAgent({
+        name: `Agent ${accountId}`,
+        accountId: accountId,
+        inboundTopicId,
+        outboundTopicId,
+        privateKey: hederaKit.signer.getOperatorPrivateKey().toString(),
+      });
+
+      this.context.logger.info(
+        `Set current agent: ${accountId} with topics ${inboundTopicId}/${outboundTopicId}`
+      );
+
+      if (this.stateManager && !this.stateManager.getConnectionsManager()) {
+        const privateKey = hederaKit.signer.getOperatorPrivateKey().toString();
+        const hcs10Client = new HCS10Client({
+          network: hederaKit.network as 'mainnet' | 'testnet',
+          operatorId: accountId,
+          operatorPrivateKey: privateKey,
+          logLevel: 'error',
+        });
+
+        this.stateManager.initializeConnectionsManager(hcs10Client);
+        this.context.logger.info(
+          'ConnectionsManager initialized in HCS10Plugin'
+        );
+      }
 
       this.initializeTools();
 
-      this.context.logger.info(
-        'HCS-10 Plugin initialized successfully'
-      );
+      this.context.logger.info('HCS-10 Plugin initialized successfully');
     } catch (error) {
-      this.context.logger.error(
-        'Failed to initialize HCS-10 plugin:',
-        error
-      );
+      this.context.logger.error('Failed to initialize HCS-10 plugin:', error);
     }
   }
 
@@ -146,9 +197,7 @@ export class HCS10Plugin extends BasePlugin {
     this.tools = [];
     delete this.stateManager;
     if (this.context?.logger) {
-      this.context.logger.info(
-        'HCS-10 Plugin cleaned up'
-      );
+      this.context.logger.info('HCS-10 Plugin cleaned up');
     }
   }
 }

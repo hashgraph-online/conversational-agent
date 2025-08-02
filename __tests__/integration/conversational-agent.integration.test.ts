@@ -54,7 +54,6 @@ describe('ConversationalAgent Integration Tests', () => {
       expect(response.output).toBeTruthy();
       logger.info('Registration response:', response.output);
       
-      // Check for transaction details
       if (response.transactionId) {
         expect(response.transactionId).toBeTruthy();
         logger.info('Transaction ID:', response.transactionId);
@@ -96,7 +95,6 @@ describe('ConversationalAgent Integration Tests', () => {
     }, 60000);
 
     test('Retrieve profile for known agent', async () => {
-      // Try to get profile for a known agent account if available
       const knownAgent = process.env.TODD_ACCOUNT_ID || '0.0.5844406';
       const response = await agent.processMessage(
         `Use retrieve_profile to get the profile for account ${knownAgent}`
@@ -176,21 +174,18 @@ describe('ConversationalAgent Integration Tests', () => {
 
   describe('Complex Workflows', () => {
     test('Multi-step agent interaction workflow', async () => {
-      // Step 1: Find agents
       const findResponse = await agent.processMessage(
         'First, use find_registrations to find any agents with AI capabilities'
       );
       expect(findResponse).toBeDefined();
       logger.info('Step 1 - Find agents:', findResponse.output);
 
-      // Step 2: Check our connections
       const connectionsResponse = await agent.processMessage(
         'Now use list_connections to see my current connections'
       );
       expect(connectionsResponse).toBeDefined();
       logger.info('Step 2 - Connections:', connectionsResponse.output);
 
-      // Step 3: Check messages
       const messagesResponse = await agent.processMessage(
         'Finally, use check_messages to see if I have any messages'
       );

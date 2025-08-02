@@ -47,7 +47,6 @@ export const useInitializeAgent = ({
       
       actions.setMessages(welcomeMessages);
       
-      // Small delay to ensure smooth transition
       await new Promise(resolve => setTimeout(resolve, 100));
       
       actions.setScreen('chat');

@@ -75,10 +75,7 @@ describe('BaseAgent Unit Tests', () => {
           expect(BaseAgent).toBeDefined();
       expect(typeof BaseAgent).toBe('function');
       
-      // Test that it's a constructor function (class)
       expect(BaseAgent.prototype.constructor).toBe(BaseAgent);
-      
-      // Test that concrete methods exist
       expect(BaseAgent.prototype.getCore).toBeDefined();
       expect(BaseAgent.prototype.isReady).toBeDefined();
     });

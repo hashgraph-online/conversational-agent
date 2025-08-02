@@ -94,54 +94,24 @@ export class ConversationalAgent {
       network = DEFAULT_NETWORK,
       openAIApiKey,
       openAIModelName = DEFAULT_MODEL_NAME,
-      verbose = false,
-      operationalMode = DEFAULT_OPERATIONAL_MODE,
-      userAccountId,
-      customSystemMessagePreamble,
-      customSystemMessagePostamble,
-      additionalPlugins = [],
-      mirrorNodeConfig,
-      disableLogging,
-      scheduleUserTransactionsInBytesMode,
     } = this.options;
 
-    if (!accountId || !privateKey) {
-      throw new Error('Account ID and private key are required');
-    }
+    this.validateOptions(accountId, privateKey);
 
     try {
       const privateKeyInstance = await this.detectPrivateKeyType(
-        accountId,
-        privateKey,
+        accountId!,
+        privateKey!,
         network
       );
 
       const serverSigner = new ServerSigner(
-        accountId,
+        accountId!,
         privateKeyInstance,
         network as 'testnet' | 'mainnet' | 'previewnet'
       );
 
-      const standardPlugins = [
-        this.hcs10Plugin,
-        this.hcs2Plugin,
-        this.inscribePlugin,
-        this.hbarTransferPlugin,
-      ];
-
-      const corePlugins = getAllHederaCorePlugins();
-
-      let allPlugins: BasePlugin[];
-
-      if (this.options.enabledPlugins) {
-        const enabledSet = new Set(this.options.enabledPlugins);
-        const filteredPlugins = [...standardPlugins, ...corePlugins].filter(
-          (plugin) => enabledSet.has(plugin.id)
-        );
-        allPlugins = [...filteredPlugins, ...additionalPlugins];
-      } else {
-        allPlugins = [...standardPlugins, ...corePlugins, ...additionalPlugins];
-      }
+      const allPlugins = this.preparePlugins();
 
       const llm = new ChatOpenAI({
         apiKey: openAIApiKey,
@@ -149,60 +119,10 @@ export class ConversationalAgent {
         temperature: DEFAULT_TEMPERATURE,
       });
 
-      this.agent = createAgent({
-        framework: 'langchain',
-        signer: serverSigner,
-        execution: {
-          mode: operationalMode === 'autonomous' ? 'direct' : 'bytes',
-          operationalMode: operationalMode,
-          ...(userAccountId && { userAccountId }),
-          ...(scheduleUserTransactionsInBytesMode !== undefined && {
-            scheduleUserTransactions: scheduleUserTransactionsInBytesMode,
-          }),
-        },
-        ai: {
-          provider: new LangChainProvider(llm),
-          temperature: DEFAULT_TEMPERATURE,
-        },
-        filtering: {
-          toolPredicate: (tool) => {
-            if (tool.name === 'hedera-account-transfer-hbar') return false;
-            if (this.options.toolFilter && !this.options.toolFilter(tool)) {
-              return false;
-            }
-            return true;
-          },
-        },
-        messaging: {
-          systemPreamble:
-            customSystemMessagePreamble || getSystemMessage(accountId),
-          ...(customSystemMessagePostamble && { systemPostamble: customSystemMessagePostamble }),
-          conciseMode: true,
-        },
-        extensions: {
-          plugins: allPlugins,
-          ...(mirrorNodeConfig && {
-            mirrorConfig: mirrorNodeConfig as Record<string, unknown>,
-          }),
-        },
-        ...(this.options.mcpServers && {
-          mcp: {
-            servers: this.options.mcpServers,
-            autoConnect: true,
-          },
-        }),
-        debug: {
-          verbose,
-          silent: disableLogging ?? false,
-        },
-      });
+      const agentConfig = this.createAgentConfig(serverSigner, llm, allPlugins);
+      this.agent = createAgent(agentConfig);
 
-      const hcs10 = allPlugins.find((p) => p.id === 'hcs-10');
-      if (hcs10) {
-        (hcs10 as { appConfig?: Record<string, unknown> }).appConfig = {
-          stateManager: this.stateManager,
-        };
-      }
+      this.configureHCS10Plugin(allPlugins);
 
       await this.agent.boot();
     } catch (error) {
@@ -277,6 +197,135 @@ export class ConversationalAgent {
     };
 
     return this.agent.chat(message, context);
+  }
+
+  /**
+   * Validates initialization options and throws if required fields are missing.
+   * 
+   * @param accountId - The Hedera account ID
+   * @param privateKey - The private key for the account
+   * @throws {Error} If required fields are missing
+   */
+  private validateOptions(accountId?: string, privateKey?: string): void {
+    if (!accountId || !privateKey) {
+      throw new Error('Account ID and private key are required');
+    }
+  }
+
+  /**
+   * Prepares the list of plugins to use based on configuration.
+   * 
+   * @returns Array of plugins to initialize with the agent
+   */
+  private preparePlugins(): BasePlugin[] {
+    const { additionalPlugins = [], enabledPlugins } = this.options;
+    
+    const standardPlugins = [
+      this.hcs10Plugin,
+      this.hcs2Plugin,
+      this.inscribePlugin,
+      this.hbarTransferPlugin,
+    ];
+    
+    const corePlugins = getAllHederaCorePlugins();
+    
+    if (enabledPlugins) {
+      const enabledSet = new Set(enabledPlugins);
+      const filteredPlugins = [...standardPlugins, ...corePlugins].filter(
+        (plugin) => enabledSet.has(plugin.id)
+      );
+      return [...filteredPlugins, ...additionalPlugins];
+    }
+    
+    return [...standardPlugins, ...corePlugins, ...additionalPlugins];
+  }
+
+  /**
+   * Creates the agent configuration object.
+   * 
+   * @param serverSigner - The server signer instance
+   * @param llm - The language model instance
+   * @param allPlugins - Array of plugins to use
+   * @returns Configuration object for creating the agent
+   */
+  private createAgentConfig(
+    serverSigner: ServerSigner,
+    llm: ChatOpenAI,
+    allPlugins: BasePlugin[]
+  ): Parameters<typeof createAgent>[0] {
+    const {
+      operationalMode = DEFAULT_OPERATIONAL_MODE,
+      userAccountId,
+      scheduleUserTransactionsInBytesMode,
+      customSystemMessagePreamble,
+      customSystemMessagePostamble,
+      verbose = false,
+      mirrorNodeConfig,
+      disableLogging,
+      accountId = '',
+    } = this.options;
+
+    return {
+      framework: 'langchain',
+      signer: serverSigner,
+      execution: {
+        mode: operationalMode === 'autonomous' ? 'direct' : 'bytes',
+        operationalMode: operationalMode,
+        ...(userAccountId && { userAccountId }),
+        ...(scheduleUserTransactionsInBytesMode !== undefined && {
+          scheduleUserTransactions: scheduleUserTransactionsInBytesMode,
+        }),
+      },
+      ai: {
+        provider: new LangChainProvider(llm),
+        temperature: DEFAULT_TEMPERATURE,
+      },
+      filtering: {
+        toolPredicate: (tool) => {
+          if (tool.name === 'hedera-account-transfer-hbar') return false;
+          if (this.options.toolFilter && !this.options.toolFilter(tool)) {
+            return false;
+          }
+          return true;
+        },
+      },
+      messaging: {
+        systemPreamble:
+          customSystemMessagePreamble || getSystemMessage(accountId),
+        ...(customSystemMessagePostamble && { systemPostamble: customSystemMessagePostamble }),
+        conciseMode: true,
+      },
+      extensions: {
+        plugins: allPlugins,
+        ...(mirrorNodeConfig && {
+          mirrorConfig: mirrorNodeConfig as Record<string, unknown>,
+        }),
+      },
+      ...(this.options.mcpServers && {
+        mcp: {
+          servers: this.options.mcpServers,
+          autoConnect: true,
+        },
+      }),
+      debug: {
+        verbose,
+        silent: disableLogging ?? false,
+      },
+    };
+  }
+
+  /**
+   * Configures the HCS-10 plugin with the state manager.
+   * 
+   * @param allPlugins - Array of all plugins
+   */
+  private configureHCS10Plugin(allPlugins: BasePlugin[]): void {
+    const hcs10 = allPlugins.find((p) => p.id === 'hcs-10');
+    if (hcs10) {
+      (hcs10 as { appConfig?: Record<string, unknown> }).appConfig = {
+        stateManager: this.stateManager,
+      };
+    }
   }
 
   /**

@@ -7,7 +7,6 @@ export const LoadingScreen: React.FC = () => {
 	const {write} = useStdout();
 	
 	useEffect(() => {
-		// Clear screen once when component mounts
 		write('\x1Bc');
 	}, [write]);
 	
