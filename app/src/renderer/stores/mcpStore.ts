@@ -41,6 +41,7 @@ export interface MCPStore {
   refreshServerTools: (serverId: string) => Promise<void>
   
   loadServers: () => Promise<void>
+  reloadServers: () => Promise<void>
   saveServers: () => Promise<void>
   
   getServerById: (serverId: string) => MCPServerConfig | undefined
@@ -99,18 +100,24 @@ export const useMCPStore = create<MCPStore>((set, get) => ({
     
     try {
       const { servers } = get()
-      const updatedServers = servers.map(server => 
-        server.id === serverId 
-          ? { ...server, ...updates, updatedAt: new Date() }
-          : server
-      )
+      
+      // If tools are not being explicitly updated, preserve existing tools
+      const updatedServers = servers.map(server => {
+        if (server.id === serverId) {
+          const updatedServer = { ...server, ...updates, updatedAt: new Date() }
+          // If tools aren't in the updates, preserve the existing tools
+          if (!updates.hasOwnProperty('tools')) {
+            updatedServer.tools = server.tools || []
+          }
+          return updatedServer
+        }
+        return server
+      })
       
       set({ servers: updatedServers, isLoading: false })
       
-      const saveResult = await window.electron.saveMCPServers(updatedServers)
-      if (!saveResult.success) {
-        throw new Error(saveResult.error || 'Failed to update server')
-      }
+      // Use the improved saveServers method that preserves tools
+      await get().saveServers()
       
     } catch (error) {
       set({
@@ -295,17 +302,26 @@ export const useMCPStore = create<MCPStore>((set, get) => ({
     const { servers } = get()
     const server = servers.find(s => s.id === serverId)
     
-    if (!server || server.status !== 'connected') {
+    if (!server || (server.status !== 'connected' && server.status !== 'ready')) {
       return
     }
     
     try {
-      const toolsResult = await window.electron.getMCPServerTools(serverId)
+      const toolsResult = await window.electron.refreshMCPServerTools(serverId)
       if (!toolsResult.success) {
-        throw new Error(toolsResult.error || 'Failed to get tools')
+        throw new Error(toolsResult.error || 'Failed to refresh tools')
       }
       
-      await get().updateServer(serverId, { tools: toolsResult.data })
+      // Update the server with the refreshed tools
+      await get().updateServer(serverId, { 
+        tools: toolsResult.data,
+        status: 'ready'
+      })
+      
+      // Wait a moment for backend to save, then reload
+      setTimeout(async () => {
+        await get().reloadServers()
+      }, 1000)
       
     } catch (error) {
       set({
@@ -342,19 +358,44 @@ export const useMCPStore = create<MCPStore>((set, get) => ({
         return
       }
       
-      const servers = result.data || []
-      set({ servers, isLoading: false, error: null })
+      const loadedServers = result.data || []
+      
+      // Merge loaded servers with current runtime state to preserve connection status
+      const { servers: currentServers } = get()
+      const mergedServers = loadedServers.map(loadedServer => {
+        const currentServer = currentServers.find(s => s.id === loadedServer.id)
+        if (currentServer) {
+          // Keep runtime status but update tools and other persisted data
+          return {
+            ...loadedServer,
+            status: currentServer.status, // Keep runtime status
+            // Keep tools from loaded server (from JSON file)
+            tools: loadedServer.tools || []
+          }
+        }
+        return loadedServer
+      })
+      
+      set({ servers: mergedServers, isLoading: false, error: null })
       
       const serverInitStates: Record<string, { state: 'pending' | 'connecting' | 'connected' | 'failed'; error?: string }> = {}
-      servers.forEach(server => {
+      mergedServers.forEach(server => {
         serverInitStates[server.id] = { state: 'pending' }
       })
       set({ serverInitStates })
       
-      const enabledServers = servers.filter(s => s.enabled)
+      // Auto-connect enabled servers, but do it properly
+      const enabledServers = mergedServers.filter(s => s.enabled)
+      
+      if (enabledServers.length === 0) {
+        set({ initializationState: 'ready', error: null })
+        return
+      }
+      
       let connectedCount = 0
       let failedCount = 0
       
+      // Connect servers sequentially to avoid race conditions
       for (const server of enabledServers) {
         try {
           set(state => ({
@@ -373,6 +414,12 @@ export const useMCPStore = create<MCPStore>((set, get) => ({
               [server.id]: { state: 'connected' }
             }
           }))
+          
+          // After connection, wait a bit and reload to get the latest tools
+          setTimeout(async () => {
+            await get().reloadServers()
+          }, 3000)
+          
         } catch (connectError) {
           failedCount++
           
@@ -389,9 +436,7 @@ export const useMCPStore = create<MCPStore>((set, get) => ({
       }
       
       let finalState: MCPInitializationState = 'ready'
-      if (enabledServers.length === 0) {
-        finalState = 'ready'
-      } else if (connectedCount === 0 && failedCount > 0) {
+      if (connectedCount === 0 && failedCount > 0) {
         finalState = 'failed'
       } else if (connectedCount > 0 && failedCount > 0) {
         finalState = 'partial'
@@ -410,16 +455,86 @@ export const useMCPStore = create<MCPStore>((set, get) => ({
     }
   },
   
+  reloadServers: async () => {
+    try {
+      const result = await window.electron.loadMCPServers()
+      if (!result.success) {
+        set({
+          error: `Failed to reload servers: ${result.error || 'Unknown error'}`
+        })
+        return
+      }
+      
+      const loadedServers = result.data || []
+      
+      // Merge loaded servers with current runtime state
+      const { servers: currentServers } = get()
+      const mergedServers = loadedServers.map(loadedServer => {
+        const currentServer = currentServers.find(s => s.id === loadedServer.id)
+        if (currentServer) {
+          // Keep runtime status but update tools and other persisted data
+          return {
+            ...loadedServer,
+            status: currentServer.status, // Keep current runtime status
+            tools: loadedServer.tools || [] // Use tools from JSON file
+          }
+        }
+        return loadedServer
+      })
+      
+      set({ servers: mergedServers })
+      
+    } catch (error) {
+      set({
+        error: error instanceof Error ? error.message : 'Failed to reload servers'
+      })
+    }
+  },
+  
   saveServers: async () => {
     const { servers } = get()
     
+    console.log('[Frontend] saveServers called with servers:', servers.map(s => ({id: s.id, tools: s.tools?.length || 0})))
+    
     try {
-      const result = await window.electron.saveMCPServers(servers)
-      if (!result.success) {
-        throw new Error(result.error || 'Failed to save servers')
+      // First reload from disk to get the latest tools from backend
+      const currentResult = await window.electron.loadMCPServers()
+      if (currentResult.success) {
+        const currentServers = currentResult.data || []
+        console.log('[Frontend] Loaded from backend:', currentServers.map(s => ({id: s.id, tools: s.tools?.length || 0})))
+        
+        // Merge frontend state with backend state (preserve tools from backend)
+        const mergedServers = servers.map(frontendServer => {
+          const backendServer = currentServers.find(s => s.id === frontendServer.id)
+          if (backendServer) {
+            // Keep tools from backend, but use other data from frontend
+            const merged = {
+              ...frontendServer,
+              tools: backendServer.tools || frontendServer.tools || []
+            }
+            console.log(`[Frontend] Merging ${frontendServer.id}: frontend ${frontendServer.tools?.length || 0} tools, backend ${backendServer.tools?.length || 0} tools, result ${merged.tools?.length || 0} tools`)
+            return merged
+          }
+          return frontendServer
+        })
+        
+        console.log('[Frontend] About to save merged servers:', mergedServers.map(s => ({id: s.id, tools: s.tools?.length || 0})))
+        
+        const result = await window.electron.saveMCPServers(mergedServers)
+        if (!result.success) {
+          throw new Error(result.error || 'Failed to save servers')
+        }
+      } else {
+        // Fallback to direct save if load fails
+        console.log('[Frontend] Fallback: saving servers directly')
+        const result = await window.electron.saveMCPServers(servers)
+        if (!result.success) {
+          throw new Error(result.error || 'Failed to save servers')
+        }
       }
       
     } catch (error) {
+      console.error('[Frontend] saveServers error:', error)
       set({
         error: error instanceof Error ? error.message : 'Failed to save MCP servers'
       })

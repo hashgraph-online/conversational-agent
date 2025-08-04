@@ -6,6 +6,8 @@ import ChatPage from './pages/ChatPage'
 import MCPPage from './pages/MCPPage'
 import SettingsPage from './pages/SettingsPage'
 import PluginsPage from './pages/PluginsPage'
+import { HCS10ProfileRegistration } from './pages/HCS10ProfileRegistration'
+import AcknowledgementsPage from './pages/AcknowledgementsPage'
 import { StoreProvider } from './providers/StoreProvider'
 import { KeyboardShortcutsProvider } from './providers/KeyboardShortcutsProvider'
 import { MCPInitProvider } from './providers/MCPInitProvider'
@@ -22,19 +24,21 @@ const App: React.FC<AppProps> = () => {
         <Router>
           <ConfigInitProvider>
             <MCPInitProvider>
-              <KeyboardShortcutsProvider>
+                <KeyboardShortcutsProvider>
                 <Layout>
                   <Routes>
                     <Route path="/" element={<HomePage />} />
                     <Route path="/chat/:agentId?" element={<ChatPage />} />
                     <Route path="/mcp" element={<MCPPage />} />
                     <Route path="/plugins" element={<PluginsPage />} />
+                    <Route path="/hcs10-profile" element={<HCS10ProfileRegistration />} />
                     <Route path="/settings" element={<SettingsPage />} />
+                    <Route path="/acknowledgements" element={<AcknowledgementsPage />} />
                   </Routes>
                 </Layout>
                 <NotificationContainer />
               </KeyboardShortcutsProvider>
-            </MCPInitProvider>
+              </MCPInitProvider>
           </ConfigInitProvider>
         </Router>
       </StoreProvider>

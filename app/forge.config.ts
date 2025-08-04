@@ -3,42 +3,39 @@ import { MakerSquirrel } from '@electron-forge/maker-squirrel';
 import { MakerZIP } from '@electron-forge/maker-zip';
 import { MakerDeb } from '@electron-forge/maker-deb';
 import { MakerRpm } from '@electron-forge/maker-rpm';
+import { MakerDMG } from '@electron-forge/maker-dmg';
 import { VitePlugin } from '@electron-forge/plugin-vite';
 
 const config: ForgeConfig = {
   packagerConfig: {
-    icon: './build/icon',
+    icon: './assets/hol-app-icon-bubble',
     appBundleId: 'com.hashgraphonline.conversational-agent',
     appCategoryType: 'public.app-category.productivity',
-    osxSign: {
-      optionsForFile: (filePath) => {
-        return {
-          entitlements: 'build/entitlements.mac.plist'
-        };
-      }
-    },
-    osxNotarize: {
-      appleId: process.env.APPLE_ID || '',
-      appleIdPassword: process.env.APPLE_PASSWORD || '',
-      teamId: process.env.APPLE_TEAM_ID || ''
-    }
+    osxSign: false,
+    osxNotarize: false
   },
   rebuildConfig: {},
   makers: [
     new MakerSquirrel({
-      name: 'conversational_agent'
+      name: 'conversational_agent',
+      setupIcon: './assets/hol-app-bubble.png'
     }),
     new MakerZIP({}, ['darwin']),
+    new MakerDMG({
+      icon: './assets/hol-app-bubble.icns'
+    }),
     new MakerRpm({
       options: {
         categories: ['Utility'],
-        description: 'Desktop application for Conversational Agent'
+        description: 'Desktop application for OpenARC (Autonomous Runtime Core)',
+        icon: './assets/hol-app-bubble.png'
       }
     }),
     new MakerDeb({
       options: {
         categories: ['Utility'],
-        description: 'Desktop application for Conversational Agent'
+        description: 'Desktop application for OpenARC (Autonomous Runtime Core)',
+        icon: './assets/hol-app-bubble.png'
       }
     })
   ],

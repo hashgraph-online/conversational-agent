@@ -5,6 +5,8 @@ import { Logger } from '../utils/logger';
 import { promisify } from 'util';
 import * as crypto from 'crypto';
 
+import type { StoredHCS10Profile } from '../../shared/schemas/hcs10';
+
 export interface AppConfig {
   hedera: {
     accountId: string;
@@ -25,6 +27,7 @@ export interface AppConfig {
     logLevel: 'debug' | 'info' | 'warn' | 'error';
   };
   llmProvider: 'openai' | 'anthropic';
+  hcs10Profiles?: StoredHCS10Profile[];
 }
 
 /**

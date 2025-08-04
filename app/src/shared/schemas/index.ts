@@ -58,3 +58,6 @@ export type CredentialRequest = z.infer<typeof CredentialRequestSchema>;
 export type Configuration = z.infer<typeof ConfigurationSchema>;
 export type IPCMessage = z.infer<typeof IPCMessageSchema>;
 export type IPCResponse = z.infer<typeof IPCResponseSchema>;
+
+// Export everything from hcs10
+export * from './hcs10';

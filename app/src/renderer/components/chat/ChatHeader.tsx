@@ -67,7 +67,6 @@ const ChatHeader: React.FC<ChatHeaderProps> = () => {
         <div className='flex items-center space-x-6'>
           {config && (
             <>
-              {/* Network Status */}
               <div className='flex items-center space-x-2 bg-gray-50/80 dark:bg-gray-700/50 px-3 py-2 rounded-lg border border-gray-200/50 dark:border-gray-600/50'>
                 {isConnected ? (
                   <FiWifi className='w-4 h-4 text-brand-teal' />
@@ -82,7 +81,6 @@ const ChatHeader: React.FC<ChatHeaderProps> = () => {
                 </Typography>
               </div>
 
-              {/* Account Info */}
               <div className='flex items-center space-x-2 bg-gray-50/80 dark:bg-gray-700/50 px-3 py-2 rounded-lg border border-gray-200/50 dark:border-gray-600/50'>
                 <FiShield className='w-4 h-4 text-brand-purple' />
                 <Typography

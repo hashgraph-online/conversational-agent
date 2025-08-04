@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react'
-import { FiSearch, FiDownload, FiExternalLink, FiStar, FiCalendar, FiUser, FiTag, FiRefreshCw } from 'react-icons/fi'
+import { FiSearch, FiDownload, FiExternalLink, FiStar, FiCalendar, FiUser, FiTag, FiRefreshCw, FiDatabase, FiClock, FiActivity, FiCheck, FiX } from 'react-icons/fi'
 import Typography from '../ui/Typography'
 import { Button } from '../ui/Button'
 import { Input } from '../ui/input'
@@ -23,6 +23,10 @@ interface MCPRegistryServer {
   updatedAt?: string
   installCount?: number
   rating?: number
+  tools?: Array<{
+    name: string
+    description?: string
+  }>
 }
 
 interface MCPRegistryResponse {
@@ -36,6 +40,16 @@ interface MCPRegistryResponse {
 interface MCPRegistryProps {
   onInstall?: (server: MCPRegistryServer) => void
   className?: string
+}
+
+interface CacheStats {
+  totalServers: number
+  serversByRegistry: Record<string, number>
+  cacheEntries: number
+  averageResponseTime: number
+  cacheHitRate: number
+  oldestEntry: string | null
+  newestEntry: string | null
 }
 
 /**
@@ -53,11 +67,29 @@ export const MCPRegistry: React.FC<MCPRegistryProps> = ({
   const [selectedCategory, setSelectedCategory] = useState<string>('')
   const [total, setTotal] = useState(0)
   const [installingIds, setInstallingIds] = useState<Set<string>>(new Set())
+  const [installedIds, setInstalledIds] = useState<Set<string>>(new Set())
+  const [installedServers, setInstalledServers] = useState<string[]>([])
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [page, setPage] = useState(0)
   const [hasMore, setHasMore] = useState(false)
   const [isLoadingMore, setIsLoadingMore] = useState(false)
+  const [cacheStats, setCacheStats] = useState<CacheStats | null>(null)
+  const [showCacheStats, setShowCacheStats] = useState(false)
+  const [lastSearchTime, setLastSearchTime] = useState<number | null>(null)
   const pageSize = 50
   const loadMoreRef = useRef<HTMLDivElement>(null)
+
+  const loadCacheStats = useCallback(async () => {
+    if (!window.electron?.getMCPCacheStats) return
+
+    try {
+      const result = await window.electron.getMCPCacheStats()
+      if (result.success && result.data) {
+        setCacheStats(result.data)
+      }
+    } catch (error) {
+    }
+  }, [])
 
   const searchRegistries = useCallback(async (query: string = '', tags: string[] = [], pageNum: number = 0, append: boolean = false) => {
     if (!window.electron?.searchMCPRegistry) {
@@ -72,12 +104,27 @@ export const MCPRegistry: React.FC<MCPRegistryProps> = ({
     }
     setError(null)
 
+    const searchStartTime = Date.now()
+
     try {
       const result = await window.electron.searchMCPRegistry({
         query: query.trim() || undefined,
         tags: tags.length > 0 ? tags : undefined,
         limit: pageSize,
         offset: pageNum * pageSize
+      })
+
+      const searchTime = Date.now() - searchStartTime
+      setLastSearchTime(searchTime)
+      
+      console.log('Search result:', {
+        pageNum,
+        offset: pageNum * pageSize,
+        serversReturned: result.data?.servers?.length,
+        total: result.data?.total,
+        hasMore: result.data?.hasMore,
+        currentServersCount: servers.length,
+        searchTime: `${searchTime}ms`
       })
 
       if (result.success && result.data) {
@@ -87,8 +134,11 @@ export const MCPRegistry: React.FC<MCPRegistryProps> = ({
           setServers(result.data.servers || [])
         }
         setTotal(result.data.total || 0)
-        setHasMore((result.data.servers?.length || 0) >= pageSize && ((pageNum + 1) * pageSize) < (result.data.total || 0))
+        const calculatedHasMore = result.data.hasMore || false
+        setHasMore(calculatedHasMore)
         setPage(pageNum)
+
+        loadCacheStats()
       } else {
         setError(result.error || 'Failed to search registries')
         if (!append) {
@@ -106,11 +156,28 @@ export const MCPRegistry: React.FC<MCPRegistryProps> = ({
       setIsLoading(false)
       setIsLoadingMore(false)
     }
-  }, [pageSize])
+  }, [pageSize, servers.length, loadCacheStats])
 
   useEffect(() => {
     searchRegistries('', [], 0, false)
-  }, [])
+    loadCacheStats()
+    // Load installed servers
+    loadInstalledServers()
+  }, [loadCacheStats])
+  
+  const loadInstalledServers = async () => {
+    if (!window.electron?.loadMCPServers) return
+    
+    try {
+      const result = await window.electron.loadMCPServers()
+      if (result.success && result.data) {
+        const serverNames = result.data.map((server: any) => server.name.toLowerCase())
+        setInstalledServers(serverNames)
+      }
+    } catch (error) {
+      console.error('Failed to load installed servers:', error)
+    }
+  }
 
 
   const categories = [
@@ -206,8 +273,15 @@ export const MCPRegistry: React.FC<MCPRegistryProps> = ({
       setError('Installation not available')
       return
     }
+    
+    // Check if already installed
+    if (installedServers.includes(server.name.toLowerCase())) {
+      setError(`${server.name} is already installed`)
+      return
+    }
 
     setInstallingIds(prev => new Set(prev).add(server.id))
+    setError(null) // Clear any previous errors
     
     try {
       const result = await window.electron.installMCPFromRegistry(
@@ -216,7 +290,33 @@ export const MCPRegistry: React.FC<MCPRegistryProps> = ({
       )
 
       if (result.success) {
+        // Mark as installed
+        setInstalledIds(prev => new Set(prev).add(server.id))
+        setInstalledServers(prev => [...prev, server.name.toLowerCase()])
+        
+        // Show success message
+        setSuccessMessage(`${server.name} installed successfully!`)
+        
+        // Clear success message after 5 seconds
+        setTimeout(() => {
+          setSuccessMessage(null)
+        }, 5000)
+        
+        // Show installed state for 5 seconds, then hide (user can refresh to see persistent state)
+        setTimeout(() => {
+          setInstalledIds(prev => {
+            const newSet = new Set(prev)
+            newSet.delete(server.id)
+            return newSet
+          })
+        }, 5000)
+        
         onInstall?.(server)
+        
+        // Reload installed servers after a delay to ensure it's saved
+        setTimeout(() => {
+          loadInstalledServers()
+        }, 1000)
       } else {
         setError(result.error || 'Failed to install server')
       }
@@ -245,7 +345,6 @@ export const MCPRegistry: React.FC<MCPRegistryProps> = ({
 
   return (
     <div className={cn('space-y-6', className)}>
-      {/* Search and Filters */}
       <div className="space-y-4">
         <div className="flex items-center gap-4">
           <div className="flex-1 relative">
@@ -274,6 +373,9 @@ export const MCPRegistry: React.FC<MCPRegistryProps> = ({
               if (window.electron?.clearMCPRegistryCache) {
                 await window.electron.clearMCPRegistryCache()
               }
+              if (window.electron?.triggerMCPBackgroundSync) {
+                await window.electron.triggerMCPBackgroundSync()
+              }
               setPage(0)
               searchRegistries(searchQuery, selectedTags, 0, false)
             }}
@@ -283,9 +385,17 @@ export const MCPRegistry: React.FC<MCPRegistryProps> = ({
             <FiRefreshCw className={cn('w-4 h-4', isLoading && 'animate-spin')} />
             Refresh
           </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowCacheStats(!showCacheStats)}
+            className="flex items-center gap-2"
+          >
+            <FiActivity className="w-4 h-4" />
+            Stats
+          </Button>
         </div>
 
-        {/* Tag filters */}
         {availableTags.length > 0 && (
           <div className="flex flex-wrap gap-2">
             <Typography variant="body1" color="muted" className="text-sm font-medium mr-2">
@@ -308,9 +418,72 @@ export const MCPRegistry: React.FC<MCPRegistryProps> = ({
             ))}
           </div>
         )}
+
+        {showCacheStats && cacheStats && (
+          <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border">
+            <div className="flex items-center gap-2 mb-3">
+              <FiDatabase className="w-4 h-4" />
+              <Typography variant="h6">Cache Statistics</Typography>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+              <div>
+                <Typography variant="body1" color="muted" className="text-xs">
+                  Total Servers
+                </Typography>
+                <Typography variant="body1" className="font-semibold">
+                  {cacheStats.totalServers.toLocaleString()}
+                </Typography>
+              </div>
+              <div>
+                <Typography variant="body1" color="muted" className="text-xs">
+                  Cache Entries
+                </Typography>
+                <Typography variant="body1" className="font-semibold">
+                  {cacheStats.cacheEntries.toLocaleString()}
+                </Typography>
+              </div>
+              <div>
+                <Typography variant="body1" color="muted" className="text-xs">
+                  Hit Rate
+                </Typography>
+                <Typography variant="body1" className="font-semibold">
+                  {cacheStats.cacheHitRate.toFixed(1)}%
+                </Typography>
+              </div>
+              <div>
+                <Typography variant="body1" color="muted" className="text-xs">
+                  Avg Response
+                </Typography>
+                <Typography variant="body1" className="font-semibold">
+                  {Math.round(cacheStats.averageResponseTime)}ms
+                </Typography>
+              </div>
+            </div>
+            <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+              <Typography variant="body1" color="muted" className="text-xs mb-2">
+                Servers by Registry
+              </Typography>
+              <div className="flex flex-wrap gap-2">
+                {Object.entries(cacheStats.serversByRegistry).map(([registry, count]) => (
+                  <span
+                    key={registry}
+                    className="px-2 py-1 text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded"
+                  >
+                    {registry}: {count.toLocaleString()}
+                  </span>
+                ))}
+              </div>
+            </div>
+            {lastSearchTime && (
+              <div className="mt-2 flex items-center gap-2 text-xs text-gray-500">
+                <FiClock className="w-3 h-3" />
+                Last search: {lastSearchTime}ms
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
-      {/* Results Summary */}
       <div className="flex items-center justify-between">
         <Typography variant="body1" color="muted">
           {(() => {
@@ -337,7 +510,6 @@ export const MCPRegistry: React.FC<MCPRegistryProps> = ({
         )}
       </div>
 
-      {/* Error */}
       {error && (
         <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
           <Typography variant="body1" className="text-red-700 dark:text-red-300">
@@ -345,8 +517,16 @@ export const MCPRegistry: React.FC<MCPRegistryProps> = ({
           </Typography>
         </div>
       )}
+      
+      {successMessage && (
+        <div className="p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg flex items-center gap-2">
+          <FiCheck className="w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0" />
+          <Typography variant="body1" className="text-green-700 dark:text-green-300">
+            {successMessage}
+          </Typography>
+        </div>
+      )}
 
-      {/* Server List */}
       {isLoading ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {[...Array(6)].map((_, i) => (
@@ -381,11 +561,11 @@ export const MCPRegistry: React.FC<MCPRegistryProps> = ({
                 server={server}
                 onInstall={() => handleInstall(server)}
                 isInstalling={installingIds.has(server.id)}
+                isInstalled={installedIds.has(server.id) || installedServers.includes(server.name.toLowerCase())}
               />
             ))}
           </div>
           
-          {/* Load More Button */}
           {hasMore && (
             <div className="mt-8 text-center" ref={loadMoreRef}>
               <Button
@@ -411,7 +591,6 @@ export const MCPRegistry: React.FC<MCPRegistryProps> = ({
             </div>
           )}
           
-          {/* Loading indicator for auto-scroll */}
           {isLoadingMore && (
             <div className="mt-4 text-center">
               <Typography variant="body1" color="muted" className="flex items-center justify-center gap-2">
@@ -430,9 +609,10 @@ interface ServerCardProps {
   server: MCPRegistryServer
   onInstall: () => void
   isInstalling: boolean
+  isInstalled?: boolean
 }
 
-const ServerCard: React.FC<ServerCardProps> = ({ server, onInstall, isInstalling }) => {
+const ServerCard: React.FC<ServerCardProps> = ({ server, onInstall, isInstalling, isInstalled }) => {
   const formatDate = (dateString?: string) => {
     if (!dateString) return null
     try {
@@ -446,9 +626,17 @@ const ServerCard: React.FC<ServerCardProps> = ({ server, onInstall, isInstalling
     }
   }
 
+  // Check if server can be installed
+  const isInstallable = !!(
+    server.packageName ||
+    (server.repository?.url && server.repository.url.includes('github.com'))
+  )
+
   return (
-    <div className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:shadow-md transition-shadow bg-white dark:bg-gray-800">
-      {/* Header */}
+    <div className={cn(
+      "p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:shadow-md transition-shadow bg-white dark:bg-gray-800",
+      !isInstallable && "opacity-75"
+    )}>
       <div className="mb-3">
         <div className="flex items-start justify-between mb-2">
           <Typography variant="h6" className="line-clamp-1">
@@ -468,7 +656,6 @@ const ServerCard: React.FC<ServerCardProps> = ({ server, onInstall, isInstalling
           {server.description}
         </Typography>
 
-        {/* Metadata */}
         <div className="flex flex-wrap gap-3 text-xs text-gray-500 dark:text-gray-400">
           {server.author && (
             <div className="flex items-center gap-1">
@@ -481,7 +668,7 @@ const ServerCard: React.FC<ServerCardProps> = ({ server, onInstall, isInstalling
               <span>v{server.version}</span>
             </div>
           )}
-          {server.installCount && (
+          {server.installCount !== undefined && server.installCount !== null && (
             <div className="flex items-center gap-1">
               <FiDownload className="w-3 h-3" />
               <span>{server.installCount.toLocaleString()} installs</span>
@@ -496,7 +683,6 @@ const ServerCard: React.FC<ServerCardProps> = ({ server, onInstall, isInstalling
         </div>
       </div>
 
-      {/* Tags */}
       {server.tags && server.tags.length > 0 && (
         <div className="mb-3 flex flex-wrap gap-1">
           {server.tags.slice(0, 3).map(tag => (
@@ -515,17 +701,69 @@ const ServerCard: React.FC<ServerCardProps> = ({ server, onInstall, isInstalling
         </div>
       )}
 
-      {/* Actions */}
+      {server.tools && server.tools.length > 0 && (
+        <div className="mb-3">
+          <Typography variant="caption" color="muted" className="block mb-1">
+            Available Tools ({server.tools.length})
+          </Typography>
+          <div className="flex flex-wrap gap-1">
+            {server.tools.slice(0, 4).map((tool, index) => (
+              <span
+                key={index}
+                className="px-2 py-1 bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300 text-xs rounded-full"
+                title={tool.description}
+              >
+                {tool.name}
+              </span>
+            ))}
+            {server.tools.length > 4 && (
+              <span className="px-2 py-1 bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400 text-xs rounded-full">
+                +{server.tools.length - 4} more
+              </span>
+            )}
+          </div>
+        </div>
+      )}
+
       <div className="flex items-center gap-2">
         <Button
-          variant="default"
+          variant={isInstalled ? "secondary" : "default"}
           size="sm"
           onClick={onInstall}
-          disabled={isInstalling}
-          className="flex-1 flex items-center justify-center gap-2"
+          disabled={isInstalling || !isInstallable || isInstalled}
+          className={cn(
+            "flex-1 flex items-center justify-center gap-2",
+            isInstalled && "bg-green-100 hover:bg-green-100 dark:bg-green-900/20 dark:hover:bg-green-900/20 text-green-700 dark:text-green-300"
+          )}
+          title={
+            !isInstallable 
+              ? 'This server cannot be installed (no npm package or GitHub repository)' 
+              : isInstalled 
+              ? 'Server is already installed' 
+              : undefined
+          }
         >
-          <FiDownload className={cn('w-4 h-4', isInstalling && 'animate-spin')} />
-          {isInstalling ? 'Installing...' : 'Install'}
+          {isInstalling ? (
+            <>
+              <FiRefreshCw className="w-4 h-4 animate-spin" />
+              Installing...
+            </>
+          ) : isInstalled ? (
+            <>
+              <FiCheck className="w-4 h-4" />
+              Installed
+            </>
+          ) : !isInstallable ? (
+            <>
+              <FiX className="w-4 h-4" />
+              Not Available
+            </>
+          ) : (
+            <>
+              <FiDownload className="w-4 h-4" />
+              Install
+            </>
+          )}
         </Button>
         {(server.repository?.url || server.url) && (
           <Button

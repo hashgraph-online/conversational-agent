@@ -1,27 +1,43 @@
-import React from 'react'
-import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { cn } from '../../lib/utils'
-import Typography from '../ui/Typography'
-import Logo from '../ui/Logo'
-import { 
+import React from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { cn } from '../../lib/utils';
+import Typography from '../ui/Typography';
+import Logo from '../ui/Logo';
+import {
   FiHome,
   FiMessageSquare,
   FiServer,
   FiPackage,
   FiSettings,
-  FiHelpCircle
-} from 'react-icons/fi'
+  FiHelpCircle,
+  FiUser,
+  FiChevronLeft,
+  FiChevronRight,
+} from 'react-icons/fi';
+import {
+  HiSparkles,
+  HiChatBubbleBottomCenterText,
+  HiServerStack,
+  HiPuzzlePiece,
+  HiUserCircle,
+  HiCog6Tooth,
+  HiQuestionMarkCircle,
+  HiSquares2X2,
+  HiHeart,
+} from 'react-icons/hi2';
 
 interface SidebarProps {
-  className?: string
+  className?: string;
 }
 
 interface NavItem {
-  id: string
-  path: string
-  label: string
-  icon: React.ElementType
-  description?: string
+  id: string;
+  path: string;
+  label: string;
+  icon: React.ElementType;
+  description?: string;
+  gradient?: string;
+  iconBg?: string;
 }
 
 const primaryNavItems: NavItem[] = [
@@ -29,100 +45,143 @@ const primaryNavItems: NavItem[] = [
     id: 'home',
     path: '/',
     label: 'Dashboard',
-    icon: FiHome,
-    description: 'Overview and quick actions'
+    icon: HiSquares2X2,
+    description: 'Overview and quick actions',
+    gradient: 'from-[#5599fe] to-[#48df7b]',
+    iconBg:
+      'from-blue-500/30 to-green-500/30 dark:from-blue-400/40 dark:to-green-400/40',
   },
   {
     id: 'chat',
     path: '/chat',
     label: 'Agent Chat',
-    icon: FiMessageSquare,
-    description: 'Interact with AI agents'
+    icon: HiChatBubbleBottomCenterText,
+    description: 'Interact with AI agents',
+    gradient: 'from-[#a679f0] to-[#5599fe]',
+    iconBg:
+      'from-purple-500/30 to-blue-500/30 dark:from-purple-400/40 dark:to-blue-400/40',
   },
   {
     id: 'mcp',
     path: '/mcp',
     label: 'MCP Servers',
-    icon: FiServer,
-    description: 'Manage MCP connections'
+    icon: HiServerStack,
+    description: 'Manage MCP connections',
+    gradient: 'from-[#48df7b] to-[#5599fe]',
+    iconBg:
+      'from-green-500/30 to-blue-500/30 dark:from-green-400/40 dark:to-blue-400/40',
   },
   {
     id: 'plugins',
     path: '/plugins',
     label: 'Plugins',
-    icon: FiPackage,
-    description: 'Extend functionality'
-  }
-]
+    icon: HiPuzzlePiece,
+    description: 'Extend functionality',
+    gradient: 'from-[#5599fe] to-[#a679f0]',
+    iconBg:
+      'from-blue-500/30 to-purple-500/30 dark:from-blue-400/40 dark:to-purple-400/40',
+  },
+  {
+    id: 'hcs10',
+    path: '/hcs10-profile',
+    label: 'My Profile',
+    icon: HiUserCircle,
+    description: 'Manage your profile',
+    gradient: 'from-[#a679f0] to-[#48df7b]',
+    iconBg:
+      'from-purple-500/30 to-green-500/30 dark:from-purple-400/40 dark:to-green-400/40',
+  },
+];
 
 const secondaryNavItems: NavItem[] = [
   {
     id: 'settings',
     path: '/settings',
     label: 'Settings',
-    icon: FiSettings,
-    description: 'Configure your workspace'
+    icon: HiCog6Tooth,
+    description: 'Configure your workspace',
+    gradient: 'from-gray-500 to-gray-600',
+    iconBg: 'from-gray-500/20 to-gray-600/20',
   },
   {
     id: 'help',
     path: '/help',
     label: 'Help & Docs',
-    icon: FiHelpCircle,
-    description: 'Get support'
-  }
-]
+    icon: HiQuestionMarkCircle,
+    description: 'Get support',
+    gradient: 'from-blue-500 to-indigo-600',
+    iconBg: 'from-blue-500/20 to-indigo-600/20',
+  },
+  {
+    id: 'acknowledgements',
+    path: '/acknowledgements',
+    label: 'Acknowledgements',
+    icon: HiHeart,
+    description: 'Credits & licenses',
+    gradient: 'from-pink-500 to-rose-600',
+    iconBg: 'from-pink-500/20 to-rose-600/20',
+  },
+];
 
-const SidebarContent: React.FC<SidebarProps & { location: any }> = ({ className, location }) => {
+const SidebarContent: React.FC<SidebarProps & { location: any }> = ({
+  className,
+  location,
+}) => {
+  const [isCollapsed, setIsCollapsed] = React.useState(false);
   const isActive = (path: string) => {
     if (path === '/') {
-      return location.pathname === '/'
+      return location.pathname === '/';
     }
-    return location.pathname.startsWith(path)
-  }
+    return location.pathname.startsWith(path);
+  };
 
   const renderNavItem = (item: NavItem) => {
-    const Icon = item.icon
-    const active = isActive(item.path)
+    const Icon = item.icon;
+    const active = isActive(item.path);
 
     if (item.id === 'help') {
       return (
         <a
           key={item.id}
-          href="https://hashgraphonline.com/docs/standards/"
-          target="_blank"
-          rel="noopener noreferrer"
+          href='https://hashgraphonline.com/docs/standards/'
+          target='_blank'
+          rel='noopener noreferrer'
           className={cn(
-            "group relative flex items-center gap-4 px-4 py-3 rounded-xl transition-all duration-200",
-            "hover:bg-gray-50 dark:hover:bg-gray-800"
+            'group relative flex items-center gap-4 rounded-2xl transition-all duration-300',
+            isCollapsed ? 'px-4 py-4 justify-center' : 'px-4 py-3.5',
+            !isCollapsed && 'hover:translate-x-1',
+            'hover:scale-[1.02]',
+            'hover:bg-gray-100/50 dark:hover:bg-white/5'
           )}
+          title={isCollapsed ? item.label : undefined}
         >
-          <div className={cn(
-            "w-10 h-10 rounded-lg flex items-center justify-center transition-colors",
-            "bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-400",
-            "group-hover:bg-gray-200 dark:group-hover:bg-gray-700"
-          )}>
-            <Icon className="w-5 h-5" />
+          <div
+            className={cn(
+              'w-10 h-10 rounded-lg flex items-center justify-center transition-all duration-200',
+              `bg-gradient-to-br ${
+                item.iconBg ||
+                'from-gray-100/50 to-gray-200/50 dark:from-white/5 dark:to-white/10'
+              }`,
+              'group-hover:scale-110 group-hover:shadow-lg'
+            )}
+          >
+            <Icon className='w-5 h-5 text-gray-600 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white transition-all duration-300' />
           </div>
 
-          <div className="flex-1 min-w-0">
-            <Typography 
-              variant="body1" 
-              className="font-medium text-gray-900 dark:text-white"
-            >
-              {item.label}
-            </Typography>
-            {item.description && (
-              <Typography 
-                variant="caption" 
-                color="muted"
-                className="block truncate"
-              >
-                {item.description}
-              </Typography>
-            )}
-          </div>
+          {!isCollapsed && (
+            <div className='flex-1 min-w-0'>
+              <div className='text-sm font-semibold text-gray-900 dark:text-white leading-tight font-mono tracking-wide group-hover:text-transparent group-hover:bg-gradient-to-r group-hover:from-[#5599fe] group-hover:to-[#a679f0] group-hover:bg-clip-text transition-all duration-300'>
+                {item.label}
+              </div>
+              {item.description && (
+                <div className='text-xs text-gray-500 dark:text-gray-400 leading-tight font-mono opacity-75 group-hover:text-gray-600 dark:group-hover:text-gray-300 transition-colors duration-300'>
+                  {item.description}
+                </div>
+              )}
+            </div>
+          )}
         </a>
-      )
+      );
     }
 
     return (
@@ -130,79 +189,172 @@ const SidebarContent: React.FC<SidebarProps & { location: any }> = ({ className,
         key={item.id}
         to={item.path}
         className={cn(
-          "group relative flex items-center gap-4 px-4 py-3 rounded-xl transition-all duration-200",
-          "hover:bg-gray-50 dark:hover:bg-gray-800",
-          active && "bg-[#5599fe]/10 dark:bg-[#5599fe]/20"
+          'group relative flex items-center gap-4 rounded-2xl transition-all duration-300',
+          isCollapsed ? 'px-4 py-4 justify-center' : 'px-4 py-3.5',
+          !isCollapsed && 'hover:translate-x-1',
+          'hover:scale-[1.02]',
+          active &&
+            'bg-gradient-to-r from-white/10 to-white/5 backdrop-blur-sm border border-white/10 shadow-lg'
         )}
+        title={isCollapsed ? item.label : undefined}
       >
         {active && (
-          <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-[#5599fe] rounded-r-full shadow-[0_0_8px_rgba(85,153,254,0.5)]" />
+          <div className='absolute left-0 top-1/2 -translate-y-1/2 w-1 h-10 bg-gradient-to-b from-[#a679f0] via-[#5599fe] to-[#48df7b] rounded-r-full shadow-[0_0_20px_rgba(85,153,254,0.8)]' />
         )}
 
-        <div className={cn(
-          "w-10 h-10 rounded-lg flex items-center justify-center transition-colors",
-          active ? "bg-[#5599fe] text-white shadow-md" : "bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-400",
-          !active && "group-hover:bg-gray-200 dark:group-hover:bg-gray-700"
-        )}>
-          <Icon className="w-5 h-5" />
+        <div
+          className={cn(
+            'relative w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300 sparkle-hover',
+            'before:absolute before:inset-0 before:rounded-xl before:opacity-0 before:transition-opacity before:duration-300',
+            active
+              ? `before:opacity-100 before:bg-gradient-to-br ${
+                  item.gradient || 'from-[#5599fe] to-[#a679f0]'
+                } text-white shadow-2xl shadow-[#5599fe]/30`
+              : '',
+            !active &&
+              'group-hover:before:opacity-100 group-hover:shadow-lg'
+          )}
+        >
+          <div
+            className={cn(
+              'absolute inset-0 rounded-xl transition-all duration-300',
+              active
+                ? `bg-gradient-to-br ${
+                    item.gradient || 'from-[#5599fe] to-[#a679f0]'
+                  }`
+                : `bg-gradient-to-br ${
+                    item.gradient || 'from-[#5599fe] to-[#a679f0]'
+                  } opacity-70`,
+              !active && 'group-hover:scale-110 group-hover:rotate-3 group-hover:opacity-100'
+            )}
+          />
+          <Icon
+            className={cn(
+              'relative z-10 w-5 h-5 transition-all duration-300 text-white',
+              !active && 'group-hover:scale-110'
+            )}
+          />
         </div>
 
-        <div className="flex-1 min-w-0">
-          <Typography 
-            variant="body1" 
-            className={cn(
-              "font-medium",
-              active ? "text-[#5599fe] dark:text-[#5599fe]" : "text-gray-900 dark:text-white"
-            )}
-          >
-            {item.label}
-          </Typography>
-          {item.description && (
-            <Typography 
-              variant="caption" 
-              color="muted"
-              className="block truncate"
+        {!isCollapsed && (
+          <div className='flex-1 min-w-0'>
+            <div
+              className={cn(
+                'text-sm font-semibold leading-tight font-mono tracking-wide',
+                active
+                  ? 'text-transparent bg-gradient-to-r from-[#5599fe] to-[#a679f0] bg-clip-text'
+                  : 'text-gray-900 dark:text-white',
+                !active &&
+                  'group-hover:text-transparent group-hover:bg-gradient-to-r group-hover:from-[#5599fe] group-hover:to-[#a679f0] group-hover:bg-clip-text'
+              )}
             >
-              {item.description}
-            </Typography>
-          )}
-        </div>
+              {item.label}
+            </div>
+            {item.description && (
+              <div
+                className={cn(
+                  'text-xs leading-tight font-mono opacity-75 transition-colors duration-300',
+                  active
+                    ? 'text-gray-600 dark:text-gray-300'
+                    : 'text-gray-500 dark:text-gray-400',
+                  !active &&
+                    'group-hover:text-gray-600 dark:group-hover:text-gray-300'
+                )}
+              >
+                {item.description}
+              </div>
+            )}
+          </div>
+        )}
       </Link>
-    )
-  }
+    );
+  };
 
   return (
-    <aside className={cn(
-      "w-72 h-full bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800",
-      "flex flex-col",
-      className
-    )}>
-      <div className="p-6 border-b border-gray-200 dark:border-gray-800">
-        <Logo size="lg" showText={false} className="mb-4" />
-        <div>
-          <Typography variant="h6" className="font-bold">
-            Conversational Agent
-          </Typography>
-          <Typography variant="caption" color="muted">
-            by Hashgraph Online
-          </Typography>
-        </div>
+    <aside
+      className={cn(
+        'h-full bg-white/95 dark:bg-black/40 backdrop-blur-xl border-r border-gray-200/50 dark:border-white/[0.06]',
+        'flex flex-col relative overflow-hidden transition-all duration-300',
+        isCollapsed ? 'w-24' : 'w-72',
+        className
+      )}
+    >
+      {/* Animated gradient background */}
+      <div className='absolute inset-0 opacity-[0.03] dark:opacity-[0.02]'>
+        <div className='absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-[#a679f0] to-[#5599fe] rounded-full blur-3xl animate-pulse' />
+        <div
+          className='absolute bottom-0 left-0 w-96 h-96 bg-gradient-to-tr from-[#48df7b] to-[#5599fe] rounded-full blur-3xl animate-pulse'
+          style={{ animationDelay: '2s' }}
+        />
+      </div>
+      <div className='relative p-4 border-b border-gray-200/50 dark:border-white/[0.06]'>
+        {/* Collapse Toggle Button */}
+        <button
+          onClick={() => setIsCollapsed(!isCollapsed)}
+          className={cn(
+            'absolute top-2 right-2 w-7 h-7',
+            'bg-white/90 dark:bg-gray-800/90',
+            'border border-gray-200 dark:border-gray-700',
+            'rounded-md flex items-center justify-center shadow-sm hover:shadow-md',
+            'transition-all duration-300 hover:scale-105 z-10',
+            'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white',
+            'backdrop-blur-sm'
+          )}
+          aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+        >
+          {isCollapsed ? (
+            <FiChevronRight className='w-3 h-3' />
+          ) : (
+            <FiChevronLeft className='w-3 h-3' />
+          )}
+        </button>
+
+        {isCollapsed ? (
+          <div className='flex justify-center pt-2'>
+            <div className='relative'>
+              <div className='absolute inset-0 bg-gradient-to-br from-[#a679f0] to-[#5599fe] rounded-2xl blur-xl opacity-50' />
+              <Logo size='md' showText={false} className='relative' />
+            </div>
+          </div>
+        ) : (
+          <div className='flex items-start gap-3 pr-8'>
+            <div className='relative flex-shrink-0'>
+              <div className='absolute inset-0 bg-gradient-to-br from-[#a679f0] to-[#5599fe] rounded-2xl blur-xl opacity-50' />
+              <Logo size='lg' showText={false} className='relative' />
+            </div>
+            <div className='flex-1 pt-1 min-w-0'>
+              <h2 className='text-sm font-bold bg-gradient-to-r from-[#5599fe] to-[#a679f0] bg-clip-text text-transparent font-mono tracking-wide break-words'>
+                OpenARC
+              </h2>
+              <p className='text-xs text-gray-500 dark:text-gray-400 font-mono opacity-80 tracking-wide'>
+                by{' '}
+                <Link
+                  to='https://hashgraphonline.com'
+                  target='_blank'
+                  rel='noopener noreferrer'
+                >
+                  HashgraphOnline
+                </Link>
+              </p>
+            </div>
+          </div>
+        )}
       </div>
 
-      <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+      <nav className='relative flex-1 p-4 space-y-2 overflow-y-auto'>
         {primaryNavItems.map(renderNavItem)}
       </nav>
 
-      <div className="p-4 border-t border-gray-200 dark:border-gray-800 space-y-1">
+      <div className='relative p-4 border-t border-gray-200/50 dark:border-white/[0.06] space-y-2'>
         {secondaryNavItems.map(renderNavItem)}
       </div>
     </aside>
-  )
-}
+  );
+};
 
 const Sidebar: React.FC<SidebarProps> = (props) => {
-  const location = useLocation()
-  return <SidebarContent {...props} location={location} />
-}
+  const location = useLocation();
+  return <SidebarContent {...props} location={location} />;
+};
 
-export default Sidebar
+export default Sidebar;

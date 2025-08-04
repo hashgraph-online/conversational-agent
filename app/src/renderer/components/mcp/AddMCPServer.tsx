@@ -602,7 +602,6 @@ export const AddMCPServer: React.FC<AddMCPServerPropsExtended> = ({
           </DialogTitle>
         </DialogHeader>
         
-        {/* Template requirements alert */}
         {template?.requirements && template.requirements.length > 0 && (
           <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-4">
             <div className="flex items-start gap-2">

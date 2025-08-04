@@ -12,6 +12,7 @@ import {
   FiWifi,
   FiWifiOff,
   FiActivity,
+  FiTool,
 } from 'react-icons/fi';
 import { Card } from '../ui/Card';
 import { Button } from '../ui/Button';
@@ -21,6 +22,7 @@ import { cn } from '../../lib/utils';
 import { MCPServerCardProps, MCPServerType } from '../../types/mcp';
 import { useMCPStore } from '../../stores/mcpStore';
 import { createMCPError } from '../../utils/mcpErrors';
+import { MCPToolsModal } from './MCPToolsModal';
 
 const serverTypeIcons: Record<MCPServerType, React.ReactNode> = {
   filesystem: <FiHardDrive className='w-5 h-5' />,
@@ -61,6 +63,7 @@ export const MCPServerCard: React.FC<MCPServerCardProps> = ({
   onTest,
 }) => {
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isToolsModalOpen, setIsToolsModalOpen] = useState(false);
 
   const handleToggle = async () => {
     try {
@@ -157,6 +160,26 @@ export const MCPServerCard: React.FC<MCPServerCardProps> = ({
           >
             <FiPlay className={cn('w-4 h-4', isRefreshing && 'animate-spin')} />
           </Button>
+          {(server.status === 'connected' || server.status === 'ready') && (
+            <Button
+              variant='ghost'
+              size='sm'
+              onClick={async () => {
+                try {
+                  const { refreshServerTools, reloadServers } = useMCPStore.getState();
+                  await refreshServerTools(server.id);
+                  // Reload servers to get latest tools from JSON file
+                  await reloadServers();
+                } catch (error) {
+                  console.error('Failed to refresh tools:', error);
+                }
+              }}
+              className='text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200'
+              title='Refresh tools'
+            >
+              <FiRefreshCw className='w-4 h-4' />
+            </Button>
+          )}
           <Button
             variant='ghost'
             size='sm'
@@ -177,6 +200,18 @@ export const MCPServerCard: React.FC<MCPServerCardProps> = ({
       </div>
 
       <div className='space-y-3'>
+        {server.description && (
+          <div>
+            <Typography
+              disableMargin
+              variant='body1'
+              className='text-gray-700 dark:text-gray-300'
+            >
+              {server.description}
+            </Typography>
+          </div>
+        )}
+        
         <div>
           <Typography
             disableMargin
@@ -197,27 +232,41 @@ export const MCPServerCard: React.FC<MCPServerCardProps> = ({
 
         {server.tools && server.tools.length > 0 && (
           <div>
-            <Typography
-              disableMargin
-              variant='body1'
-              color='muted'
-              className='mb-2'
-            >
-              Available Tools ({server.tools.length})
-            </Typography>
+            <div className='flex items-center justify-between mb-2'>
+              <Typography
+                disableMargin
+                variant='body1'
+                color='muted'
+              >
+                Available Tools ({server.tools.length})
+              </Typography>
+              <Button
+                variant='ghost'
+                size='sm'
+                onClick={() => setIsToolsModalOpen(true)}
+                className='text-primary-600 hover:text-primary-800 dark:text-primary-400 dark:hover:text-primary-300'
+              >
+                <FiTool className='w-4 h-4 mr-1' />
+                View Details
+              </Button>
+            </div>
             <div className='flex flex-wrap gap-1'>
-              {server.tools.slice(0, 5).map((tool, index) => (
+              {server.tools.slice(0, 3).map((tool, index) => (
                 <span
                   key={index}
                   className='px-2 py-1 bg-primary-50 text-primary-700 dark:bg-primary-900 dark:text-primary-300 text-xs rounded-full'
+                  title={tool.description}
                 >
                   {tool.name}
                 </span>
               ))}
-              {server.tools.length > 5 && (
-                <span className='px-2 py-1 bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400 text-xs rounded-full'>
-                  +{server.tools.length - 5} more
-                </span>
+              {server.tools.length > 3 && (
+                <button
+                  onClick={() => setIsToolsModalOpen(true)}
+                  className='px-2 py-1 bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400 text-xs rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors cursor-pointer'
+                >
+                  +{server.tools.length - 3} more
+                </button>
               )}
             </div>
           </div>
@@ -293,6 +342,14 @@ export const MCPServerCard: React.FC<MCPServerCardProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Tools Modal */}
+      <MCPToolsModal
+        isOpen={isToolsModalOpen}
+        onClose={() => setIsToolsModalOpen(false)}
+        serverName={server.name}
+        tools={server.tools || []}
+      />
     </Card>
   );
 };

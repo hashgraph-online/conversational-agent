@@ -239,6 +239,8 @@ export const useConfigStore = create<ConfigStore>((set, get) => ({
     
     try {
       await window.electron.saveConfig(config)
+      // Also save to localStorage for immediate theme application
+      localStorage.setItem('app-config', JSON.stringify(config))
       set({ isLoading: false })
     } catch (error) {
       set({ 
@@ -264,6 +266,8 @@ export const useConfigStore = create<ConfigStore>((set, get) => ({
       if (loadedConfig) {
         const migratedConfig = migrateConfig(loadedConfig)
         set({ config: migratedConfig, isLoading: false })
+        // Sync with localStorage
+        localStorage.setItem('app-config', JSON.stringify(migratedConfig))
         
         try {
           await configService.applyTheme(migratedConfig.advanced.theme)

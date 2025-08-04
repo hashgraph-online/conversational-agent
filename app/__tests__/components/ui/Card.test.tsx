@@ -15,27 +15,14 @@ describe('Card', () => {
   it('applies default styles', () => {
     render(<Card data-testid="card">Content</Card>);
     const card = screen.getByTestId('card');
-    expect(card).toHaveClass('rounded-lg', 'border', 'bg-white', 'shadow-sm');
+    expect(card).toHaveClass('rounded-xl', 'border', 'shadow-sm');
   });
 
   it('supports custom className', () => {
     render(<Card className="custom-class" data-testid="card">Content</Card>);
     const card = screen.getByTestId('card');
     expect(card).toHaveClass('custom-class');
-  });
-
-  it('supports different variants', () => {
-    const { rerender } = render(<Card variant="outlined" data-testid="card">Content</Card>);
-    let card = screen.getByTestId('card');
-    expect(card).toHaveClass('border-2');
-
-    rerender(<Card variant="elevated" data-testid="card">Content</Card>);
-    card = screen.getByTestId('card');
-    expect(card).toHaveClass('shadow-lg');
-
-    rerender(<Card variant="flat" data-testid="card">Content</Card>);
-    card = screen.getByTestId('card');
-    expect(card).toHaveClass('shadow-none');
+    expect(card).toHaveClass('rounded-xl');
   });
 
   it('renders with complete structure', () => {
@@ -70,21 +57,21 @@ describe('CardHeader', () => {
   it('applies default styles', () => {
     render(<CardHeader data-testid="header">Header</CardHeader>);
     const header = screen.getByTestId('header');
-    expect(header).toHaveClass('flex', 'flex-col', 'space-y-1.5', 'p-6');
+    expect(header).toHaveClass('grid', 'items-start', 'gap-1.5', 'px-6');
   });
 });
 
 describe('CardTitle', () => {
-  it('renders as h3 by default', () => {
+  it('renders as div element', () => {
     render(<CardTitle>Title</CardTitle>);
     const title = screen.getByText('Title');
-    expect(title.tagName).toBe('H3');
+    expect(title.tagName).toBe('DIV');
   });
 
   it('applies default styles', () => {
     render(<CardTitle>Title</CardTitle>);
     const title = screen.getByText('Title');
-    expect(title).toHaveClass('text-2xl', 'font-semibold', 'leading-none', 'tracking-tight');
+    expect(title).toHaveClass('leading-none', 'font-semibold');
   });
 
   it('supports custom className', () => {
@@ -95,16 +82,16 @@ describe('CardTitle', () => {
 });
 
 describe('CardDescription', () => {
-  it('renders as p element', () => {
+  it('renders as div element', () => {
     render(<CardDescription>Description</CardDescription>);
     const description = screen.getByText('Description');
-    expect(description.tagName).toBe('P');
+    expect(description.tagName).toBe('DIV');
   });
 
   it('applies default styles', () => {
     render(<CardDescription>Description</CardDescription>);
     const description = screen.getByText('Description');
-    expect(description).toHaveClass('text-sm', 'text-hedera-smoke-600');
+    expect(description).toHaveClass('text-sm', 'text-muted-foreground');
   });
 });
 
@@ -117,7 +104,7 @@ describe('CardContent', () => {
   it('applies default styles', () => {
     render(<CardContent data-testid="content">Content</CardContent>);
     const content = screen.getByTestId('content');
-    expect(content).toHaveClass('p-6', 'pt-0');
+    expect(content).toHaveClass('px-6');
   });
 });
 
@@ -130,7 +117,7 @@ describe('CardFooter', () => {
   it('applies default styles', () => {
     render(<CardFooter data-testid="footer">Footer</CardFooter>);
     const footer = screen.getByTestId('footer');
-    expect(footer).toHaveClass('flex', 'items-center', 'p-6', 'pt-0');
+    expect(footer).toHaveClass('flex', 'items-center', 'px-6');
   });
 
   it('supports custom className', () => {

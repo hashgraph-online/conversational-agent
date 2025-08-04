@@ -11,6 +11,7 @@ export interface MCPServerTool {
 export interface MCPServerConfig {
   id: string
   name: string
+  description?: string
   type: MCPServerType
   status: MCPServerStatus
   enabled: boolean

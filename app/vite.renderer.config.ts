@@ -17,18 +17,6 @@ export default defineConfig({
         process: true,
       },
     }),
-    {
-      name: 'fix-noble-hashes',
-      enforce: 'pre',
-      resolveId(id) {
-        if (id.startsWith('@noble/hashes/') && !id.endsWith('.js')) {
-          return id + '.js';
-        }
-        if (id === '@noble/hashes/sha2.js') {
-          return '@noble/hashes/sha256.js';
-        }
-      }
-    }
   ],
   resolve: {
     alias: {
@@ -36,8 +24,10 @@ export default defineConfig({
       '@/renderer': path.resolve(__dirname, './src/renderer'),
       '@/lib': path.resolve(__dirname, './src/lib'),
       'react': path.resolve(__dirname, './node_modules/react'),
-      'react-dom': path.resolve(__dirname, './node_modules/react-dom')
-    }
+      'react-dom': path.resolve(__dirname, './node_modules/react-dom'),
+      '@noble/hashes/keccak': path.resolve(__dirname, './node_modules/@noble/hashes/sha3.js')
+    },
+    extensions: ['.ts', '.tsx', '.js', '.jsx', '.mjs', '.json']
   },
   optimizeDeps: {
     exclude: ['electron'],
@@ -47,7 +37,12 @@ export default defineConfig({
       'react-dom',
       'react/jsx-runtime',
       'react/jsx-dev-runtime',
-      'zustand'
+      'zustand',
+      'vite-plugin-node-polyfills/shims/buffer',
+      'vite-plugin-node-polyfills/shims/global',
+      'vite-plugin-node-polyfills/shims/process',
+      '@noble/hashes/sha3',
+      '@noble/hashes/sha256'
     ],
     force: true,
     esbuildOptions: {

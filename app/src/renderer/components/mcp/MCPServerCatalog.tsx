@@ -84,7 +84,6 @@ const ServerCard: React.FC<{
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6 hover:shadow-md transition-shadow">
-      {/* Header */}
       <div className="flex items-start justify-between mb-4">
         <div className="flex-1">
           <div className="mb-1">
@@ -104,7 +103,6 @@ const ServerCard: React.FC<{
         </div>
       </div>
 
-      {/* Tags and metadata */}
       <div className="flex flex-wrap items-center gap-2 mb-4">
         <span className={cn(
           'px-2 py-1 rounded-full text-xs font-medium',
@@ -126,7 +124,6 @@ const ServerCard: React.FC<{
         ))}
       </div>
 
-      {/* Requirements toggle */}
       {server.requirements.length > 0 && (
         <button
           onClick={() => setShowRequirements(!showRequirements)}
@@ -140,7 +137,6 @@ const ServerCard: React.FC<{
         </button>
       )}
 
-      {/* Requirements list */}
       {showRequirements && (
         <div className="mb-4 p-3 bg-gray-50 dark:bg-gray-900 rounded-md">
           <div className="mb-2">
@@ -161,7 +157,6 @@ const ServerCard: React.FC<{
         </div>
       )}
 
-      {/* Actions */}
       <div className="flex items-center gap-2">
         {isInstalled ? (
           <Button variant="outline" size="sm" disabled className="flex-1">
@@ -267,7 +262,6 @@ export const MCPServerCatalog: React.FC<MCPServerCatalogProps> = ({
   return (
     <TooltipProvider>
       <div className="space-y-6">
-        {/* Header */}
         <div>
           <div className="mb-2">
             <Typography variant="h2" className="text-2xl font-bold">
@@ -279,7 +273,6 @@ export const MCPServerCatalog: React.FC<MCPServerCatalogProps> = ({
         </Typography>
       </div>
 
-      {/* Search and filters */}
       <div className="flex flex-col sm:flex-row gap-4">
         <div className="relative flex-1">
           <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -301,7 +294,6 @@ export const MCPServerCatalog: React.FC<MCPServerCatalogProps> = ({
         </select>
       </div>
 
-      {/* Category filters */}
       <div className="flex flex-wrap gap-2">
         <Button
           variant={selectedCategory === null ? 'default' : 'outline'}
@@ -327,7 +319,6 @@ export const MCPServerCatalog: React.FC<MCPServerCatalogProps> = ({
         })}
       </div>
 
-      {/* Results summary */}
       <div className="flex items-center justify-between">
         <Typography variant="body1" className="text-gray-600 dark:text-gray-400">
           Showing {filteredServers.length} of {servers.length} servers
@@ -345,7 +336,6 @@ export const MCPServerCatalog: React.FC<MCPServerCatalogProps> = ({
         )}
       </div>
 
-      {/* Server grid */}
       {filteredServers.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredServers.map(server => (

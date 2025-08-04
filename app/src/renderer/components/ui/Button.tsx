@@ -6,28 +6,28 @@ import { cn } from "@/renderer/lib/utils"
 import { gradients, animations, shadows } from "@/renderer/lib/styles"
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg font-mono font-bold transition-all duration-300 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-gray-900 transform active:scale-[0.98] touch-manipulation shadow-lg hover:shadow-xl",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl font-medium transition-all duration-300 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent transform active:scale-[0.98] touch-manipulation",
   {
     variants: {
       variant: {
         default:
-          "bg-hgo-blue text-white hover:bg-hgo-blue/90 focus-visible:ring-hgo-blue/50",
+          "bg-gradient-to-r from-[#5599fe] to-[#5599fe] text-white shadow-lg shadow-[#5599fe]/20 hover:shadow-xl hover:shadow-[#5599fe]/30 hover:scale-[1.02] focus-visible:ring-[#5599fe]/50",
         gradient:
-          "bg-gradient-to-r from-hgo-purple via-hgo-blue to-hgo-green text-white hover:opacity-90 focus-visible:ring-hgo-purple/50",
+          "bg-gradient-to-r from-[#a679f0] via-[#5599fe] to-[#48df7b] text-white shadow-lg shadow-purple-500/20 hover:shadow-xl hover:shadow-purple-500/30 hover:scale-[1.02] focus-visible:ring-[#a679f0]/50",
         destructive:
           "bg-red-600 text-white shadow-md hover:bg-red-700 hover:shadow-lg focus-visible:ring-red-500/50",
         outline:
-          "border-2 border-gray-300 dark:border-gray-600 bg-transparent hover:bg-gray-50 dark:hover:bg-gray-800 hover:border-gray-400 dark:hover:border-gray-500 text-gray-700 dark:text-gray-300",
+          "border border-white/10 bg-white/5 dark:bg-white/5 backdrop-blur-sm shadow-sm hover:bg-white/10 dark:hover:bg-white/10 hover:border-white/20 text-gray-700 dark:text-gray-300",
         secondary:
-          "bg-gray-600 text-white hover:bg-gray-700 focus-visible:ring-gray-600/50",
+          "bg-white/10 dark:bg-white/5 backdrop-blur-sm text-gray-700 dark:text-gray-300 shadow-sm hover:bg-white/20 dark:hover:bg-white/10 border border-white/10",
         ghost:
-          "hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-100 text-gray-600 dark:text-gray-400",
-        link: "text-hgo-blue underline-offset-4 hover:underline hover:text-hgo-purple",
+          "hover:bg-white/10 dark:hover:bg-white/10 hover:backdrop-blur-sm text-gray-600 dark:text-gray-400",
+        link: "text-[#5599fe] underline-offset-4 hover:underline hover:text-[#a679f0]",
       },
       size: {
-        default: "h-11 px-6 py-2.5 text-base",
-        sm: "h-9 px-3 py-1.5 text-xs",
-        lg: "h-12 px-8 py-3 text-lg",
+        sm: "px-2 py-1 text-xs sm:px-3 sm:py-1.5 sm:text-xs",
+        default: "px-3 py-1.5 text-xs sm:px-4 sm:py-2 sm:text-sm",
+        lg: "px-3.5 py-2 text-sm sm:px-5 sm:py-2.5 sm:text-base",
         xl: "h-14 px-10 py-4 text-xl",
         icon: "size-10",
       },

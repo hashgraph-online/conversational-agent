@@ -9,28 +9,29 @@ describe('Button', () => {
     expect(screen.getByRole('button', { name: 'Click me' })).toBeInTheDocument();
   });
 
-  it('applies primary variant styles by default', () => {
-    render(<Button>Primary</Button>);
+  it('applies default variant styles by default', () => {
+    render(<Button>Default</Button>);
     const button = screen.getByRole('button');
-    expect(button).toHaveClass('bg-primary');
+    expect(button).toHaveClass('bg-hgo-blue');
   });
 
   it('applies secondary variant styles', () => {
     render(<Button variant="secondary">Secondary</Button>);
     const button = screen.getByRole('button');
-    expect(button).toHaveClass('bg-secondary');
+    expect(button).toHaveClass('bg-gray-600');
   });
 
   it('applies ghost variant styles', () => {
     render(<Button variant="ghost">Ghost</Button>);
     const button = screen.getByRole('button');
-    expect(button).toHaveClass('bg-transparent');
+    expect(button).not.toHaveClass('bg-gray-100');
+    expect(button).toHaveClass('text-gray-600');
   });
 
-  it('applies danger variant styles', () => {
-    render(<Button variant="danger">Danger</Button>);
+  it('applies destructive variant styles', () => {
+    render(<Button variant="destructive">Destructive</Button>);
     const button = screen.getByRole('button');
-    expect(button).toHaveClass('bg-danger');
+    expect(button).toHaveClass('bg-red-600');
   });
 
   it('handles click events', async () => {
@@ -55,29 +56,27 @@ describe('Button', () => {
   it('supports different sizes', () => {
     const { rerender } = render(<Button size="sm">Small</Button>);
     let button = screen.getByRole('button');
-    expect(button).toHaveClass('px-3', 'py-1', 'text-sm');
+    expect(button).toHaveClass('h-9', 'px-3', 'text-xs');
 
-    rerender(<Button size="md">Medium</Button>);
+    rerender(<Button size="default">Default</Button>);
     button = screen.getByRole('button');
-    expect(button).toHaveClass('px-4', 'py-2', 'text-base');
+    expect(button).toHaveClass('h-11', 'px-6', 'text-base');
 
     rerender(<Button size="lg">Large</Button>);
     button = screen.getByRole('button');
-    expect(button).toHaveClass('px-6', 'py-3', 'text-lg');
+    expect(button).toHaveClass('h-12', 'px-8', 'text-lg');
   });
 
-  it('supports full width', () => {
-    render(<Button fullWidth>Full Width</Button>);
+  it('supports gradient variant', () => {
+    render(<Button variant="gradient">Gradient</Button>);
     const button = screen.getByRole('button');
-    expect(button).toHaveClass('w-full');
+    expect(button).toHaveClass('bg-gradient-to-r');
   });
 
-  it('supports loading state', () => {
-    render(<Button loading>Loading</Button>);
+  it('supports outline variant', () => {
+    render(<Button variant="outline">Outline</Button>);
     const button = screen.getByRole('button');
-    
-    expect(button).toBeDisabled();
-    expect(screen.getByTestId('button-spinner')).toBeInTheDocument();
+    expect(button).toHaveClass('border-2', 'bg-transparent');
   });
 
   it('supports custom className', () => {

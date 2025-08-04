@@ -1,5 +1,7 @@
 import { Logger } from '../utils/logger'
 import { MCPServerConfig } from './MCPService'
+import { MCPCacheManager } from './MCPCacheManager'
+import type { NewMCPServer } from '../db/schema'
 
 export interface MCPRegistryServer {
   id: string
@@ -24,6 +26,10 @@ export interface MCPRegistryServer {
   updatedAt?: string
   installCount?: number
   rating?: number
+  tools?: Array<{
+    name: string
+    description?: string
+  }>
 }
 
 export interface MCPRegistryResponse {
@@ -48,11 +54,20 @@ export interface MCPRegistrySearchOptions {
 export class MCPRegistryService {
   private static instance: MCPRegistryService
   private logger: Logger
-  private cache: Map<string, { data: MCPRegistryResponse; timestamp: number }> = new Map()
-  private readonly CACHE_TTL = 5 * 60 * 1000
+  private cacheManager: MCPCacheManager
+  private backgroundSyncActive = false
+  private readonly REGISTRY_SYNC_INTERVAL = 60 * 60 * 1000;
+  private readonly BACKGROUND_BATCH_SIZE = 50;
 
   private constructor() {
     this.logger = new Logger({ module: 'MCPRegistryService' })
+    try {
+      this.cacheManager = MCPCacheManager.getInstance()
+      this.initializeBackgroundSync()
+    } catch (error) {
+      this.logger.error('Failed to initialize cache manager:', error)
+      this.logger.warn('MCPRegistryService will operate without caching')
+    }
   }
 
   /**
@@ -66,65 +81,54 @@ export class MCPRegistryService {
   }
 
   /**
-   * Search for MCP servers across multiple registries
+   * Search for MCP servers with intelligent caching
    */
   async searchServers(options: MCPRegistrySearchOptions = {}): Promise<MCPRegistryResponse> {
-    const cacheKey = JSON.stringify(options)
-    const cached = this.cache.get(cacheKey)
-    
-    if (cached && Date.now() - cached.timestamp < this.CACHE_TTL) {
-      this.logger.info('Returning cached registry results')
-      return cached.data
-    }
-
     try {
       this.logger.info('Searching MCP registries with options:', options)
       
-      const registryPromises = [
-        this.searchPulseMCP(options)
-      ]
-
-      const results = await Promise.allSettled(registryPromises)
-      const allServers: MCPRegistryServer[] = []
-      let totalCount = 0
-
-      results.forEach((result, index) => {
-        if (result.status === 'fulfilled' && result.value) {
-          allServers.push(...result.value.servers)
-          totalCount += result.value.total || result.value.servers.length
-        } else {
-          const registryNames = ['PulseMCP', 'Official Registry', 'Smithery Registry']
-          this.logger.warn(`Failed to fetch from ${registryNames[index]}:`, 
-            result.status === 'rejected' ? result.reason : 'Unknown error')
+      if (this.cacheManager) {
+        const cacheOptions = {
+          query: options.query,
+          tags: options.tags,
+          author: options.author,
+          limit: options.limit || 50,
+          offset: options.offset || 0,
+          sortBy: 'installCount' as const,
+          sortOrder: 'desc' as const
         }
-      })
 
-      const uniqueServers = this.deduplicateServers(allServers)
-      
-      const filteredServers = this.filterServers(uniqueServers, options)
-      
-      const sortedServers = this.sortServers(filteredServers, options.query)
+        try {
+          const cacheResult = await this.cacheManager.searchServers(cacheOptions)
+          
+          if (cacheResult.fromCache || cacheResult.servers.length > 0) {
+            // Convert and filter cached servers for installability
+            const convertedServers = cacheResult.servers.map(this.convertFromCachedServer)
+            const installableServers = convertedServers.filter(server => {
+              const installable = this.isServerInstallable(server)
+              if (!installable) {
+                this.logger.debug(`Filtering out non-installable server from cache: ${server.name}`)
+              }
+              return installable
+            })
+            
+            this.logger.info(`Found ${installableServers.length} installable servers from cache (filtered from ${cacheResult.servers.length}, ${cacheResult.queryTime}ms)`)
+            return {
+              servers: installableServers,
+              total: installableServers.length,
+              hasMore: cacheResult.hasMore
+            }
+          }
 
-      let aggregatedTotal = 0
-      let aggregatedHasMore = false
-      
-      results.forEach((result, index) => {
-        if (result.status === 'fulfilled' && result.value) {
-          aggregatedTotal += result.value.total || 0
-          aggregatedHasMore = aggregatedHasMore || result.value.hasMore || false
+          this.triggerBackgroundSync()
+        } catch (cacheError) {
+          this.logger.warn('Cache search failed, falling back to direct API:', cacheError)
         }
-      })
-
-      const response: MCPRegistryResponse = {
-        servers: sortedServers,
-        total: aggregatedTotal,
-        hasMore: aggregatedHasMore
       }
-
-      this.cache.set(cacheKey, { data: response, timestamp: Date.now() })
       
-      this.logger.info(`Found ${response.servers.length} unique MCP servers from registries`)
-      return response
+      const freshResults = await this.searchRegistriesWithTimeout(options, 5000)
+      
+      return freshResults
 
     } catch (error) {
       this.logger.error('Failed to search MCP registries:', error)
@@ -137,27 +141,68 @@ export class MCPRegistryService {
    */
   async getServerDetails(serverId: string, packageName?: string): Promise<MCPRegistryServer | null> {
     try {
+      this.logger.info(`Getting server details for: ${serverId}, packageName: ${packageName}`)
+      
+      // If no packageName provided, try using serverId as a fallback
+      const effectivePackageName = packageName || serverId
+      
       const detailPromises = [
-        this.getServerDetailsFromPulseMCP(serverId, packageName),
+        this.getServerDetailsFromPulseMCP(serverId, effectivePackageName),
         this.getServerDetailsFromOfficialRegistry(serverId),
-        this.getServerDetailsFromSmitheryRegistry(serverId, packageName)
+        this.getServerDetailsFromSmitheryRegistry(serverId, effectivePackageName)
       ]
 
       const results = await Promise.allSettled(detailPromises)
       
-      for (const result of results) {
+      for (let i = 0; i < results.length; i++) {
+        const result = results[i]
+        const source = ['PulseMCP', 'Official Registry', 'Smithery'][i]
         if (result.status === 'fulfilled' && result.value) {
+          this.logger.info(`Found server details from ${source}`)
           return result.value
+        } else if (result.status === 'rejected') {
+          this.logger.debug(`${source} failed:`, result.reason)
         }
       }
 
-      this.logger.warn(`No details found for server: ${serverId}`)
+      this.logger.warn(`No details found for server: ${serverId} (packageName: ${packageName}, effectivePackageName: ${effectivePackageName})`)
       return null
 
     } catch (error) {
       this.logger.error(`Failed to get server details for ${serverId}:`, error)
       return null
     }
+  }
+
+  /**
+   * Check if a server can be installed
+   */
+  isServerInstallable(registryServer: MCPRegistryServer): boolean {
+    // Must have one of these installation methods
+    const hasCommand = !!registryServer.config?.command
+    const hasGitHub = !!(registryServer.repository?.url && registryServer.repository.url.includes('github.com'))
+    const hasPackageName = !!registryServer.packageName
+    
+    // If it has a direct command or GitHub repo, it's installable
+    if (hasCommand || hasGitHub) {
+      return true
+    }
+    
+    // If it only has a packageName, we need to be more careful
+    // Some servers have invalid packageNames that don't actually exist
+    if (hasPackageName && registryServer.packageName) {
+      // Known invalid packageNames that don't actually exist on npm
+      const invalidPackageNames = ['bitcoin-mcp', 'mcp-notes']
+      if (invalidPackageNames.includes(registryServer.packageName)) {
+        this.logger.debug(`Filtering out server with invalid packageName: ${registryServer.packageName}`)
+        return false
+      }
+      // For now, assume other packageNames are valid
+      // In the future, we could check npm registry
+      return true
+    }
+    
+    return false
   }
 
   /**
@@ -171,21 +216,35 @@ export class MCPRegistryService {
       config: {}
     }
 
-    if (registryServer.packageName) {
-      config.config!.command = registryServer.packageName
-      config.config!.args = registryServer.config?.args || []
-      config.config!.env = registryServer.config?.env || {}
-    } else if (registryServer.repository?.url) {
-      if (registryServer.repository.url.includes('github.com')) {
-        const repoMatch = registryServer.repository.url.match(/github\.com\/([^/]+\/[^/]+)/)
-        if (repoMatch) {
-          config.config!.command = `npx github:${repoMatch[1]}`
-        }
-      }
-    } else if (registryServer.config?.command) {
+    // Try different approaches to determine the install command
+    if (registryServer.config?.command) {
+      // Use explicit command if provided
       config.config!.command = registryServer.config.command
       config.config!.args = registryServer.config.args || []
       config.config!.env = registryServer.config.env || {}
+    } else if (registryServer.packageName) {
+      // Use npm package if packageName is available
+      config.config!.command = 'npx'
+      config.config!.args = ['-y', registryServer.packageName]
+      config.config!.env = registryServer.config?.env || {}
+    } else if (registryServer.repository?.url) {
+      // Try to create command from GitHub repository
+      if (registryServer.repository.url.includes('github.com')) {
+        const repoMatch = registryServer.repository.url.match(/github\.com\/([^/]+\/[^/]+)/)
+        if (repoMatch) {
+          config.config!.command = 'npx'
+          config.config!.args = ['-y', `github:${repoMatch[1]}`]
+        }
+      }
+    } else {
+      // Last resort: try using the server ID as a package name
+      config.config!.command = 'npx'
+      config.config!.args = ['-y', registryServer.id]
+    }
+
+    // Add description if available
+    if (registryServer.description) {
+      config.description = registryServer.description
     }
 
     return config
@@ -223,9 +282,28 @@ export class MCPRegistryService {
       
       const totalServers = data.total_count || 0
       const hasNext = data.next !== null && data.next !== undefined
+      const serversCount = (data.servers || []).length
+      
+      this.logger.info(`PulseMCP API response: offset=${options.offset}, count=${serversCount}, total=${totalServers}, hasNext=${hasNext}, next=${data.next}`)
+      
+      const normalizedServers = (data.servers || []).map(server => {
+        try {
+          return this.normalizePulseMCPServer(server)
+        } catch (error) {
+          this.logger.warn(`Failed to normalize server:`, error, server)
+          return null
+        }
+      }).filter(Boolean).filter(server => {
+        // Filter out non-installable servers
+        const installable = this.isServerInstallable(server)
+        if (!installable) {
+          this.logger.debug(`Filtering out non-installable server: ${server.name}`)
+        }
+        return installable
+      })
       
       return {
-        servers: (data.servers || []).map(this.normalizePulseMCPServer),
+        servers: normalizedServers,
         total: totalServers,
         hasMore: hasNext
       }
@@ -288,22 +366,35 @@ export class MCPRegistryService {
   }
 
   private async getServerDetailsFromPulseMCP(serverId: string, packageName?: string): Promise<MCPRegistryServer | null> {
-    if (!packageName) return null
+    if (!packageName) {
+      this.logger.debug(`PulseMCP detail lookup skipped - no packageName provided for serverId: ${serverId}`)
+      return null
+    }
     
     const baseUrl = 'https://api.pulsemcp.com/v0beta'
     const url = `${baseUrl}/servers/${encodeURIComponent(packageName)}`
     
-    const response = await fetch(url, {
-      headers: {
-        'User-Agent': 'ConversationalAgent/1.0 (https://hashgraphonline.com)',
-        'Accept': 'application/json'
+    try {
+      this.logger.debug(`Fetching PulseMCP details from: ${url}`)
+      const response = await fetch(url, {
+        headers: {
+          'User-Agent': 'ConversationalAgent/1.0 (https://hashgraphonline.com)',
+          'Accept': 'application/json'
+        }
+      })
+
+      if (!response.ok) {
+        this.logger.debug(`PulseMCP detail request failed with status: ${response.status}`)
+        return null
       }
-    })
 
-    if (!response.ok) return null
-
-    const data = await response.json()
-    return this.normalizePulseMCPServer(data)
+      const data = await response.json()
+      this.logger.debug(`PulseMCP detail response:`, data)
+      return this.normalizePulseMCPServer(data)
+    } catch (error) {
+      this.logger.debug(`PulseMCP detail request error:`, error)
+      return null
+    }
   }
 
   private async getServerDetailsFromOfficialRegistry(serverId: string): Promise<MCPRegistryServer | null> {
@@ -345,13 +436,31 @@ export class MCPRegistryService {
 
 
   private normalizePulseMCPServer = (server: any): MCPRegistryServer => {
+    // PulseMCP uses short_description instead of description
+    const description = server.short_description || server.description || ''
+    
+    // Log servers without package_name for debugging
+    if (!server.package_name && server.name) {
+      this.logger.debug(`Server "${server.name}" has no package_name field`)
+    }
+    
+    // List of known invalid packageNames that don't actually exist on npm
+    const invalidPackageNames = ['bitcoin-mcp', 'mcp-notes']
+    
+    // Clean up packageName if it's known to be invalid
+    let packageName = server.package_name
+    if (packageName && invalidPackageNames.includes(packageName)) {
+      this.logger.debug(`Removing invalid packageName "${packageName}" from server "${server.name}"`)
+      packageName = undefined
+    }
+    
     return {
       id: server.id || server.name || server.package_name,
       name: server.name || server.package_name,
-      description: server.description || '',
+      description: String(description),
       author: server.author,
       version: server.version,
-      packageName: server.package_name,
+      packageName: packageName,
       repository: server.repository ? {
         type: 'git',
         url: server.repository.url || server.repository
@@ -361,7 +470,8 @@ export class MCPRegistryService {
       createdAt: server.created_at,
       updatedAt: server.updated_at,
       installCount: server.downloads || server.install_count,
-      rating: server.rating
+      rating: server.rating,
+      tools: server.tools || server.capabilities?.tools || undefined
     }
   }
 
@@ -378,7 +488,8 @@ export class MCPRegistryService {
       tags: server.tags || [],
       license: server.license,
       createdAt: server.created_at,
-      updatedAt: server.updated_at
+      updatedAt: server.updated_at,
+      tools: server.tools || server.capabilities?.tools || undefined
     }
   }
 
@@ -447,8 +558,318 @@ export class MCPRegistryService {
   /**
    * Clear the cache
    */
-  clearCache(): void {
-    this.cache.clear()
-    this.logger.info('Registry cache cleared')
+  async clearCache(): Promise<void> {
+    if (this.cacheManager) {
+      try {
+        await this.cacheManager.clearSearchCache()
+        await this.cacheManager.clearRegistrySync()
+        this.logger.info('Registry cache and sync status cleared')
+      } catch (error) {
+        this.logger.error('Failed to clear cache:', error)
+      }
+    } else {
+      this.logger.warn('Cache manager not available - no cache to clear')
+    }
+  }
+
+  /**
+   * Get cache statistics
+   */
+  async getCacheStats(): Promise<any> {
+    if (this.cacheManager) {
+      try {
+        return await this.cacheManager.getCacheStats()
+      } catch (error) {
+        this.logger.error('Failed to get cache stats:', error)
+        return {
+          totalServers: 0,
+          serversByRegistry: {},
+          cacheEntries: 0,
+          averageResponseTime: 0,
+          cacheHitRate: 0,
+          oldestEntry: null,
+          newestEntry: null
+        }
+      }
+    } else {
+      return {
+        totalServers: 0,
+        serversByRegistry: {},
+        cacheEntries: 0,
+        averageResponseTime: 0,
+        cacheHitRate: 0,
+        oldestEntry: null,
+        newestEntry: null
+      }
+    }
+  }
+
+  /**
+   * Initialize background sync system
+   */
+  private initializeBackgroundSync(): void {
+    if (!this.cacheManager) {
+      this.logger.warn('Cache manager not available - skipping background sync initialization')
+      return
+    }
+
+    setTimeout(() => {
+      this.triggerBackgroundSync()
+    }, 30000)
+
+    setInterval(() => {
+      this.triggerBackgroundSync()
+    }, this.REGISTRY_SYNC_INTERVAL)
+  }
+
+  /**
+   * Trigger background sync if not already running
+   */
+  private triggerBackgroundSync(): void {
+    if (!this.cacheManager) {
+      this.logger.debug('Cache manager not available - skipping background sync')
+      return
+    }
+
+    if (this.backgroundSyncActive) {
+      this.logger.debug('Background sync already active, skipping')
+      return
+    }
+
+    // Delay background sync to avoid blocking startup
+    setTimeout(() => {
+      this.performBackgroundSync().catch(error => {
+        this.logger.error('Background sync failed:', error)
+      })
+    }, 5000) // 5 second delay
+  }
+
+  /**
+   * Perform background sync of all registries
+   */
+  private async performBackgroundSync(): Promise<void> {
+    if (this.backgroundSyncActive) return
+
+    this.backgroundSyncActive = true
+    const startTime = Date.now()
+
+    try {
+      this.logger.info('Starting background registry sync...')
+
+      const registries = ['pulsemcp', 'official', 'smithery']
+      const syncPromises = registries.map(registry => this.syncRegistry(registry))
+
+      await Promise.allSettled(syncPromises)
+
+      const duration = Date.now() - startTime
+      this.logger.info(`Background sync completed in ${duration}ms`)
+
+    } catch (error) {
+      this.logger.error('Background sync failed:', error)
+    } finally {
+      this.backgroundSyncActive = false
+    }
+  }
+
+  /**
+   * Sync a specific registry
+   */
+  private async syncRegistry(registry: string): Promise<void> {
+    const startTime = Date.now()
+
+    try {
+      const isFresh = await this.cacheManager.isRegistryFresh(registry)
+      if (isFresh) {
+        this.logger.debug(`Registry ${registry} is already fresh, skipping sync`)
+        return
+      }
+
+      await this.cacheManager.updateRegistrySync(registry, 'syncing')
+
+      let totalServers = 0
+      let offset = 0
+      const servers: MCPRegistryServer[] = []
+
+      while (true) {
+        const options: MCPRegistrySearchOptions = {
+          limit: this.BACKGROUND_BATCH_SIZE,
+          offset
+        }
+
+        let batchResults: MCPRegistryResponse
+        
+        switch (registry) {
+          case 'pulsemcp':
+            batchResults = await this.searchPulseMCP(options)
+            break
+          case 'official':
+            batchResults = await this.searchOfficialRegistry(options)
+            break
+          case 'smithery':
+            batchResults = await this.searchSmitheryRegistry(options)
+            break
+          default:
+            throw new Error(`Unknown registry: ${registry}`)
+        }
+
+        if (!batchResults.servers || batchResults.servers.length === 0) {
+          this.logger.info(`${registry} sync: No servers returned, stopping at offset ${offset}`)
+          break
+        }
+
+        servers.push(...batchResults.servers)
+        totalServers += batchResults.servers.length
+
+        this.logger.info(`${registry} sync: Fetched ${batchResults.servers.length} servers, total so far: ${totalServers}, hasMore: ${batchResults.hasMore}`)
+
+        const cacheServers = batchResults.servers.map(server => this.convertToCachedServer(server, registry))
+        try {
+          await this.cacheManager.bulkCacheServers(cacheServers)
+        } catch (cacheError) {
+          this.logger.error(`Failed to cache servers for ${registry}:`, cacheError)
+          // Continue with sync even if caching fails
+        }
+
+        offset += this.BACKGROUND_BATCH_SIZE
+
+        if (!batchResults.hasMore || batchResults.servers.length < this.BACKGROUND_BATCH_SIZE) {
+          this.logger.info(`${registry} sync: Stopping - hasMore: ${batchResults.hasMore}, servers.length: ${batchResults.servers.length}, batchSize: ${this.BACKGROUND_BATCH_SIZE}`)
+          break
+        }
+
+        await new Promise(resolve => setTimeout(resolve, 100))
+      }
+
+      const duration = Date.now() - startTime
+      await this.cacheManager.updateRegistrySync(registry, 'success', {
+        serverCount: totalServers,
+        syncDurationMs: duration
+      })
+
+      this.logger.info(`Synced ${totalServers} servers from ${registry} in ${duration}ms`)
+
+    } catch (error) {
+      const duration = Date.now() - startTime
+      await this.cacheManager.updateRegistrySync(registry, 'error', {
+        errorMessage: error instanceof Error ? error.message : 'Unknown error',
+        syncDurationMs: duration
+      })
+
+      this.logger.error(`Failed to sync registry ${registry}:`, error)
+      throw error
+    }
+  }
+
+  /**
+   * Search registries with timeout for immediate responses
+   */
+  private async searchRegistriesWithTimeout(options: MCPRegistrySearchOptions, timeoutMs: number): Promise<MCPRegistryResponse> {
+    try {
+      const registryPromises = [
+        this.searchPulseMCP(options),
+        this.searchOfficialRegistry(options),
+        this.searchSmitheryRegistry(options)
+      ]
+
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error('Registry search timeout')), timeoutMs)
+      })
+
+      const results = await Promise.allSettled([
+        Promise.race([Promise.allSettled(registryPromises), timeoutPromise])
+      ])
+
+      const allServers: MCPRegistryServer[] = []
+      let totalCount = 0
+
+      if (results[0].status === 'fulfilled' && Array.isArray(results[0].value)) {
+        results[0].value.forEach((result, index) => {
+          if (result.status === 'fulfilled' && result.value) {
+            allServers.push(...result.value.servers)
+            totalCount += result.value.total || result.value.servers.length
+          } else {
+            const registryNames = ['PulseMCP', 'Official Registry', 'Smithery Registry']
+            this.logger.warn(`Failed to fetch from ${registryNames[index]}:`, 
+              result.status === 'rejected' ? result.reason : 'Unknown error')
+          }
+        })
+      }
+
+      const uniqueServers = this.deduplicateServers(allServers)
+      const filteredServers = this.filterServers(uniqueServers, options)
+      const sortedServers = this.sortServers(filteredServers, options.query)
+
+      const cacheServers = sortedServers.map(server => this.convertToCachedServer(server, 'mixed'))
+      if (cacheServers.length > 0) {
+        await this.cacheManager.bulkCacheServers(cacheServers)
+      }
+
+      return {
+        servers: sortedServers,
+        total: totalCount,
+        hasMore: false      }
+
+    } catch (error) {
+      this.logger.warn('Timeout registry search failed:', error)
+      return { servers: [], total: 0, hasMore: false }
+    }
+  }
+
+  /**
+   * Convert registry server to cached format
+   */
+  private convertToCachedServer(server: MCPRegistryServer, registry: string): Omit<NewMCPServer, 'lastFetched'> {
+    return {
+      id: server.id,
+      name: server.name,
+      description: server.description || '',
+      author: server.author || null,
+      version: server.version || null,
+      url: server.url || null,
+      packageName: server.packageName || null,
+      repositoryType: server.repository?.type || null,
+      repositoryUrl: server.repository?.url || null,
+      configCommand: server.config?.command || null,
+      configArgs: server.config?.args ? JSON.stringify(server.config.args) : null,
+      configEnv: server.config?.env ? JSON.stringify(server.config.env) : null,
+      tags: server.tags ? JSON.stringify(server.tags) : null,
+      license: server.license || null,
+      createdAt: server.createdAt || null,
+      updatedAt: server.updatedAt || null,
+      installCount: server.installCount || 0,
+      rating: server.rating || null,
+      registry,
+      isActive: true
+    }
+  }
+
+  /**
+   * Convert cached server to registry format
+   */
+  private convertFromCachedServer = (server: any): MCPRegistryServer => {
+    return {
+      id: server.id,
+      name: server.name,
+      description: String(server.description || ''),
+      author: server.author,
+      version: server.version,
+      url: server.url,
+      packageName: server.packageName,
+      repository: server.repositoryUrl ? {
+        type: server.repositoryType || 'git',
+        url: server.repositoryUrl
+      } : undefined,
+      config: server.configCommand ? {
+        command: server.configCommand,
+        args: server.configArgs ? JSON.parse(server.configArgs) : [],
+        env: server.configEnv ? JSON.parse(server.configEnv) : {}
+      } : undefined,
+      tags: server.tags ? JSON.parse(server.tags) : [],
+      license: server.license,
+      createdAt: server.createdAt,
+      updatedAt: server.updatedAt,
+      installCount: server.installCount,
+      rating: server.rating
+    }
   }
 }

@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react'
 import { useMCPStore } from '../stores/mcpStore'
-import { Logger } from '@hashgraphonline/standards-sdk'
+import { createElectronRendererLogger } from '../utils/electron-logger-adapter'
 
 interface MCPInitProviderProps {
   children: React.ReactNode
@@ -27,7 +27,7 @@ const waitForElectronBridge = async (maxRetries = 30, retryDelay = 1000): Promis
 export const MCPInitProvider: React.FC<MCPInitProviderProps> = ({ children }) => {
   const { loadServers, error } = useMCPStore()
   const hasInitialized = useRef(false)
-  const logger = useRef(new Logger({ module: 'MCPInitProvider' }))
+  const logger = useRef(createElectronRendererLogger({ module: 'MCPInitProvider' }))
 
   useEffect(() => {
     if (hasInitialized.current) {

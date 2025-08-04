@@ -500,90 +500,19 @@ export const usePluginStore = create<PluginStore>((set, get) => ({
     }
   },
   
+  // Local plugin loading is not yet implemented
   loadLocalPlugin: async (path: string) => {
-    set({ isLoading: true, error: null })
-    
-    try {
-      const result = await window.electron.loadLocalPlugin(path)
-      
-      if (!result.success) {
-        throw new Error(result.error || 'Failed to load local plugin')
-      }
-      
-      const localPlugin = result.data as LocalPluginConfig
-      
-      set(state => ({
-        plugins: {
-          ...state.plugins,
-          [localPlugin.id]: localPlugin
-        },
-        isLoading: false,
-        error: null
-      }))
-      
-    } catch (error) {
-      set({
-        isLoading: false,
-        error: error instanceof Error ? error.message : 'Failed to load local plugin'
-      })
-      throw error
-    }
+    throw new Error('Local plugin loading is not yet implemented')
   },
   
+  // Local plugin reloading is not yet implemented
   reloadLocalPlugin: async (pluginId: string) => {
-    set({ isLoading: true, error: null })
-    
-    try {
-      const plugin = get().plugins[pluginId]
-      if (!plugin || plugin.type !== 'local') {
-        throw new Error('Local plugin not found')
-      }
-      
-      const result = await window.electron.reloadLocalPlugin(pluginId)
-      
-      if (!result.success) {
-        throw new Error(result.error || 'Failed to reload local plugin')
-      }
-      
-      const reloadedPlugin = result.data as LocalPluginConfig
-      
-      set(state => ({
-        plugins: {
-          ...state.plugins,
-          [pluginId]: reloadedPlugin
-        },
-        isLoading: false,
-        error: null
-      }))
-      
-    } catch (error) {
-      set({
-        isLoading: false,
-        error: error instanceof Error ? error.message : 'Failed to reload local plugin'
-      })
-      throw error
-    }
+    throw new Error('Local plugin reloading is not yet implemented')
   },
   
+  // Custom plugin registry is not yet implemented
   setRegistry: async (registry: string, auth?: { token?: string; username?: string; password?: string }) => {
-    set({ isLoading: true, error: null })
-    
-    try {
-      const result = await window.electron.setPluginRegistry(registry, auth)
-      
-      if (!result.success) {
-        throw new Error(result.error || 'Failed to set registry')
-      }
-      
-      set({ isLoading: false, error: null })
-      
-    } catch (error) {
-      set({
-        isLoading: false,
-        error: error instanceof Error ? error.message : 'Failed to set registry'
-      })
-      throw error
-    }
+    throw new Error('Custom plugin registry is not yet implemented')
   },
   
   loadInstalledPlugins: async () => {

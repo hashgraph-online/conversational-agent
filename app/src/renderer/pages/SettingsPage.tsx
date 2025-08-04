@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react'
+import { motion } from 'framer-motion'
 import { FiServer, FiCpu, FiSettings, FiAlertCircle, FiX } from 'react-icons/fi'
 import { HederaSettings } from './settings/HederaSettings'
 import { LLMSettings } from './settings/LLMSettings'
@@ -7,6 +8,7 @@ import { useConfigStore } from '../stores/configStore'
 import { Button } from '../components/ui/Button'
 import { Card, CardContent } from '../components/ui/Card'
 import Typography from '../components/ui/Typography'
+import { cn } from '../lib/utils'
 
 interface SettingsPageProps {}
 
@@ -24,6 +26,12 @@ const tabs: Tab[] = [
   { key: 'llm', label: 'AI Models', icon: FiCpu, component: LLMSettings },
   { key: 'advanced', label: 'Advanced', icon: FiSettings, component: AdvancedSettings }
 ]
+
+const tabGradients = {
+  hedera: 'from-[#a679f0] to-[#5599fe]',
+  llm: 'from-[#5599fe] to-[#48df7b]',
+  advanced: 'from-[#48df7b] to-[#a679f0]'
+}
 
 const SettingsPage: React.FC<SettingsPageProps> = () => {
   const [activeTab, setActiveTab] = useState<TabKey>('hedera')
@@ -65,8 +73,6 @@ const SettingsPage: React.FC<SettingsPageProps> = () => {
     }
   }, [saveConfig, isHederaConfigValid, isLLMConfigValid, saveTimeout])
 
-  const ActiveComponent = tabs.find(tab => tab.key === activeTab)?.component || HederaSettings
-
   const handleSaveConfiguration = async () => {
     try {
       await saveConfig()
@@ -82,6 +88,7 @@ const SettingsPage: React.FC<SettingsPageProps> = () => {
 
   const isConfigValid = isHederaConfigValid() && isLLMConfigValid()
 
+
   if (isLoading) {
     return (
       <div className="p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto">
@@ -93,12 +100,56 @@ const SettingsPage: React.FC<SettingsPageProps> = () => {
   }
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto">
-      <div className="mb-4 sm:mb-6">
-        <Typography variant="h2" gradient as="h1" noMargin>
+    <div className="p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto relative">
+      {/* Animated background pattern */}
+      <div className="absolute inset-0 opacity-[0.01] dark:opacity-[0.02] pointer-events-none">
+        <motion.div
+          className="absolute inset-0"
+          animate={{
+            backgroundPosition: ['0% 0%', '100% 100%'],
+          }}
+          transition={{
+            duration: 20,
+            repeat: Infinity,
+            repeatType: 'reverse',
+          }}
+          style={{
+            backgroundImage: `repeating-linear-gradient(45deg, transparent, transparent 35px, rgba(166, 121, 240, 0.1) 35px, rgba(166, 121, 240, 0.1) 70px)`,
+            backgroundSize: '200% 200%',
+          }}
+        />
+      </div>
+      
+      {/* Glowing orbs */}
+      <motion.div
+        className="absolute top-0 right-0 w-48 h-48 bg-[#a679f0]/10 rounded-full blur-3xl pointer-events-none"
+        animate={{
+          scale: [1, 1.2, 1],
+          opacity: [0.1, 0.2, 0.1],
+        }}
+        transition={{
+          duration: 4,
+          repeat: Infinity,
+          ease: 'easeInOut',
+        }}
+      />
+      
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="mb-4 sm:mb-6 relative z-10"
+      >
+        <Typography 
+          variant="h2" 
+          className="font-bold text-4xl animate-gradient bg-gradient-to-r from-[#a679f0] via-[#5599fe] to-[#48df7b] bg-clip-text text-transparent"
+          style={{ backgroundSize: '200% 200%' }}
+          as="h1" 
+          noMargin
+        >
           Settings
         </Typography>
-      </div>
+      </motion.div>
       
       {error && (
         <div 
@@ -122,55 +173,99 @@ const SettingsPage: React.FC<SettingsPageProps> = () => {
         </div>
       )}
       
-      <Card className="shadow-xl">
+      <Card className="shadow-xl relative z-10 backdrop-blur-sm bg-white/95 dark:bg-gray-900/95">
         <div className="border-b border-gray-200 dark:border-gray-700 overflow-x-auto">
           <nav className="flex space-x-4 sm:space-x-8 px-4 sm:px-6 min-w-max" role="tablist" aria-label="Settings tabs">
-            {tabs.map(tab => {
+            {tabs.map((tab, index) => {
               const Icon = tab.icon
+              const isActive = activeTab === tab.key
+              const gradient = tabGradients[tab.key]
+              
               return (
-                <button
+                <motion.button
                   key={tab.key}
                   onClick={() => setActiveTab(tab.key)}
-                  className={`
-                    py-3 sm:py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2
-                    transition-all focus:outline-none focus:ring-2 focus:ring-brand-blue/50 focus:rounded-t-md min-h-[44px] touch-manipulation
-                    ${activeTab === tab.key
-                      ? 'border-brand-blue text-brand-blue'
-                      : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:border-gray-300 dark:hover:border-gray-600'
-                    }
-                  `}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, delay: index * 0.1 }}
+                  whileHover={{ y: -2 }}
+                  whileTap={{ scale: 0.98 }}
+                  className={cn(
+                    "py-3 sm:py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2",
+                    "transition-all focus:outline-none focus:ring-2 focus:ring-brand-blue/50 focus:rounded-t-md min-h-[44px] touch-manipulation relative",
+                    isActive
+                      ? 'border-transparent text-transparent'
+                      : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
+                  )}
                   role="tab"
                   aria-selected={activeTab === tab.key}
                   aria-controls={`${tab.key}-panel`}
                 >
-                  <Icon className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" aria-hidden="true" />
-                  <span className="whitespace-nowrap">
+                  {isActive && (
+                    <motion.div
+                      layoutId="activeTabBorder"
+                      className={cn(
+                        "absolute inset-x-0 bottom-0 h-0.5",
+                        `bg-gradient-to-r ${gradient}`
+                      )}
+                      transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                    />
+                  )}
+                  
+                  <div className={cn(
+                    "relative w-5 h-5 sm:w-6 sm:h-6 rounded-lg flex items-center justify-center transition-all duration-300",
+                    isActive && `bg-gradient-to-br ${gradient} shadow-lg`
+                  )}>
+                    <Icon className={cn(
+                      "w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0 transition-colors duration-300",
+                      isActive ? "text-white" : "text-current"
+                    )} aria-hidden="true" />
+                  </div>
+                  
+                  <span className={cn(
+                    "whitespace-nowrap transition-all duration-300",
+                    isActive && `bg-gradient-to-r ${gradient} bg-clip-text text-transparent font-semibold`
+                  )}>
                     {tab.label}
                   </span>
-                </button>
+                </motion.button>
               )
             })}
           </nav>
         </div>
         
         <CardContent className="p-4 sm:p-6">
-          <div 
+          <motion.div 
+            key={activeTab}
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            transition={{ duration: 0.3 }}
             role="tabpanel" 
             id={`${activeTab}-panel`}
             aria-labelledby={`${activeTab}-tab`}
           >
-            <ActiveComponent />
-          </div>
+            {activeTab === 'hedera' && <HederaSettings />}
+            {activeTab === 'llm' && <LLMSettings />}
+            {activeTab === 'advanced' && <AdvancedSettings />}
+          </motion.div>
         </CardContent>
         
         <div className="border-t border-gray-200 dark:border-gray-700 p-4 sm:p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div className="w-full sm:w-auto">
             {hasChanges && isConfigValid && (
-              <Typography variant="caption" color="muted">
-                <span role="status" aria-live="polite">
-                  Configuration will auto-save in 2 seconds...
-                </span>
-              </Typography>
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex items-center gap-2"
+              >
+                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                <Typography variant="caption" color="muted">
+                  <span role="status" aria-live="polite">
+                    Configuration will auto-save in 2 seconds...
+                  </span>
+                </Typography>
+              </motion.div>
             )}
             {hasChanges && !isConfigValid && (
               <Typography variant="caption" className="text-red-600 dark:text-red-400">

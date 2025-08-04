@@ -36,18 +36,18 @@ const Typography: React.FC<TypographyProps> = ({
   const Component = as || getComponent(variant)
 
   const variantClasses: Record<TypographyVariant, string> = {
-    h1: 'text-4xl md:text-5xl lg:text-6xl font-display font-bold tracking-tight',
-    h2: 'text-3xl md:text-4xl lg:text-5xl font-display font-bold tracking-tight',
-    h3: 'text-2xl md:text-3xl lg:text-4xl font-display font-semibold',
-    h4: 'text-xl md:text-2xl lg:text-3xl font-display font-semibold',
-    h5: 'text-lg md:text-xl lg:text-2xl font-display font-medium',
-    h6: 'text-base md:text-lg lg:text-xl font-display font-medium',
-    subtitle1: 'text-lg font-medium',
-    subtitle2: 'text-base font-medium',
-    body1: 'text-base font-normal',
-    body2: 'text-sm font-normal',
-    caption: 'text-xs font-normal',
-    overline: 'text-xs font-medium uppercase tracking-wide',
+    h1: 'text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight',
+    h2: 'text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold tracking-tight',
+    h3: 'text-base sm:text-lg md:text-xl font-bold',
+    h4: 'text-sm sm:text-base md:text-lg font-bold',
+    h5: 'text-base sm:text-lg md:text-xl font-medium',
+    h6: 'text-sm sm:text-base md:text-lg font-medium',
+    subtitle1: 'text-sm sm:text-base md:text-lg font-semibold',
+    subtitle2: 'text-xs sm:text-sm md:text-base font-semibold',
+    body1: 'text-xs sm:text-sm md:text-base font-normal',
+    body2: 'text-xs sm:text-sm font-normal',
+    caption: 'text-xs font-medium',
+    overline: 'text-xs font-medium uppercase tracking-widest font-mono',
   }
 
   const colorClasses = gradient

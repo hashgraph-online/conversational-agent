@@ -124,7 +124,13 @@ export class AgentService {
               break;
             case 'custom':
               command = server.config.command;
-              args = server.config.args ? server.config.args.split(' ') : [];
+              if (server.config.args) {
+                args = Array.isArray(server.config.args) 
+                  ? server.config.args 
+                  : server.config.args.split(' ');
+              } else {
+                args = [];
+              }
               break;
             default:
               command = server.config.command || 'echo';
@@ -332,5 +338,12 @@ export class AgentService {
    */
   isInitializing(): boolean {
     return this.initializing;
+  }
+
+  /**
+   * Get the current agent instance
+   */
+  getAgent(): SafeConversationalAgent | null {
+    return this.agent;
   }
 }

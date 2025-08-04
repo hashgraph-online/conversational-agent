@@ -40,6 +40,8 @@ export interface ElectronAPI {
   getMCPRegistryServerDetails: (serverId: string, packageName?: string) => Promise<{ success: boolean; data?: any; error?: string }>
   installMCPFromRegistry: (serverId: string, packageName?: string) => Promise<{ success: boolean; data?: any; error?: string }>
   clearMCPRegistryCache: () => Promise<{ success: boolean; error?: string }>
+  getMCPCacheStats: () => Promise<{ success: boolean; data?: any; error?: string }>
+  triggerMCPBackgroundSync: () => Promise<{ success: boolean; data?: any; error?: string }>
   
   send: (channel: string, data?: any) => void
   invoke: (channel: string, data?: any) => Promise<any>

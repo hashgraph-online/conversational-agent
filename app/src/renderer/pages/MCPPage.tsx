@@ -37,6 +37,7 @@ const MCPPage: React.FC = () => {
     toggleServer,
     testConnection,
     loadServers,
+    reloadServers,
     clearError,
   } = useMCPStore();
 
@@ -49,6 +50,15 @@ const MCPPage: React.FC = () => {
       setIsAddModalOpen(true);
     }
   }, [serverTemplate]);
+
+  // Periodic reload to catch tools updated asynchronously
+  useEffect(() => {
+    const interval = setInterval(() => {
+      reloadServers();
+    }, 5000); // Check every 5 seconds
+
+    return () => clearInterval(interval);
+  }, [reloadServers]);
 
   const handleAddServer = async (data: MCPServerFormData) => {
     try {
@@ -236,7 +246,7 @@ const MCPPage: React.FC = () => {
                   </div>
                   <div className='text-center'>
                     <div className='text-2xl font-bold text-green-600 dark:text-green-400'>
-                      {servers.filter((s) => s.status === 'connected').length}
+                      {servers.filter((s) => s.status === 'connected' || s.status === 'ready').length}
                     </div>
                     <div className='text-sm text-gray-500 dark:text-gray-400'>
                       Connected
@@ -247,7 +257,7 @@ const MCPPage: React.FC = () => {
                   <div className='text-center'>
                     <div className='text-2xl font-bold text-blue-600 dark:text-blue-400'>
                       {servers
-                        .filter((s) => s.status === 'connected' && s.enabled)
+                        .filter((s) => (s.status === 'connected' || s.status === 'ready') && s.enabled)
                         .reduce((acc, s) => acc + (s.tools?.length || 0), 0)}
                     </div>
                     <div className='text-sm text-gray-500 dark:text-gray-400'>

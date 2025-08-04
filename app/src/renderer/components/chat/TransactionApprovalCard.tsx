@@ -257,7 +257,6 @@ export const TransactionApprovalCard: React.FC<TransactionApprovalCardProps> = (
                 )}
               />
             ) : scheduleInfo?.transactionBody && (
-              /* Fallback display if parsing fails */
               <div className="bg-white/50 dark:bg-gray-900/30 rounded-lg p-3">
                 <Typography variant="caption" color="secondary" className="block mb-2">
                   Transaction Details

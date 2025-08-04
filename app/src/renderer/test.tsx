@@ -3,7 +3,6 @@ import ReactDOM from 'react-dom/client'
 
 const TestApp = () => {
   React.useEffect(() => {
-    console.log('React Test App mounted!')
   }, [])
   
   return (
@@ -16,13 +15,9 @@ const TestApp = () => {
   )
 }
 
-console.log('Test script loading...')
 const root = document.getElementById('root')
-console.log('Root element:', root)
 
 if (root) {
   ReactDOM.createRoot(root).render(<TestApp />)
-  console.log('React render called')
 } else {
-  console.error('No root element found!')
 }

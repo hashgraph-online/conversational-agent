@@ -139,7 +139,6 @@ export const MCPConnectionTester: React.FC<MCPConnectionTesterProps> = ({
           </Typography>
         </div>
 
-        {/* Progress Indicator */}
         {(loading || testProgress.stage !== TestStage.Idle) && (
           <div className="space-y-3">
             <div className="flex items-center gap-3">
@@ -165,7 +164,6 @@ export const MCPConnectionTester: React.FC<MCPConnectionTesterProps> = ({
               </div>
             </div>
 
-            {/* Progress Bar */}
             <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 overflow-hidden">
               <div
                 className={cn(
@@ -176,7 +174,6 @@ export const MCPConnectionTester: React.FC<MCPConnectionTesterProps> = ({
               />
             </div>
 
-            {/* Stage Steps */}
             <div className="grid grid-cols-4 gap-2 text-xs">
               {[
                 { stage: TestStage.Connecting, label: 'Connect' },
@@ -200,7 +197,6 @@ export const MCPConnectionTester: React.FC<MCPConnectionTesterProps> = ({
           </div>
         )}
 
-        {/* Test Results */}
         {result && testProgress.stage === TestStage.Complete && (
           <div className={cn(
             "p-4 rounded-lg border",
@@ -261,7 +257,6 @@ export const MCPConnectionTester: React.FC<MCPConnectionTesterProps> = ({
           </div>
         )}
 
-        {/* Action Buttons */}
         <div className="flex gap-2">
           {!loading && testProgress.stage === TestStage.Idle && (
             <Button

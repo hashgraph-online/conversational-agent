@@ -61,6 +61,7 @@ declare global {
       sendMessage: (data: { content: string; sessionId: string }) => Promise<Message>
       
       initializeAgent: (config: any) => Promise<{ success: boolean; data?: { sessionId?: string }; error?: string }>
+      preloadAgent: (config: any) => Promise<{ success: boolean; error?: string }>
       sendAgentMessage: (data: any) => Promise<{ success: boolean; data?: any; error?: string }>
       disconnectAgentNew: () => Promise<{ success: boolean; error?: string }>
       getAgentStatus: () => Promise<{ success: boolean; data?: any; error?: string }>
@@ -81,9 +82,6 @@ declare global {
       configurePlugin: (pluginId: string, config: Record<string, any>) => Promise<{ success: boolean; error?: string }>
       grantPluginPermissions: (pluginId: string, permissions: PluginPermissions) => Promise<{ success: boolean; error?: string }>
       revokePluginPermissions: (pluginId: string, permissions: PluginPermissions) => Promise<{ success: boolean; data?: PluginPermissions; error?: string }>
-      loadLocalPlugin: (path: string) => Promise<{ success: boolean; data?: PluginConfig; error?: string }>
-      reloadLocalPlugin: (pluginId: string) => Promise<{ success: boolean; data?: PluginConfig; error?: string }>
-      setPluginRegistry: (registry: string, auth?: { token?: string; username?: string; password?: string }) => Promise<{ success: boolean; error?: string }>
       getInstalledPlugins: () => Promise<{ success: boolean; data?: PluginConfig[]; error?: string }>
       checkPluginUpdates: () => Promise<{ success: boolean; data?: PluginUpdateInfo[]; error?: string }>
       
@@ -109,6 +107,15 @@ declare global {
       
       send: (channel: string, data?: any) => void
       invoke: (channel: string, data?: any) => Promise<any>
+      on: (channel: string, callback: (...args: any[]) => void) => () => void
+      removeListener: (channel: string, callback: (...args: any[]) => void) => void
+      openExternal: (url: string) => Promise<void>
+    }
+    
+    api: {
+      invoke: (channel: string, data?: any) => Promise<any>
+      on: (channel: string, callback: (...args: any[]) => void) => () => void
+      removeListener: (channel: string, callback: (...args: any[]) => void) => void
     }
   }
 }

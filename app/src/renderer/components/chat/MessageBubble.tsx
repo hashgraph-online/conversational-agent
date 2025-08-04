@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import Typography from '../ui/Typography';
 import type { Message } from '../../stores/agentStore';
 import { FiUser, FiCpu, FiHash, FiClock } from 'react-icons/fi';
@@ -8,6 +8,7 @@ import { TransactionApprovalButton } from './TransactionApprovalButton';
 import { useNotificationStore } from '../../stores/notificationStore';
 import { useAgentStore } from '../../stores/agentStore';
 import { useConfigStore } from '../../stores/configStore';
+import { CodeBlock } from '../ui/CodeBlock';
 
 interface MessageBubbleProps {
   message: Message;
@@ -43,10 +44,8 @@ function parseScheduleMessage(content: string, isUser: boolean): string {
  * @returns Cleaned message content
  */
 function cleanMessageContent(content: string): string {
-  // Remove hidden file content sections
   const cleanedContent = content.replace(/\n\n<!-- HIDDEN_FILE_CONTENT -->[\s\S]*?<!-- END_HIDDEN_FILE_CONTENT -->/g, '');
   
-  // Also remove individual file sections if any remain
   return cleanedContent.replace(/\n<!-- FILE_START:.*? -->[\s\S]*?<!-- FILE_END:.*? -->/g, '');
 }
 
@@ -61,6 +60,72 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
   );
   const config = useConfigStore((state) => state.config);
   const operationalMode = config?.advanced?.operationalMode || 'autonomous';
+
+  const contentParts = useMemo(() => {
+    const cleanedContent = cleanMessageContent(message.content);
+    const parsedContent = parseScheduleMessage(cleanedContent, isUser);
+    
+    const codePattern = /```([a-z]*)\n([\s\S]*?)```/g;
+    let lastIndex = 0;
+    const results = [];
+    let match;
+
+    while ((match = codePattern.exec(parsedContent)) !== null) {
+      if (match.index > lastIndex) {
+        results.push({
+          type: 'text',
+          content: parsedContent.slice(lastIndex, match.index),
+        });
+      }
+
+      results.push({
+        type: 'code',
+        language: match[1] || 'typescript',
+        content: match[2].trim(),
+      });
+
+      lastIndex = match.index + match[0].length;
+    }
+
+    if (lastIndex < parsedContent.length) {
+      results.push({
+        type: 'text',
+        content: parsedContent.slice(lastIndex),
+      });
+    }
+
+    return results;
+  }, [message.content, isUser]);
+
+  const processMarkdown = (text: string) => {
+    let processed = text;
+
+    processed = processed.replace(/`([^`]+)`/g, (_, code) => {
+      return `<code class="inline-code-style">${code}</code>`;
+    });
+
+    processed = processed.replace(/\*\*([^*]+)\*\*/g, '<strong class="font-semibold">$1</strong>');
+    processed = processed.replace(/__([^_]+)__/g, '<strong class="font-semibold">$1</strong>');
+
+    processed = processed.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+    processed = processed.replace(/_([^_]+)_/g, '<em>$1</em>');
+
+    processed = processed.replace(
+      /\[([^\]]+)\]\(([^)]+)\)/g,
+      '<a href="$2" target="_blank" rel="noopener noreferrer" class="underline text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300">$1</a>'
+    );
+
+    processed = processed.replace(/^### (.*$)/gm, '<h3 class="text-lg font-bold mt-4 mb-2">$1</h3>');
+    processed = processed.replace(/^## (.*$)/gm, '<h2 class="text-xl font-bold mt-4 mb-2">$1</h2>');
+    processed = processed.replace(/^# (.*$)/gm, '<h1 class="text-2xl font-bold mt-4 mb-2">$1</h1>');
+
+    processed = processed.replace(/^\s*[-*] (.+)$/gm, '<li class="ml-4">• $1</li>');
+    processed = processed.replace(/(<li.*<\/li>)/s, '<ul class="my-2">$1</ul>');
+    
+    processed = processed.replace(/\n/g, '<br />');
+
+    return processed;
+  };
 
   useEffect(() => {
   }, [message.metadata?.scheduleId, operationalMode, config?.advanced]);
@@ -106,13 +171,12 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
           isUser ? 'flex-row-reverse space-x-reverse' : 'flex-row'
         )}
       >
-        {/* Avatar */}
         <div
           className={cn(
             'flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center',
             isUser
-              ? 'bg-gradient-to-r from-brand-blue to-brand-purple'
-              : 'bg-gradient-to-r from-brand-teal to-brand-green'
+              ? 'bg-gradient-to-r from-blue-500 to-purple-500'
+              : 'bg-gradient-to-r from-teal-500 to-green-500'
           )}
           aria-hidden='true'
         >
@@ -123,7 +187,6 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
           )}
         </div>
 
-        {/* Message Content */}
         <div
           className={cn(
             'flex flex-col space-y-1',
@@ -134,20 +197,48 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
             className={cn(
               'px-4 py-3 rounded-2xl shadow-sm',
               isUser
-                ? 'bg-gradient-to-r from-brand-blue to-brand-purple text-white rounded-br-md'
+                ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-br-md'
                 : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-bl-md'
             )}
           >
-            <Typography
-              variant='body1'
-              color={isUser ? 'white' : 'default'}
-              className='whitespace-pre-wrap break-words'
-            >
-              {parseScheduleMessage(cleanMessageContent(message.content), isUser)}
-            </Typography>
+            <div className='space-y-2'>
+              {contentParts.map((part, index) => {
+                if (part.type === 'code') {
+                  return (
+                    <CodeBlock
+                      key={`code-${index}`}
+                      code={part.content}
+                      language={part.language}
+                      showLineNumbers
+                      className='my-2'
+                    />
+                  );
+                }
+
+                if (isUser) {
+                  return (
+                    <Typography
+                      key={`text-${index}`}
+                      variant='body1'
+                      color='white'
+                      className='whitespace-pre-wrap break-words'
+                    >
+                      {part.content}
+                    </Typography>
+                  );
+                }
+
+                return (
+                  <div
+                    key={`text-${index}`}
+                    className='prose prose-sm dark:prose-invert max-w-none prose-p:my-1 prose-headings:my-2 prose-ul:my-1 prose-li:my-0 [&_.inline-code-style]:bg-gray-200 [&_.inline-code-style]:dark:bg-gray-700 [&_.inline-code-style]:px-1.5 [&_.inline-code-style]:py-0.5 [&_.inline-code-style]:rounded [&_.inline-code-style]:font-mono [&_.inline-code-style]:text-xs'
+                    dangerouslySetInnerHTML={{ __html: processMarkdown(part.content) }}
+                  />
+                );
+              })}
+            </div>
           </div>
 
-          {/* Metadata */}
           <div
             className={cn(
               'flex items-center space-x-2 px-2',
@@ -166,7 +257,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
             {message.metadata?.transactionId && (
               <div className='flex items-center space-x-1'>
                 <FiHash
-                  className='w-3 h-3 text-brand-teal'
+                  className='w-3 h-3 text-teal-500'
                   aria-hidden='true'
                 />
                 <Typography
@@ -183,12 +274,11 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
               </div>
             )}
 
-            {/* Show schedule ID in autonomous mode */}
             {operationalMode === 'autonomous' &&
               message.metadata?.scheduleId && (
                 <div className='flex items-center space-x-1'>
                   <FiClock
-                    className='w-3 h-3 text-brand-purple'
+                    className='w-3 h-3 text-purple-500'
                     aria-hidden='true'
                   />
                   <Typography
@@ -204,7 +294,6 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
               )}
           </div>
 
-          {/* Transaction Notes */}
           {message.metadata?.notes && message.metadata.notes.length > 0 && (
             <div
               className={cn(
@@ -237,7 +326,6 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
             </div>
           )}
 
-          {/* Transaction Display for Return Bytes Mode - Raw Bytes */}
           {operationalMode === 'returnBytes' &&
             message.metadata?.transactionBytes &&
             !isUser && (
@@ -262,7 +350,6 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
               />
             )}
 
-          {/* Transaction Approval for Return Bytes Mode - Scheduled Transactions */}
           {operationalMode === 'returnBytes' &&
             message.metadata?.scheduleId &&
             !isUser && (

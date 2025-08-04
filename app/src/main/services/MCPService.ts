@@ -55,6 +55,7 @@ export class MCPService {
   private validator: MCPServerValidator
   private connectionHealthMap: Map<string, MCPConnectionHealth> = new Map()
   private connectionStartTimes: Map<string, Date> = new Map()
+  private connectingServers: Set<string> = new Set()
 
   private constructor() {
     this.logger = new Logger({ module: 'MCPService' })
@@ -79,7 +80,18 @@ export class MCPService {
     try {
       if (fs.existsSync(this.configPath)) {
         const data = await fs.promises.readFile(this.configPath, 'utf8')
-        this.serverConfigs = JSON.parse(data)
+        const loadedConfigs = JSON.parse(data)
+        
+        // Reset all connection status to disconnected on load
+        // Connection status is runtime state, not persisted state
+        this.serverConfigs = loadedConfigs.map((config: MCPServerConfig) => ({
+          ...config,
+          status: 'disconnected' as const,
+          errorMessage: undefined,
+          lastConnected: config.lastConnected, // Keep last connected time
+          tools: config.tools || [] // Preserve tools from JSON file
+        }))
+        
         this.logger.info(`Loaded ${this.serverConfigs.length} MCP server configurations`)
       } else {
         this.serverConfigs = this.getDefaultServers()
@@ -276,6 +288,15 @@ export class MCPService {
    */
   async connectServer(serverId: string): Promise<MCPConnectionResult> {
     try {
+      // Prevent multiple simultaneous connections to the same server
+      if (this.connectingServers.has(serverId) || this.servers.has(serverId)) {
+        this.logger.warn(`Connection to server ${serverId} already in progress or connected, skipping`)
+        return {
+          success: true, // Return success if already connected
+          tools: []
+        }
+      }
+
       const serverConfig = this.serverConfigs.find(s => s.id === serverId)
       if (!serverConfig) {
         return {
@@ -283,6 +304,8 @@ export class MCPService {
           error: 'Server configuration not found'
         }
       }
+
+      this.connectingServers.add(serverId)
 
       const validationResult = await this.validator.validate(serverConfig)
       
@@ -353,27 +376,19 @@ export class MCPService {
           if (!connected) {
             connected = true
             clearTimeout(timeout)
+            this.connectingServers.delete(serverId) // Remove from connecting set
             this.logger.info(`Successfully connected to MCP server: ${serverConfig.name}`)
             
             serverConfig.status = 'handshaking'
             
-            this.getServerTools(serverId).then(tools => {
-              serverConfig.status = 'ready'
-              this.updateConnectionHealth(serverId, 'success')
-              
-              resolve({
-                success: true,
-                tools
-              })
-            }).catch(() => {
-              serverConfig.status = 'connected'
-              this.updateConnectionHealth(serverId, 'success')
-              
-              resolve({
-                success: true,
-                tools: []
-              })
+            // Immediately resolve with success, then fetch tools in background
+            resolve({
+              success: true,
+              tools: []
             })
+            
+            // Fetch tools immediately after connection is established
+            this.fetchAndSaveTools(serverId)
           }
         })
 
@@ -381,6 +396,7 @@ export class MCPService {
           if (!connected) {
             connected = true
             clearTimeout(timeout)
+            this.connectingServers.delete(serverId) // Remove from connecting set
             this.servers.delete(serverId)
             serverConfig.status = 'error'
             serverConfig.errorMessage = error.message
@@ -403,6 +419,7 @@ export class MCPService {
 
         childProcess.on('close', (code: number | null) => {
           this.servers.delete(serverId)
+          this.connectingServers.delete(serverId) // Remove from connecting set
           if (!connected) {
             connected = true
             clearTimeout(timeout)
@@ -414,6 +431,7 @@ export class MCPService {
         })
       })
     } catch (error) {
+      this.connectingServers.delete(serverId) // Remove from connecting set on error
       this.logger.error(`Failed to connect to server ${serverId}:`, error)
       return {
         success: false,
@@ -451,33 +469,91 @@ export class MCPService {
 
       return new Promise((resolve, reject) => {
         const timeout = setTimeout(() => {
-          reject(new Error('Tools request timed out'))
-        }, 5000)
+          this.logger.warn(`Tools request timed out for server ${serverId}`)
+          resolve([]) // Return empty array instead of rejecting
+        }, 15000) // Increase timeout to 15 seconds
 
-        let responseData = ''
+        let responseBuffer = ''
+        let initialized = false
 
         const onData = (data: Buffer) => {
-          responseData += data.toString()
-          try {
-            const response = JSON.parse(responseData)
-            if (response.result && Array.isArray(response.result.tools)) {
-              clearTimeout(timeout)
-              process.stdout?.off('data', onData)
-              resolve(response.result.tools)
+          responseBuffer += data.toString()
+          const lines = responseBuffer.split('\n')
+          responseBuffer = lines.pop() || '' // Keep incomplete line in buffer
+
+          for (const line of lines) {
+            if (!line.trim()) continue
+
+            try {
+              const response = JSON.parse(line)
+              this.logger.debug(`MCP Server ${serverId} response:`, response)
+
+              // Handle initialization response first
+              if (!initialized && response.result && response.result.protocolVersion) {
+                initialized = true
+                this.logger.info(`MCP Server ${serverId} initialized with protocol version ${response.result.protocolVersion}`)
+                
+                // Now request tools
+                const toolsRequest = {
+                  jsonrpc: '2.0',
+                  id: Date.now(),
+                  method: 'tools/list'
+                }
+                process.stdin?.write(JSON.stringify(toolsRequest) + '\n')
+                continue
+              }
+
+              // Handle tools list response
+              if (response.result && Array.isArray(response.result.tools)) {
+                clearTimeout(timeout)
+                // Don't remove the data listener immediately - let it stay active
+                this.logger.info(`Retrieved ${response.result.tools.length} tools from server ${serverId}`)
+                resolve(response.result.tools)
+                return
+              }
+
+              // Handle error responses
+              if (response.error) {
+                this.logger.error(`MCP Server ${serverId} error:`, response.error)
+                if (response.error.code === -32601) {
+                  // Method not found - server might not support tools/list
+                  clearTimeout(timeout)
+                  // Don't remove the data listener - let it stay active
+                  resolve([])
+                  return
+                }
+              }
+            } catch (parseError) {
+              // Not JSON or malformed - continue processing other lines
+              continue
             }
-          } catch {
           }
         }
 
         process.stdout?.on('data', onData)
+        process.stderr?.on('data', (data: Buffer) => {
+          this.logger.debug(`MCP Server ${serverId} stderr:`, data.toString())
+        })
 
-        const request = {
+        // Start with initialization
+        const initRequest = {
           jsonrpc: '2.0',
-          id: Date.now(),
-          method: 'tools/list'
+          id: 1,
+          method: 'initialize',
+          params: {
+            protocolVersion: '2024-11-05',
+            capabilities: {
+              tools: {}
+            },
+            clientInfo: {
+              name: 'conversational-agent',
+              version: '1.0.0'
+            }
+          }
         }
 
-        process.stdin?.write(JSON.stringify(request) + '\n')
+        this.logger.debug(`Sending initialize request to server ${serverId}`)
+        process.stdin?.write(JSON.stringify(initRequest) + '\n')
       })
     } catch (error) {
       this.logger.error(`Failed to get tools from server ${serverId}:`, error)
@@ -495,6 +571,87 @@ export class MCPService {
     
     await Promise.allSettled(disconnectPromises)
     this.logger.info('Disconnected from all MCP servers')
+  }
+
+  /**
+   * Fetch and save tools for a server (internal method)
+   */
+  private async fetchAndSaveTools(serverId: string): Promise<void> {
+    // Use a delay to ensure server is fully ready
+    setTimeout(async () => {
+      try {
+        // Check if server is still connected before fetching tools
+        if (this.servers.has(serverId)) {
+          this.logger.debug(`Attempting to fetch tools for server ${serverId}`)
+          const tools = await this.getServerTools(serverId)
+          this.logger.info(`Successfully fetched ${tools.length} tools from server ${serverId}`)
+          
+          // Update the server config in memory
+          const currentServerConfig = this.serverConfigs.find(s => s.id === serverId)
+          if (currentServerConfig) {
+            this.logger.info(`Before updating tools for ${serverId}: existing tools = ${(currentServerConfig.tools || []).length}`)
+            currentServerConfig.status = 'ready'
+            currentServerConfig.tools = tools // Save tools to server config
+            currentServerConfig.lastConnected = new Date()
+            currentServerConfig.updatedAt = new Date()
+            this.updateConnectionHealth(serverId, 'success')
+            
+            this.logger.info(`After updating tools for ${serverId}: new tools = ${tools.length}`)
+            this.logger.debug(`Tools being saved for ${serverId}:`, tools.map(t => t.name).join(', '))
+            
+            // Save the updated server config with tools
+            await this.saveServers(this.serverConfigs)
+            this.logger.info(`Server ${serverId} now ready with ${tools.length} tools saved to disk`)
+            
+            // Verify tools were actually saved
+            const verifyConfig = this.serverConfigs.find(s => s.id === serverId)
+            if (verifyConfig && verifyConfig.tools) {
+              this.logger.info(`Verification: ${serverId} has ${verifyConfig.tools.length} tools in memory after save`)
+            }
+          } else {
+            this.logger.error(`Server config for ${serverId} not found when trying to save tools`)
+          }
+        } else {
+          this.logger.warn(`Server ${serverId} was disconnected before tools could be fetched`)
+        }
+      } catch (toolsError) {
+        this.logger.error(`Failed to fetch tools for ${serverId}:`, toolsError)
+        const currentServerConfig = this.serverConfigs.find(s => s.id === serverId)
+        if (currentServerConfig) {
+          currentServerConfig.status = 'connected'
+          // Don't clear tools on error - preserve existing tools if any
+          // currentServerConfig.tools remains unchanged
+          currentServerConfig.lastConnected = new Date()
+          currentServerConfig.updatedAt = new Date()
+          this.updateConnectionHealth(serverId, 'success')
+          
+          // Save the updated server config (preserving existing tools)
+          await this.saveServers(this.serverConfigs)
+        }
+      }
+    }, 2000) // Wait 2 seconds for server to be fully ready
+  }
+
+  /**
+   * Refresh tools for a connected server
+   */
+  async refreshServerTools(serverId: string): Promise<MCPServerTool[]> {
+    const serverConfig = this.serverConfigs.find(s => s.id === serverId)
+    if (!serverConfig || serverConfig.status !== 'ready' && serverConfig.status !== 'connected') {
+      this.logger.warn(`Server ${serverId} is not connected, cannot refresh tools`)
+      return []
+    }
+
+    try {
+      const tools = await this.getServerTools(serverId)
+      serverConfig.tools = tools
+      await this.saveServers(this.serverConfigs)
+      this.logger.info(`Refreshed tools for server ${serverId}: ${tools.length} tools found`)
+      return tools
+    } catch (error) {
+      this.logger.error(`Failed to refresh tools for server ${serverId}:`, error)
+      return serverConfig.tools || []
+    }
   }
 
   /**

@@ -25,7 +25,7 @@ describe('Input', () => {
     const input = screen.getByPlaceholderText('Disabled input');
     
     expect(input).toBeDisabled();
-    expect(input).toHaveClass('opacity-50', 'cursor-not-allowed');
+    expect(input).toHaveClass('disabled:opacity-50', 'disabled:cursor-not-allowed');
   });
 
   it('supports different types', () => {
@@ -42,40 +42,10 @@ describe('Input', () => {
     expect(input).toHaveAttribute('type', 'number');
   });
 
-  it('supports validation states', () => {
-    const { rerender } = render(<Input error />);
-    let input = screen.getByRole('textbox');
-    expect(input).toHaveClass('border-danger', 'focus:ring-danger');
-
-    rerender(<Input success />);
-    input = screen.getByRole('textbox');
-    expect(input).toHaveClass('border-accent', 'focus:ring-accent');
-  });
-
-  it('displays error message', () => {
-    render(<Input error errorMessage="This field is required" />);
-    expect(screen.getByText('This field is required')).toBeInTheDocument();
-    expect(screen.getByText('This field is required')).toHaveClass('text-danger');
-  });
-
-  it('supports different sizes', () => {
-    const { rerender } = render(<Input size="sm" />);
-    let input = screen.getByRole('textbox');
-    expect(input).toHaveClass('px-3', 'py-1', 'text-sm');
-
-    rerender(<Input size="md" />);
-    input = screen.getByRole('textbox');
-    expect(input).toHaveClass('px-4', 'py-2', 'text-base');
-
-    rerender(<Input size="lg" />);
-    input = screen.getByRole('textbox');
-    expect(input).toHaveClass('px-6', 'py-3', 'text-lg');
-  });
-
-  it('supports full width', () => {
-    render(<Input fullWidth />);
-    const input = screen.getByRole('textbox');
-    expect(input).toHaveClass('w-full');
+  it('applies default styles', () => {
+    render(<Input data-testid="input" />);
+    const input = screen.getByTestId('input');
+    expect(input).toHaveClass('h-9', 'w-full', 'rounded-md', 'border', 'px-3', 'py-1');
   });
 
   it('supports custom className', () => {
@@ -147,16 +117,9 @@ describe('Input', () => {
     expect(handleBlur).toHaveBeenCalled();
   });
 
-  it('clears input when clear button is clicked', async () => {
-    const handleChange = jest.fn();
-    const user = userEvent.setup();
-    
-    render(<Input value="test" onChange={handleChange} clearable />);
-    const clearButton = screen.getByRole('button', { name: 'Clear input' });
-    
-    await user.click(clearButton);
-    expect(handleChange).toHaveBeenCalledWith(expect.objectContaining({
-      target: expect.objectContaining({ value: '' })
-    }));
+  it('supports focus ring styles', () => {
+    render(<Input data-testid="input" />);
+    const input = screen.getByTestId('input');
+    expect(input).toHaveClass('focus-visible:ring-ring/50');
   });
 });

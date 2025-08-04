@@ -2,14 +2,78 @@
 @import './spacing.css';
 @import './animations.css';
 @import 'tailwindcss';
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Base styles for dark mode support - HGO Design System */
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+  }
+
+  html.dark {
+    --background: 240 10% 3.9%; /* Deep black/navy like HGO */
+    --foreground: 0 0% 98%;
+  }
+
+  html {
+    @apply antialiased;
+  }
+
+  body {
+    @apply bg-white text-gray-900;
+    background-image: 
+      radial-gradient(at 20% 80%, rgb(120, 119, 198, 0.01) 0%, transparent 50%),
+      radial-gradient(at 80% 20%, rgb(85, 153, 254, 0.01) 0%, transparent 50%),
+      radial-gradient(at 40% 40%, rgb(72, 223, 123, 0.01) 0%, transparent 50%);
+    transition: background-color 0.5s ease-in-out, color 0.5s ease-in-out;
+  }
+
+  html.dark body {
+    @apply bg-[#0a0a0a] text-gray-100;
+    background-image: 
+      radial-gradient(at 20% 80%, rgb(120, 119, 198, 0.03) 0%, transparent 50%),
+      radial-gradient(at 80% 20%, rgb(85, 153, 254, 0.03) 0%, transparent 50%),
+      radial-gradient(at 40% 40%, rgb(72, 223, 123, 0.03) 0%, transparent 50%);
+  }
+  
+  /* Smooth transitions for all theme-affected elements */
+  * {
+    transition-property: background-color, border-color, color, fill, stroke, box-shadow, opacity;
+    transition-duration: 0.5s;
+    transition-timing-function: ease-in-out;
+  }
+  
+  /* Faster transitions for interactive elements */
+  button, a, input, textarea, select {
+    transition-duration: 0.3s;
+  }
+  
+  /* Special handling for backdrop filters and transforms */
+  .backdrop-blur-sm, .backdrop-blur, .backdrop-blur-md, .backdrop-blur-lg, .backdrop-blur-xl {
+    transition-property: backdrop-filter, background-color, border-color;
+    transition-duration: 0.5s;
+    transition-timing-function: ease-in-out;
+  }
+  
+  /* Disable transitions for elements that shouldn't animate */
+  pre, code, .no-transition {
+    transition: none !important;
+  }
+  
+  /* Prevent transition flash on page load */
+  .no-transition-on-load * {
+    transition: none !important;
+  }
+}
 
 /* HGO Design System Theme Configuration for Tailwind v4 */
 @theme {
+  
   /* Font families */
   --font-family-sans: "Roboto", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
   --font-family-mono: "Roboto Mono", ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace;
-  --font-family-jakarta: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
-  --font-family-styrene: "Styrene A", ui-sans-serif, system-ui, sans-serif;
+  --font-family-display: "Roboto", ui-sans-serif, system-ui, sans-serif;
   
   /* HGO Brand Colors - Updated to match hackathon.tsx */
   --color-brand-white: #ffffff;
@@ -161,6 +225,15 @@
   --color-hgo-purple: #a679f0;
   --color-hgo-green: #48df7b;
   --color-hgo-dark: #3f4174;
+
+  /* Light mode colors */
+  --color-border: hsl(0 0% 89.8%);
+  --color-input: hsl(0 0% 89.8%);
+  --color-ring: hsl(0 0% 3.9%);
+  --color-secondary: hsl(0 0% 96.1%);
+  --color-secondary-foreground: hsl(0 0% 9%);
+  --color-accent: hsl(0 0% 96.1%);
+  --color-accent-foreground: hsl(0 0% 9%);
 }
 
 /* Keyframes */
@@ -206,110 +279,6 @@
   100% { background-position: 100% 0; }
 }
 
-/* Define utilities for CSS variable colors */
-@utility border-border {
-  border-color: hsl(var(--border));
-}
-
-@utility bg-background {
-  background-color: hsl(var(--background));
-}
-
-@utility bg-foreground {
-  background-color: hsl(var(--foreground));
-}
-
-@utility text-foreground {
-  color: hsl(var(--foreground));
-}
-
-@utility bg-card {
-  background-color: hsl(var(--card));
-}
-
-@utility text-card-foreground {
-  color: hsl(var(--card-foreground));
-}
-
-@utility bg-popover {
-  background-color: hsl(var(--popover));
-}
-
-@utility text-popover-foreground {
-  color: hsl(var(--popover-foreground));
-}
-
-@utility bg-primary {
-  background-color: hsl(var(--primary));
-}
-
-@utility text-primary {
-  color: hsl(var(--primary));
-}
-
-@utility text-primary-foreground {
-  color: hsl(var(--primary-foreground));
-}
-
-@utility bg-secondary {
-  background-color: hsl(var(--secondary));
-}
-
-@utility text-secondary {
-  color: hsl(var(--secondary));
-}
-
-@utility text-secondary-foreground {
-  color: hsl(var(--secondary-foreground));
-}
-
-@utility bg-muted {
-  background-color: hsl(var(--muted));
-}
-
-@utility text-muted {
-  color: hsl(var(--muted));
-}
-
-@utility text-muted-foreground {
-  color: hsl(var(--muted-foreground));
-}
-
-@utility bg-accent {
-  background-color: hsl(var(--accent));
-}
-
-@utility text-accent {
-  color: hsl(var(--accent));
-}
-
-@utility text-accent-foreground {
-  color: hsl(var(--accent-foreground));
-}
-
-@utility bg-destructive {
-  background-color: hsl(var(--destructive));
-}
-
-@utility text-destructive {
-  color: hsl(var(--destructive));
-}
-
-@utility text-destructive-foreground {
-  color: hsl(var(--destructive-foreground));
-}
-
-@utility border-input {
-  border-color: hsl(var(--input));
-}
-
-@utility ring-ring {
-  --tw-ring-color: hsl(var(--ring));
-}
-
-@utility ring-offset-background {
-  --tw-ring-offset-color: hsl(var(--background));
-}
 
 /* Utility classes for gradients */
 @utility bg-gradient-radial {
@@ -358,28 +327,28 @@
 }
 
 .dark {
-  --background: 0 0% 3.9%;
+  --background: 240 10% 3.9%; /* HGO deep black */
   --foreground: 0 0% 98%;
-  --card: 0 0% 3.9%;
+  --card: 240 6% 10%; /* Slightly lighter for cards */
   --card-foreground: 0 0% 98%;
-  --popover: 0 0% 3.9%;
+  --popover: 240 6% 10%;
   --popover-foreground: 0 0% 98%;
   --primary: 221 79% 67%; /* Keep HGO brand blue */
   --primary-foreground: 0 0% 9%;
-  --secondary: 0 0% 14.9%;
+  --secondary: 240 5% 17%; /* Adjusted for HGO aesthetic */
   --secondary-foreground: 0 0% 98%;
-  --muted: 0 0% 14.9%;
-  --muted-foreground: 0 0% 63.9%;
-  --accent: 0 0% 14.9%;
-  --accent-foreground: 0 0% 98%;
+  --muted: 240 5% 25%;
+  --muted-foreground: 240 5% 65%;
+  --accent: 143 65% 61%; /* HGO green accent */
+  --accent-foreground: 0 0% 9%;
   --destructive: 0 62.8% 30.6%;
   --destructive-foreground: 0 0% 98%;
-  --border: 0 0% 14.9%;
-  --input: 0 0% 14.9%;
-  --ring: 0 0% 83.1%;
-  --chart-1: 220 70% 50%;
-  --chart-2: 160 60% 45%;
-  --chart-3: 30 80% 55%;
+  --border: 240 6% 20%;
+  --input: 240 6% 20%;
+  --ring: 221 79% 67%;
+  --chart-1: 221 79% 67%;
+  --chart-2: 262 52% 77%;
+  --chart-3: 143 65% 61%;
   --chart-4: 280 65% 60%;
   --chart-5: 340 75% 55%;
 }
@@ -398,7 +367,7 @@ html {
 
 body {
   margin: 0;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Oxygen',
+  font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Oxygen',
     'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
     sans-serif;
   font-weight: 400;
@@ -409,7 +378,7 @@ body {
 
 /* Typography defaults */
 h1, h2, h3, h4, h5, h6 {
-  font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+  font-family: 'Roboto', sans-serif;
   font-weight: 700;
   line-height: 1.2;
   margin-top: 0;
@@ -437,6 +406,84 @@ p {
   height: 100vh;
   display: flex;
   flex-direction: column;
+}
+
+@layer utilities {
+  .bg-background {
+    background-color: hsl(var(--background));
+  }
+  .text-foreground {
+    color: hsl(var(--foreground));
+  }
+  .bg-card {
+    background-color: hsl(var(--card));
+  }
+  .text-card-foreground {
+    color: hsl(var(--card-foreground));
+  }
+  .bg-popover {
+    background-color: hsl(var(--popover));
+  }
+  .text-popover-foreground {
+    color: hsl(var(--popover-foreground));
+  }
+  .bg-primary {
+    background-color: hsl(var(--primary));
+  }
+  .text-primary {
+    color: hsl(var(--primary));
+  }
+  .text-primary-foreground {
+    color: hsl(var(--primary-foreground));
+  }
+  .bg-secondary {
+    background-color: hsl(var(--secondary));
+  }
+  .text-secondary {
+    color: hsl(var(--secondary));
+  }
+  .text-secondary-foreground {
+    color: hsl(var(--secondary-foreground));
+  }
+  .bg-muted {
+    background-color: hsl(var(--muted));
+  }
+  .text-muted {
+    color: hsl(var(--muted));
+  }
+  .text-muted-foreground {
+    color: hsl(var(--muted-foreground));
+  }
+  .bg-accent {
+    background-color: hsl(var(--accent));
+  }
+  .text-accent {
+    color: hsl(var(--accent));
+  }
+  .text-accent-foreground {
+    color: hsl(var(--accent-foreground));
+  }
+  .bg-destructive {
+    background-color: hsl(var(--destructive));
+  }
+  .text-destructive {
+    color: hsl(var(--destructive));
+  }
+  .text-destructive-foreground {
+    color: hsl(var(--destructive-foreground));
+  }
+  .border-border {
+    border-color: hsl(var(--border));
+  }
+  .border-input {
+    border-color: hsl(var(--input));
+  }
+  .ring-ring {
+    --tw-ring-color: hsl(var(--ring));
+  }
+  .ring-offset-background {
+    --tw-ring-offset-color: hsl(var(--background));
+  }
 }
 
 @layer base {

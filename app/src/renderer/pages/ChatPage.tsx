@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { motion } from 'framer-motion'
 import Typography from '../components/ui/Typography'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/input'
@@ -28,6 +29,7 @@ import { cn } from '../lib/utils'
 import type { Message } from '../stores/agentStore'
 import { ModeToggle } from '../components/chat/ModeToggle'
 import MessageBubble from '../components/chat/MessageBubble'
+import { Disclaimer } from '../components/chat/Disclaimer'
 
 interface ChatPageProps {}
 
@@ -67,7 +69,11 @@ const ChatPage: React.FC<ChatPageProps> = () => {
       }
     }
 
-    initializeAgent()
+    const timer = setTimeout(() => {
+      initializeAgent()
+    }, 100)
+
+    return () => clearTimeout(timer)
   }, [config, isConfigComplete, isConnected, status, connect])
 
   useEffect(() => {
@@ -151,7 +157,6 @@ const ChatPage: React.FC<ChatPageProps> = () => {
       let messageToSend = message
       
       if (selectedFiles.length > 0) {
-        // Process files and create a hidden section for the agent
         const filePromises = selectedFiles.map(async (file) => {
           try {
             const base64Content = await fileToBase64(file)
@@ -163,14 +168,12 @@ const ChatPage: React.FC<ChatPageProps> = () => {
               return `\n<!-- FILE_START:${file.name} -->\n[File: ${file.name} (${(file.size / 1024).toFixed(1)}KB, ${fileType})]\nBase64 content:\n${base64Content}\n<!-- FILE_END:${file.name} -->\n`
             }
           } catch (error) {
-            console.error(`Failed to read file ${file.name}:`, error)
             return `\n<!-- FILE_ERROR:${file.name} -->\n[File: ${file.name} - Error reading file]\n<!-- FILE_ERROR_END -->\n`
           }
         })
         
         const fileContents = await Promise.all(filePromises)
         
-        // Create a user-friendly message with file list
         const fileList = selectedFiles.map(file => {
           const sizeStr = file.size > 1024 * 1024 
             ? `${(file.size / (1024 * 1024)).toFixed(1)}MB`
@@ -182,7 +185,6 @@ const ChatPage: React.FC<ChatPageProps> = () => {
           ? `${message}\n\nAttached files:\n${fileList}`
           : `Attached files:\n${fileList}`
         
-        // Combine visible part with hidden file content
         messageToSend = `${userVisiblePart}\n\n<!-- HIDDEN_FILE_CONTENT -->\n${fileContents.join('')}\n<!-- END_HIDDEN_FILE_CONTENT -->`
       }
       
@@ -217,7 +219,6 @@ const ChatPage: React.FC<ChatPageProps> = () => {
   if (!isConfigComplete) {
     return (
       <div className="flex flex-col h-full bg-gray-50 dark:bg-gray-950">
-        {/* Header */}
         <header className="h-16 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between px-6">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-gradient-to-br from-[#a679f0] to-[#5599fe] rounded-xl flex items-center justify-center">
@@ -229,7 +230,6 @@ const ChatPage: React.FC<ChatPageProps> = () => {
           </div>
         </header>
 
-        {/* Content */}
         <div className="flex-1 flex items-center justify-center p-8">
           <div className="text-center space-y-6 max-w-lg animate-fade-in">
             <div className="w-20 h-20 bg-gradient-to-br from-[#a679f0] to-[#5599fe] rounded-2xl flex items-center justify-center mx-auto animate-float">
@@ -258,10 +258,9 @@ const ChatPage: React.FC<ChatPageProps> = () => {
     )
   }
 
-  if (!isConnected && !['connecting'].includes(status)) {
+  if (!isConnected) {
     return (
       <div className="flex flex-col h-full bg-gray-50 dark:bg-gray-950">
-        {/* Header */}
         <header className="h-16 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between px-6">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-gradient-to-br from-[#a679f0] to-[#5599fe] rounded-xl flex items-center justify-center">
@@ -273,60 +272,127 @@ const ChatPage: React.FC<ChatPageProps> = () => {
           </div>
         </header>
 
-        {/* Content */}
         <div className="flex-1 flex items-center justify-center p-8">
-          <div className="text-center space-y-6 max-w-lg animate-fade-in">
-            <div className="w-20 h-20 bg-gradient-to-br from-[#48df7b] to-[#5599fe] rounded-2xl flex items-center justify-center mx-auto animate-float">
-              <FiRefreshCw className="w-10 h-10 text-white" />
+          {status === 'connecting' ? (
+            <div className="text-center space-y-6 max-w-lg animate-fade-in">
+              <div className="w-20 h-20 bg-gradient-to-br from-[#a679f0] to-[#5599fe] rounded-2xl flex items-center justify-center mx-auto">
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
+                >
+                  <FiRefreshCw className="w-10 h-10 text-white" />
+                </motion.div>
+              </div>
+              <div className="space-y-3">
+                <Typography variant="h3" gradient className="font-bold">
+                  Connecting to Agent
+                </Typography>
+                <Typography variant="body1" color="muted" className="max-w-md mx-auto">
+                  Initializing your AI assistant. This may take a moment...
+                </Typography>
+                <div className="flex flex-col gap-2 mt-4">
+                  <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                    <motion.div
+                      className="w-2 h-2 bg-[#5599fe] rounded-full"
+                      animate={{ opacity: [0.3, 1, 0.3] }}
+                      transition={{ duration: 1.5, repeat: Infinity }}
+                    />
+                    Loading MCP servers...
+                  </div>
+                  <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                    <motion.div
+                      className="w-2 h-2 bg-[#a679f0] rounded-full"
+                      animate={{ opacity: [0.3, 1, 0.3] }}
+                      transition={{ duration: 1.5, repeat: Infinity, delay: 0.5 }}
+                    />
+                    Establishing Hedera connection...
+                  </div>
+                  <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                    <motion.div
+                      className="w-2 h-2 bg-[#48df7b] rounded-full"
+                      animate={{ opacity: [0.3, 1, 0.3] }}
+                      transition={{ duration: 1.5, repeat: Infinity, delay: 1 }}
+                    />
+                    Configuring AI model...
+                  </div>
+                </div>
+              </div>
             </div>
-            <div className="space-y-3">
-              <Typography variant="h3" gradient className="font-bold">
-                Ready to Connect
-              </Typography>
-              <Typography variant="body1" color="muted" className="max-w-md mx-auto">
-                {connectionError 
-                  ? `Connection failed: ${connectionError}. Please check your configuration and try again.`
-                  : 'Your AI assistant is ready to start. Click below to establish a secure connection and begin chatting.'
-                }
-              </Typography>
+          ) : (
+            <div className="text-center space-y-6 max-w-lg animate-fade-in">
+              <div className="w-20 h-20 bg-gradient-to-br from-[#48df7b] to-[#5599fe] rounded-2xl flex items-center justify-center mx-auto animate-float">
+                <FiRefreshCw className="w-10 h-10 text-white" />
+              </div>
+              <div className="space-y-3">
+                <Typography variant="h3" gradient className="font-bold">
+                  Ready to Connect
+                </Typography>
+                <Typography variant="body1" color="muted" className="max-w-md mx-auto">
+                  {connectionError 
+                    ? `Connection failed: ${connectionError}. Please check your configuration and try again.`
+                    : 'Your AI assistant is ready to start. Click below to establish a secure connection and begin chatting.'
+                  }
+                </Typography>
+              </div>
+              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                <Button
+                  onClick={handleConnect}
+                  variant="default"
+                  size="lg"
+                  disabled={status === 'connecting'}
+                >
+                  <FiRefreshCw className={cn(
+                    "w-5 h-5",
+                    status === 'connecting' && "animate-spin"
+                  )} />
+                  {status === 'connecting' ? 'Connecting...' : 'Connect to Agent'}
+                </Button>
+                <Button
+                  onClick={handleGoToSettings}
+                  variant="secondary"
+                  size="lg"
+                >
+                  <FiSettings className="w-5 h-5" />
+                  Settings
+                </Button>
+              </div>
             </div>
-            <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <Button
-                onClick={handleConnect}
-                variant="gradient"
-                size="lg"
-                disabled={status === 'connecting'}
-              >
-                <FiRefreshCw className={cn(
-                  "w-5 h-5",
-                  status === 'connecting' && "animate-spin"
-                )} />
-                {status === 'connecting' ? 'Connecting...' : 'Connect to Agent'}
-              </Button>
-              <Button
-                onClick={handleGoToSettings}
-                variant="secondary"
-                size="lg"
-              >
-                <FiSettings className="w-5 h-5" />
-                Settings
-              </Button>
-            </div>
-          </div>
+          )}
         </div>
       </div>
     )
   }
 
   return (
-    <div className="flex flex-col h-full bg-gray-50 dark:bg-gray-950">
-      {/* Header */}
-      <header className="h-16 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between px-6">
+    <div className="flex flex-col h-full bg-gray-50 dark:bg-gray-950 relative overflow-hidden">
+      {/* Animated background */}
+      <div className="absolute inset-0 opacity-[0.01] dark:opacity-[0.02] pointer-events-none">
+        <motion.div
+          className="absolute inset-0"
+          animate={{
+            backgroundPosition: ['0% 0%', '100% 100%'],
+          }}
+          transition={{
+            duration: 20,
+            repeat: Infinity,
+            repeatType: 'reverse',
+          }}
+          style={{
+            backgroundImage: `repeating-linear-gradient(45deg, transparent, transparent 35px, rgba(85, 153, 254, 0.1) 35px, rgba(85, 153, 254, 0.1) 70px)`,
+            backgroundSize: '200% 200%',
+          }}
+        />
+      </div>
+      <header className="h-16 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border-b border-gray-200 dark:border-gray-800 flex items-center justify-between px-6 relative z-10">
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-[#a679f0] to-[#5599fe] rounded-xl flex items-center justify-center shadow-md">
+            <motion.div 
+              className="w-10 h-10 bg-gradient-to-br from-[#a679f0] to-[#5599fe] rounded-xl flex items-center justify-center shadow-md"
+              whileHover={{ scale: 1.1, rotate: 5 }}
+              whileTap={{ scale: 0.95 }}
+            >
               <FiZap className="w-5 h-5 text-white" />
-            </div>
+            </motion.div>
             <div>
               <Typography variant="h6" className="font-bold">
                 AI Assistant
@@ -345,7 +411,6 @@ const ChatPage: React.FC<ChatPageProps> = () => {
         </div>
         
         <div className="flex items-center gap-3">
-          {/* Mode Toggle */}
           <ModeToggle
             mode={operationalMode}
             onChange={async (mode) => {
@@ -361,7 +426,6 @@ const ChatPage: React.FC<ChatPageProps> = () => {
           
           {config && (
             <>
-              {/* Network Status */}
               <div className="flex items-center gap-2 px-3 py-2 bg-gray-100 dark:bg-gray-800 rounded-lg">
                 {isConnected ? (
                   <FiWifi className="w-4 h-4 text-[#48df7b]" />
@@ -373,7 +437,6 @@ const ChatPage: React.FC<ChatPageProps> = () => {
                 </Typography>
               </div>
               
-              {/* Account Info */}
               <div className="flex items-center gap-2 px-3 py-2 bg-gray-100 dark:bg-gray-800 rounded-lg">
                 <FiShield className="w-4 h-4 text-[#a679f0]" />
                 <Typography variant="caption" className="font-medium">
@@ -385,55 +448,97 @@ const ChatPage: React.FC<ChatPageProps> = () => {
         </div>
       </header>
 
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto relative">
         {messages.length === 0 ? (
           <div className="h-full flex items-center justify-center p-8">
-            <div className="text-center space-y-6 max-w-2xl">
-              <div className="w-16 h-16 bg-gradient-to-br from-[#a679f0] to-[#5599fe] rounded-2xl flex items-center justify-center mx-auto shadow-lg">
+            <div className="text-center space-y-6 max-w-2xl relative z-10">
+              {/* Floating orbs */}
+              <motion.div
+                className="absolute -top-20 -right-20 w-64 h-64 bg-[#a679f0]/10 rounded-full blur-3xl"
+                animate={{
+                  scale: [1, 1.2, 1],
+                  opacity: [0.1, 0.2, 0.1],
+                }}
+                transition={{
+                  duration: 4,
+                  repeat: Infinity,
+                  ease: 'easeInOut',
+                }}
+              />
+              <motion.div
+                className="absolute -bottom-20 -left-20 w-64 h-64 bg-[#48df7b]/10 rounded-full blur-3xl"
+                animate={{
+                  scale: [1.2, 1, 1.2],
+                  opacity: [0.1, 0.2, 0.1],
+                }}
+                transition={{
+                  duration: 4,
+                  repeat: Infinity,
+                  ease: 'easeInOut',
+                  delay: 2,
+                }}
+              />
+              
+              <motion.div 
+                className="w-16 h-16 bg-gradient-to-br from-[#a679f0] to-[#5599fe] rounded-2xl flex items-center justify-center mx-auto shadow-lg"
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.5 }}
+                whileHover={{ scale: 1.1 }}
+              >
                 <FiMessageSquare className="w-8 h-8 text-white" />
-              </div>
+              </motion.div>
               <div className="space-y-3">
-                <Typography variant="h4" className="font-bold">
-                  Welcome to Conversational Agent
+                <Typography 
+                  variant="h4" 
+                  className="font-bold animate-gradient bg-gradient-to-r from-[#a679f0] via-[#5599fe] to-[#48df7b] bg-clip-text text-transparent"
+                  style={{ backgroundSize: '200% 200%' }}
+                >
+                  Welcome to OpenARC
                 </Typography>
                 <Typography variant="body1" color="muted">
-                  I can help you with Hedera network operations, account management, token transfers, 
-                  smart contracts, and more. Start by asking me a question or requesting help with a task.
+                  I can help you with Hedera network operations, HCS-1 inscriptions, HCS-20 ticks, 
+                  account management, NFT minting, smart contracts, and more. Start by asking me a question or requesting help with a task.
                 </Typography>
               </div>
 
-              {/* Suggestion Cards */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-8 stagger-children">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-8">
                 {[
-                  { icon: FiCpu, text: "What's my account balance?", color: "purple" },
-                  { icon: FiCode, text: "Transfer 5 HBAR to 0.0.123456", color: "blue" },
-                  { icon: FiShield, text: "Help me create a new account", color: "green" },
-                  { icon: FiMessageSquare, text: "Send a message to HCS topic", color: "purple" }
+                  { icon: FiCpu, text: "Inscribe data using HCS-1", gradient: 'from-[#a679f0] to-[#5599fe]' },
+                  { icon: FiCode, text: "Deploy an HCS-20 tick", gradient: 'from-[#5599fe] to-[#48df7b]' },
+                  { icon: FiShield, text: "Mint NFTs on Hedera", gradient: 'from-[#48df7b] to-[#5599fe]' },
+                  { icon: FiMessageSquare, text: "Check my HCS inscriptions", gradient: 'from-[#5599fe] to-[#a679f0]' }
                 ].map((suggestion, index) => {
                   const Icon = suggestion.icon
-                  const gradientClass = {
-                    purple: 'from-[#a679f0]/20 to-[#a679f0]/10',
-                    blue: 'from-[#5599fe]/20 to-[#5599fe]/10',
-                    green: 'from-[#48df7b]/20 to-[#48df7b]/10'
-                  }[suggestion.color]
                   
                   return (
-                    <button
+                    <motion.button
                       key={index}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.5, delay: index * 0.1 }}
+                      whileHover={{ scale: 1.05, y: -2 }}
+                      whileTap={{ scale: 0.98 }}
                       onClick={() => setInputValue(suggestion.text)}
-                      className="p-4 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700 transition-all text-left group card-hover"
+                      className="p-4 bg-white/80 dark:bg-gray-900/50 backdrop-blur-sm rounded-xl border border-gray-200 dark:border-gray-800 hover:border-[#5599fe]/50 hover:shadow-xl transition-all text-left group relative overflow-hidden"
                     >
                       <div className={cn(
-                        "w-10 h-10 rounded-lg bg-gradient-to-br flex items-center justify-center mb-3",
-                        gradientClass
-                      )}>
-                        <Icon className="w-5 h-5 text-gray-700 dark:text-white" />
+                        "absolute inset-0 opacity-0 group-hover:opacity-[0.05] transition-opacity duration-500",
+                        `bg-gradient-to-br ${suggestion.gradient}`
+                      )} />
+                      
+                      <div className="relative">
+                        <div className={cn(
+                          "w-10 h-10 rounded-lg flex items-center justify-center mb-3 shadow-md group-hover:shadow-lg transition-all duration-300",
+                          `bg-gradient-to-br ${suggestion.gradient}`
+                        )}>
+                          <Icon className="w-5 h-5 text-white" />
+                        </div>
+                        <Typography variant="body2" className="group-hover:text-transparent group-hover:bg-gradient-to-r group-hover:from-[#5599fe] group-hover:to-[#a679f0] group-hover:bg-clip-text transition-all duration-300">
+                          {suggestion.text}
+                        </Typography>
                       </div>
-                      <Typography variant="body2" className="group-hover:text-[#5599fe] transition-colors">
-                        {suggestion.text}
-                      </Typography>
-                    </button>
+                    </motion.button>
                   )
                 })}
               </div>
@@ -446,20 +551,37 @@ const ChatPage: React.FC<ChatPageProps> = () => {
             ))}
             
             {isLoading && (
-              <div className="flex justify-start animate-fade-in">
-                <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl px-4 py-3">
-                  <div className="flex items-center gap-2">
+              <motion.div 
+                className="flex justify-start"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.3 }}
+              >
+                <div className="bg-white/80 dark:bg-gray-900/50 backdrop-blur-sm border border-gray-200 dark:border-gray-800 rounded-2xl px-4 py-3 shadow-lg">
+                  <div className="flex items-center gap-3">
                     <div className="flex gap-1">
-                      <div className="w-2 h-2 bg-[#5599fe] rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                      <div className="w-2 h-2 bg-[#5599fe] rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                      <div className="w-2 h-2 bg-[#5599fe] rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                      <motion.div 
+                        className="w-2 h-2 bg-gradient-to-r from-[#a679f0] to-[#5599fe] rounded-full"
+                        animate={{ y: [-4, 0, -4] }}
+                        transition={{ duration: 0.6, repeat: Infinity, delay: 0 }}
+                      />
+                      <motion.div 
+                        className="w-2 h-2 bg-gradient-to-r from-[#5599fe] to-[#48df7b] rounded-full"
+                        animate={{ y: [-4, 0, -4] }}
+                        transition={{ duration: 0.6, repeat: Infinity, delay: 0.15 }}
+                      />
+                      <motion.div 
+                        className="w-2 h-2 bg-gradient-to-r from-[#48df7b] to-[#a679f0] rounded-full"
+                        animate={{ y: [-4, 0, -4] }}
+                        transition={{ duration: 0.6, repeat: Infinity, delay: 0.3 }}
+                      />
                     </div>
-                    <Typography variant="caption" color="muted">
+                    <Typography variant="caption" className="bg-gradient-to-r from-[#5599fe] to-[#a679f0] bg-clip-text text-transparent font-medium">
                       Agent is thinking...
                     </Typography>
                   </div>
                 </div>
-              </div>
+              </motion.div>
             )}
             
             <div ref={messagesEndRef} />
@@ -467,10 +589,11 @@ const ChatPage: React.FC<ChatPageProps> = () => {
         )}
       </div>
 
-      {/* Input Area */}
+      {/* Disclaimer */}
+      <Disclaimer />
+
       <div className="border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4">
         <div className="max-w-4xl mx-auto">
-          {/* File error alert */}
           {fileError && (
             <Alert className="mb-3 border-orange-200 bg-orange-50 dark:border-orange-800 dark:bg-orange-950/20">
               <FiAlertCircle className="h-4 w-4 text-orange-600 dark:text-orange-400" />
@@ -480,7 +603,6 @@ const ChatPage: React.FC<ChatPageProps> = () => {
             </Alert>
           )}
           
-          {/* File previews */}
           {selectedFiles.length > 0 && (
             <div className="mb-3 flex flex-wrap gap-2">
               {selectedFiles.map((file, index) => (
@@ -568,7 +690,6 @@ const ChatPage: React.FC<ChatPageProps> = () => {
           </div>
         </div>
         
-        {/* Hidden file input */}
         <input
           ref={fileInputRef}
           type="file"

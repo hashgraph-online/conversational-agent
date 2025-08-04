@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { useConfigStore } from '../stores/configStore'
+import { configService } from '../services/configService'
 
 interface ConfigInitProviderProps {
   children: React.ReactNode
@@ -15,6 +16,7 @@ interface ConfigInitProviderProps {
 export const ConfigInitProvider: React.FC<ConfigInitProviderProps> = ({ children }) => {
   const [isInitialized, setIsInitialized] = useState(false)
   const loadConfig = useConfigStore((state) => state.loadConfig)
+  const config = useConfigStore((state) => state.config)
 
   useEffect(() => {
     let mounted = true
@@ -38,6 +40,15 @@ export const ConfigInitProvider: React.FC<ConfigInitProviderProps> = ({ children
       mounted = false
     }
   }, [loadConfig])
+
+  // Apply theme after config is loaded
+  useEffect(() => {
+    if (config?.advanced?.theme) {
+      configService.applyTheme(config.advanced.theme).catch(error => {
+        console.error('Failed to apply theme:', error)
+      })
+    }
+  }, [config?.advanced?.theme])
 
   return <>{children}</>
 }

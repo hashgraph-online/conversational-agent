@@ -1,4 +1,4 @@
-import { ipcMain, IpcMainInvokeEvent, app } from 'electron';
+import { ipcMain, IpcMainInvokeEvent, app, shell } from 'electron';
 import {
   CredentialSchema,
   CredentialRequestSchema,
@@ -26,6 +26,7 @@ import type {
 import { ConfigService } from '../services/ConfigService';
 import { registerTransactionHandlers } from '../handlers/transactionHandlers';
 import { MirrorNodeService } from '../services/MirrorNodeService';
+import { setupHCS10Handlers } from './hcs10Handlers';
 
 const DEFAULT_SERVICE = 'conversational-agent';
 
@@ -135,7 +136,7 @@ export function setupAgentHandlers(): void {
     }
   });
 
-  ipcMain.handle('agent:sendMessage', async (
+  ipcMain.handle('agent:send-message', async (
     event: IpcMainInvokeEvent,
     data: { content: string; chatHistory: ChatHistory[] }
   ): Promise<IPCResponse> => {
@@ -156,6 +157,23 @@ export function setupAgentHandlers(): void {
       return result;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to disconnect';
+      return { success: false, error: errorMessage };
+    }
+  });
+
+  ipcMain.handle('agent:preload', async (
+    event: IpcMainInvokeEvent,
+    config: AgentConfig
+  ): Promise<IPCResponse> => {
+    try {
+      logger.info('IPC handler agent:preload called');
+      // Start preload in background, don't wait for completion
+      agentService.preload?.(config)?.catch(error => {
+        logger.warn('Background preload failed:', error);
+      });
+      return { success: true };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to start preload';
       return { success: false, error: errorMessage };
     }
   });
@@ -413,6 +431,19 @@ export function setupMCPHandlers(): void {
     }
   });
 
+  ipcMain.handle('mcp:refreshServerTools', async (
+    event: IpcMainInvokeEvent,
+    serverId: string
+  ): Promise<IPCResponse> => {
+    try {
+      const tools = await mcpService.refreshServerTools(serverId);
+      return { success: true, data: tools };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to refresh server tools';
+      return { success: false, error: errorMessage };
+    }
+  });
+
   ipcMain.handle('mcp:validateServerConfig', async (
     event: IpcMainInvokeEvent,
     server: MCPServerConfig
@@ -457,9 +488,40 @@ export function setupMCPHandlers(): void {
     data: { serverId: string; packageName?: string }
   ): Promise<IPCResponse> => {
     try {
+      // First check if the server is installable at all
+      const searchResult = await registryService.searchServers({ query: data.serverId });
+      const server = searchResult.servers.find(s => s.id === data.serverId || s.name === data.serverId);
+      
+      if (server && !registryService.isServerInstallable(server)) {
+        return { success: false, error: 'This server does not have an npm package or GitHub repository available for installation' };
+      }
+      
       const registryServer = await registryService.getServerDetails(data.serverId, data.packageName);
       if (!registryServer) {
-        return { success: false, error: 'Server not found in registry' };
+        // If we can't get details but the server exists in search results, try to use it directly
+        if (server) {
+          const mcpConfig = registryService.convertToMCPConfig(server);
+          if (mcpConfig.config?.command) {
+            const serverConfig: MCPServerConfig = {
+              id: `registry-${Date.now()}`,
+              name: server.name,
+              type: 'custom',
+              status: 'disconnected',
+              enabled: true,
+              config: mcpConfig.config,
+              description: server.description,
+              createdAt: new Date(),
+              updatedAt: new Date()
+            };
+
+            const servers = await mcpService.loadServers();
+            servers.push(serverConfig);
+            await mcpService.saveServers(servers);
+
+            return { success: true, data: serverConfig };
+          }
+        }
+        return { success: false, error: 'Unable to fetch server details from registry. The server package may not exist or may not be available for installation.' };
       }
 
       const mcpConfig = registryService.convertToMCPConfig(registryServer);
@@ -493,10 +555,34 @@ export function setupMCPHandlers(): void {
     event: IpcMainInvokeEvent
   ): Promise<IPCResponse> => {
     try {
-      registryService.clearCache();
+      await registryService.clearCache();
       return { success: true };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to clear registry cache';
+      return { success: false, error: errorMessage };
+    }
+  });
+
+  ipcMain.handle('mcp:getCacheStats', async (
+    event: IpcMainInvokeEvent
+  ): Promise<IPCResponse> => {
+    try {
+      const stats = await registryService.getCacheStats();
+      return { success: true, data: stats };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to get cache statistics';
+      return { success: false, error: errorMessage };
+    }
+  });
+
+  ipcMain.handle('mcp:triggerBackgroundSync', async (
+    event: IpcMainInvokeEvent
+  ): Promise<IPCResponse> => {
+    try {
+      (registryService as any).triggerBackgroundSync();
+      return { success: true, data: { message: 'Background sync triggered' } };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to trigger background sync';
       return { success: false, error: errorMessage };
     }
   });
@@ -709,6 +795,39 @@ export function setupPluginHandlers(): void {
     }
   });
 
+  ipcMain.handle('plugin:revokePermissions', async (
+    event: IpcMainInvokeEvent,
+    data: { pluginId: string; permissions: PluginPermissions }
+  ): Promise<IPCResponse> => {
+    try {
+      const plugins = await npmService.loadPlugins();
+      const plugin = plugins.find(p => p.id === data.pluginId);
+      
+      if (!plugin) {
+        return { success: false, error: 'Plugin not found' };
+      }
+
+      // Remove the specified permissions from granted permissions
+      if (plugin.grantedPermissions) {
+        const revokedPermissions = { ...plugin.grantedPermissions };
+        Object.keys(data.permissions).forEach(key => {
+          delete revokedPermissions[key as keyof PluginPermissions];
+        });
+        plugin.grantedPermissions = revokedPermissions;
+      }
+      
+      plugin.updatedAt = new Date();
+      
+      await npmService.savePlugins(plugins);
+      
+      return { success: true, data: plugin.grantedPermissions };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to revoke plugin permissions';
+      logger.error('Revoke plugin permissions failed:', error);
+      return { success: false, error: errorMessage };
+    }
+  });
+
   ipcMain.handle('plugin:getInstalled', async (
     event: IpcMainInvokeEvent
   ): Promise<IPCResponse> => {
@@ -786,6 +905,9 @@ export function setupPluginHandlers(): void {
       return { success: false, error: errorMessage };
     }
   });
+
+  // Note: Local plugin loading and custom registry features are not yet implemented
+  // These handlers will be added when the functionality is implemented
 }
 
 /**
@@ -802,6 +924,8 @@ export function setupIPCHandlers(masterPassword: string): void {
   setupPluginHandlers();
   registerTransactionHandlers();
   setupMirrorNodeHandlers();
+  setupThemeHandlers();
+  setupHCS10Handlers();
 }
 
 /**
@@ -839,6 +963,70 @@ function setupMirrorNodeHandlers(): void {
         success: false, 
         error: error instanceof Error ? error.message : 'Failed to fetch transaction' 
       };
+    }
+  });
+}
+
+/**
+ * Sets up theme-related IPC handlers
+ */
+function setupThemeHandlers(): void {
+  const logger = new Logger({ module: 'ThemeHandlers' });
+
+  ipcMain.handle('theme:set', async (
+    event: IpcMainInvokeEvent,
+    theme: 'light' | 'dark'
+  ): Promise<IPCResponse> => {
+    try {
+      logger.info(`Setting theme to: ${theme}`);
+      return { success: true, data: { theme } };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to set theme';
+      logger.error('Theme set error:', error);
+      return { success: false, error: errorMessage };
+    }
+  });
+
+  ipcMain.handle('app:setAutoStart', async (
+    event: IpcMainInvokeEvent,
+    enabled: boolean
+  ): Promise<IPCResponse> => {
+    try {
+      logger.info(`Setting auto start to: ${enabled}`);
+      return { success: true, data: { autoStart: enabled } };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to set auto start';
+      logger.error('Auto start set error:', error);
+      return { success: false, error: errorMessage };
+    }
+  });
+
+  ipcMain.handle('app:setLogLevel', async (
+    event: IpcMainInvokeEvent,
+    level: string
+  ): Promise<IPCResponse> => {
+    try {
+      logger.info(`Setting log level to: ${level}`);
+      return { success: true, data: { logLevel: level } };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to set log level';
+      logger.error('Log level set error:', error);
+      return { success: false, error: errorMessage };
+    }
+  });
+
+  ipcMain.handle('open-external', async (
+    event: IpcMainInvokeEvent,
+    url: string
+  ): Promise<IPCResponse> => {
+    try {
+      logger.info(`Opening external URL: ${url}`);
+      await shell.openExternal(url);
+      return { success: true };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to open external URL';
+      logger.error('Open external error:', error);
+      return { success: false, error: errorMessage };
     }
   });
 }

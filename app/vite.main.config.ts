@@ -2,23 +2,16 @@ import { defineConfig } from 'vite';
 import path from 'path';
 
 export default defineConfig({
-  define: {
-    '__bundlerPathsOverrides': JSON.stringify({
-      'thread-stream-worker': null
-    }),
-    'globalThis.__bundlerPathsOverrides': JSON.stringify({
-      'thread-stream-worker': null
-    })
-  },
   build: {
     rollupOptions: {
-      external: ['electron', 'keytar'],
+      external: ['electron', 'keytar', 'better-sqlite3', 'drizzle-orm/better-sqlite3'],
       output: {
         entryFileNames: 'main.js'
       }
     }
   },
   resolve: {
-    conditions: ['node']
+    conditions: ['node'],
+    extensions: ['.ts', '.js', '.mjs', '.json']
   }
 });

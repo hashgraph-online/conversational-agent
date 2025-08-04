@@ -19,7 +19,7 @@
 	],
 	"dependencies": {
 		"@hashgraphonline/conversational-agent": "file:..",
-		"@hashgraphonline/standards-agent-kit": "file:.yalc/@hashgraphonline/standards-agent-kit",
+		"@hashgraphonline/standards-agent-kit": "0.2.109",
 		"chalk": "^5.3.0",
 		"figlet": "^1.7.0",
 		"gradient-string": "^2.0.2",
