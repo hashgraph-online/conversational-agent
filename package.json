@@ -86,7 +86,7 @@
   },
   "dependencies": {
     "@hashgraph/sdk": "^2.69.0",
-    "@hashgraphonline/standards-agent-kit": "0.2.113",
+    "@hashgraphonline/standards-agent-kit": "0.2.120",
     "@hashgraphonline/standards-sdk": "0.0.165",
     "@langchain/core": "^0.3.66",
     "@langchain/openai": "^0.6.3",
@@ -95,6 +95,7 @@
     "electron-log": "^5.4.2",
     "hedera-agent-kit": "^2.0.3",
     "langchain": "^0.3.3",
+    "tiktoken": "^1.0.21",
     "zod": "^3.23.8"
   },
   "repository": {

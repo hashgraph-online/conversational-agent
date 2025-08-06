@@ -101,13 +101,24 @@ export const useMCPStore = create<MCPStore>((set, get) => ({
     try {
       const { servers } = get()
       
-      // If tools are not being explicitly updated, preserve existing tools
+      const diskResult = await window.electron.loadMCPServers()
+      let diskTools: any = undefined
+      if (diskResult.success) {
+        const diskServer = diskResult.data?.find((s: any) => s.id === serverId)
+        if (diskServer && diskServer.tools && diskServer.tools.length > 0) {
+          diskTools = diskServer.tools
+          console.log(`[Frontend] Found ${diskTools.length} tools on disk for ${serverId}`)
+        }
+      }
+      
       const updatedServers = servers.map(server => {
         if (server.id === serverId) {
           const updatedServer = { ...server, ...updates, updatedAt: new Date() }
-          // If tools aren't in the updates, preserve the existing tools
           if (!updates.hasOwnProperty('tools')) {
-            updatedServer.tools = server.tools || []
+            updatedServer.tools = diskTools || server.tools || []
+            if (diskTools) {
+              console.log(`[Frontend] Preserving ${diskTools.length} tools from disk for ${serverId}`)
+            }
           }
           return updatedServer
         }
@@ -116,7 +127,6 @@ export const useMCPStore = create<MCPStore>((set, get) => ({
       
       set({ servers: updatedServers, isLoading: false })
       
-      // Use the improved saveServers method that preserves tools
       await get().saveServers()
       
     } catch (error) {
@@ -312,13 +322,11 @@ export const useMCPStore = create<MCPStore>((set, get) => ({
         throw new Error(toolsResult.error || 'Failed to refresh tools')
       }
       
-      // Update the server with the refreshed tools
       await get().updateServer(serverId, { 
         tools: toolsResult.data,
         status: 'ready'
       })
       
-      // Wait a moment for backend to save, then reload
       setTimeout(async () => {
         await get().reloadServers()
       }, 1000)
@@ -360,16 +368,15 @@ export const useMCPStore = create<MCPStore>((set, get) => ({
       
       const loadedServers = result.data || []
       
-      // Merge loaded servers with current runtime state to preserve connection status
       const { servers: currentServers } = get()
       const mergedServers = loadedServers.map(loadedServer => {
         const currentServer = currentServers.find(s => s.id === loadedServer.id)
+        console.log(`[MCPStore] Loading server ${loadedServer.id}: ${loadedServer.tools?.length || 0} tools from JSON`)
         if (currentServer) {
-          // Keep runtime status but update tools and other persisted data
+          console.log(`[MCPStore] Current server ${currentServer.id} has ${currentServer.tools?.length || 0} tools in memory`)
           return {
             ...loadedServer,
-            status: currentServer.status, // Keep runtime status
-            // Keep tools from loaded server (from JSON file)
+            status: currentServer.status,
             tools: loadedServer.tools || []
           }
         }
@@ -384,7 +391,6 @@ export const useMCPStore = create<MCPStore>((set, get) => ({
       })
       set({ serverInitStates })
       
-      // Auto-connect enabled servers, but do it properly
       const enabledServers = mergedServers.filter(s => s.enabled)
       
       if (enabledServers.length === 0) {
@@ -395,7 +401,6 @@ export const useMCPStore = create<MCPStore>((set, get) => ({
       let connectedCount = 0
       let failedCount = 0
       
-      // Connect servers sequentially to avoid race conditions
       for (const server of enabledServers) {
         try {
           set(state => ({
@@ -415,8 +420,8 @@ export const useMCPStore = create<MCPStore>((set, get) => ({
             }
           }))
           
-          // After connection, wait a bit and reload to get the latest tools
           setTimeout(async () => {
+            console.log(`[MCPStore] Reloading servers after connection for ${server.id} to fetch tools...`)
             await get().reloadServers()
           }, 3000)
           
@@ -467,16 +472,16 @@ export const useMCPStore = create<MCPStore>((set, get) => ({
       
       const loadedServers = result.data || []
       
-      // Merge loaded servers with current runtime state
       const { servers: currentServers } = get()
       const mergedServers = loadedServers.map(loadedServer => {
         const currentServer = currentServers.find(s => s.id === loadedServer.id)
+        console.log(`[MCPStore reload] Server ${loadedServer.id}: ${loadedServer.tools?.length || 0} tools from JSON`)
         if (currentServer) {
-          // Keep runtime status but update tools and other persisted data
+          console.log(`[MCPStore reload] Current ${currentServer.id}: ${currentServer.tools?.length || 0} tools in memory`)
           return {
             ...loadedServer,
-            status: currentServer.status, // Keep current runtime status
-            tools: loadedServer.tools || [] // Use tools from JSON file
+            status: currentServer.status,
+            tools: loadedServer.tools || []
           }
         }
         return loadedServer
@@ -497,25 +502,27 @@ export const useMCPStore = create<MCPStore>((set, get) => ({
     console.log('[Frontend] saveServers called with servers:', servers.map(s => ({id: s.id, tools: s.tools?.length || 0})))
     
     try {
-      // First reload from disk to get the latest tools from backend
       const currentResult = await window.electron.loadMCPServers()
       if (currentResult.success) {
         const currentServers = currentResult.data || []
         console.log('[Frontend] Loaded from backend:', currentServers.map(s => ({id: s.id, tools: s.tools?.length || 0})))
         
-        // Merge frontend state with backend state (preserve tools from backend)
         const mergedServers = servers.map(frontendServer => {
           const backendServer = currentServers.find(s => s.id === frontendServer.id)
-          if (backendServer) {
-            // Keep tools from backend, but use other data from frontend
+          if (backendServer && backendServer.tools && backendServer.tools.length > 0) {
             const merged = {
               ...frontendServer,
-              tools: backendServer.tools || frontendServer.tools || []
+              tools: backendServer.tools
             }
-            console.log(`[Frontend] Merging ${frontendServer.id}: frontend ${frontendServer.tools?.length || 0} tools, backend ${backendServer.tools?.length || 0} tools, result ${merged.tools?.length || 0} tools`)
+            console.log(`[Frontend] Preserving ${backendServer.tools.length} tools from backend for ${frontendServer.id}`)
             return merged
+          } else if (frontendServer.tools && frontendServer.tools.length > 0) {
+            console.log(`[Frontend] Keeping ${frontendServer.tools.length} tools from frontend for ${frontendServer.id}`)
+            return frontendServer
+          } else {
+            console.log(`[Frontend] No tools for ${frontendServer.id} in either frontend or backend`)
+            return frontendServer
           }
-          return frontendServer
         })
         
         console.log('[Frontend] About to save merged servers:', mergedServers.map(s => ({id: s.id, tools: s.tools?.length || 0})))
@@ -525,7 +532,6 @@ export const useMCPStore = create<MCPStore>((set, get) => ({
           throw new Error(result.error || 'Failed to save servers')
         }
       } else {
-        // Fallback to direct save if load fails
         console.log('[Frontend] Fallback: saving servers directly')
         const result = await window.electron.saveMCPServers(servers)
         if (!result.success) {

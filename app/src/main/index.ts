@@ -137,6 +137,14 @@ app.on('ready', async () => {
   logger.info('IPC handlers setup complete')
   
   createWindow()
+  
+  // Initialize UpdateService after window is created
+  if (mainWindow) {
+    const { UpdateService } = await import('./services/UpdateService')
+    const updateService = UpdateService.getInstance()
+    updateService.setMainWindow(mainWindow)
+    logger.info('UpdateService initialized')
+  }
 })
 
 app.on('activate', () => {

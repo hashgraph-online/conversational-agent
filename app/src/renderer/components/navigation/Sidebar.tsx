@@ -42,16 +42,6 @@ interface NavItem {
 
 const primaryNavItems: NavItem[] = [
   {
-    id: 'home',
-    path: '/',
-    label: 'Dashboard',
-    icon: HiSquares2X2,
-    description: 'Overview and quick actions',
-    gradient: 'from-[#5599fe] to-[#48df7b]',
-    iconBg:
-      'from-blue-500/30 to-green-500/30 dark:from-blue-400/40 dark:to-green-400/40',
-  },
-  {
     id: 'chat',
     path: '/chat',
     label: 'Agent Chat',
@@ -322,11 +312,11 @@ const SidebarContent: React.FC<SidebarProps & { location: any }> = ({
               <div className='absolute inset-0 bg-gradient-to-br from-[#a679f0] to-[#5599fe] rounded-2xl blur-xl opacity-50' />
               <Logo size='lg' showText={false} className='relative' />
             </div>
-            <div className='flex-1 pt-1 min-w-0'>
-              <h2 className='text-sm font-bold bg-gradient-to-r from-[#5599fe] to-[#a679f0] bg-clip-text text-transparent font-mono tracking-wide break-words'>
+            <div className='flex-1 min-w-0 flex flex-col'>
+              <div className='text-2xl font-bold bg-gradient-to-r from-[#5599fe] to-[#a679f0] bg-clip-text text-transparent font-mono tracking-wide break-words' style={{ lineHeight: '1' }}>
                 OpenARC
-              </h2>
-              <p className='text-xs text-gray-500 dark:text-gray-400 font-mono opacity-80 tracking-wide'>
+              </div>
+              <div className='text-xs text-gray-500 dark:text-gray-400 font-mono opacity-80 tracking-wide' style={{ marginTop: '2px', lineHeight: '1' }}>
                 by{' '}
                 <Link
                   to='https://hashgraphonline.com'
@@ -335,7 +325,7 @@ const SidebarContent: React.FC<SidebarProps & { location: any }> = ({
                 >
                   HashgraphOnline
                 </Link>
-              </p>
+              </div>
             </div>
           </div>
         )}

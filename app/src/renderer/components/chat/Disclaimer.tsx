@@ -6,7 +6,7 @@ import { LegalDisclaimerModal } from './LegalDisclaimerModal';
 
 export const Disclaimer: React.FC = () => {
   return (
-    <Alert className="mx-4 mb-4 border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-900/50">
+    <Alert className="border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-900/50">
       <FiInfo className="h-4 w-4 text-gray-600 dark:text-gray-400" />
       <AlertDescription className="text-xs text-gray-600 dark:text-gray-400">
         <div className="flex items-start justify-between gap-3">

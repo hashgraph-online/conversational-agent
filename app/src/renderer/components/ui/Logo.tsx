@@ -59,6 +59,7 @@ const Logo: React.FC<LogoProps> = ({ className, showText = true, size = 'md' }) 
           'transition-all duration-200',
           'object-contain'
         )}
+        style={{ filter: 'brightness(0) saturate(100%) invert(42%) sepia(93%) saturate(1352%) hue-rotate(196deg) brightness(102%) contrast(96%)' }}
       />
       {showText && (
         <span className={cn(

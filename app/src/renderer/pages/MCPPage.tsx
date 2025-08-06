@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FiAlertCircle, FiX, FiGrid, FiList, FiPlus } from 'react-icons/fi';
+import { FiAlertCircle, FiX, FiGrid, FiList, FiPlus, FiInfo, FiTool, FiZap, FiShield, FiDatabase } from 'react-icons/fi';
 import Typography from '../components/ui/Typography';
 import { Button } from '../components/ui/Button';
 import { MCPServerList } from '../components/mcp/MCPServerList';
@@ -8,6 +8,7 @@ import { MCPConnectionTester } from '../components/mcp/MCPConnectionTester';
 import { MCPServerCatalog } from '../components/mcp/MCPServerCatalog';
 import { MCPRegistry } from '../components/mcp/MCPRegistry';
 import { AddMCPServer } from '../components/mcp/AddMCPServer';
+import { MCPInfoPanel } from '../components/mcp/MCPInfoPanel';
 import { useMCPStore } from '../stores/mcpStore';
 import { MCPServerConfig, MCPServerFormData } from '../types/mcp';
 
@@ -54,6 +55,7 @@ const MCPPage: React.FC = () => {
   // Periodic reload to catch tools updated asynchronously
   useEffect(() => {
     const interval = setInterval(() => {
+      console.log('[MCPPage] Reloading servers to check for tools updates...');
       reloadServers();
     }, 5000); // Check every 5 seconds
 
@@ -185,6 +187,43 @@ const MCPPage: React.FC = () => {
       </div>
 
       <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6'>
+        {/* Educational Section for New Users - Simplified */}
+        {servers.length === 0 && !isLoading && (
+          <div className='mb-6 bg-blue-50 dark:bg-blue-900/10 rounded-lg p-4 border border-blue-200 dark:border-blue-800'>
+            <div className='flex items-start gap-3'>
+              <FiInfo className='w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0' />
+              <div className='flex-1'>
+                <Typography variant='body2' className='font-medium mb-2 text-gray-900 dark:text-white'>
+                  What are MCP Servers?
+                </Typography>
+                <Typography variant='caption' className='text-gray-600 dark:text-gray-400 mb-3 block'>
+                  MCP servers are extensions that give your AI agent new abilities like reading files, browsing the web, or executing code. 
+                  Think of them as "plugins" that transform your AI from a chatbot into a powerful assistant.
+                </Typography>
+                
+                <div className='flex gap-2'>
+                  <Button
+                    variant='default'
+                    size='sm'
+                    onClick={() => setIsAddModalOpen(true)}
+                  >
+                    <FiPlus className='w-3 h-3 mr-1' />
+                    Add Server
+                  </Button>
+                  <Button
+                    variant='secondary'
+                    size='sm'
+                    onClick={() => setViewMode('browse')}
+                  >
+                    <FiGrid className='w-3 h-3 mr-1' />
+                    Browse
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {error && (
           <div className='mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg flex items-start gap-3'>
             <FiAlertCircle className='w-5 h-5 text-red-500 mt-0.5 flex-shrink-0' />
@@ -208,6 +247,15 @@ const MCPPage: React.FC = () => {
         {viewMode === 'servers' ? (
           <div className='grid gap-6 xl:grid-cols-4 lg:grid-cols-3'>
             <div className='xl:col-span-3 lg:col-span-2'>
+              {/* Mini help text for users with servers - Simplified */}
+              {servers.length > 0 && (
+                <div className='mb-3 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg'>
+                  <Typography variant='caption' className='text-gray-600 dark:text-gray-400'>
+                    💡 Enable servers to give your AI new abilities. Click on any server to see its tools.
+                  </Typography>
+                </div>
+              )}
+              
               <MCPServerList
                 servers={servers}
                 loading={isLoading}
@@ -234,38 +282,11 @@ const MCPPage: React.FC = () => {
                 </div>
               )}
 
-              <div className='bg-gray-50 dark:bg-gray-800 rounded-lg p-4'>
-                <div className='grid grid-cols-2 gap-4'>
-                  <div className='text-center'>
-                    <div className='text-2xl font-bold text-gray-900 dark:text-gray-100'>
-                      {servers.length}
-                    </div>
-                    <div className='text-sm text-gray-500 dark:text-gray-400'>
-                      Total
-                    </div>
-                  </div>
-                  <div className='text-center'>
-                    <div className='text-2xl font-bold text-green-600 dark:text-green-400'>
-                      {servers.filter((s) => s.status === 'connected' || s.status === 'ready').length}
-                    </div>
-                    <div className='text-sm text-gray-500 dark:text-gray-400'>
-                      Connected
-                    </div>
-                  </div>
-                </div>
-                <div className='mt-4 pt-4 border-t border-gray-200 dark:border-gray-700'>
-                  <div className='text-center'>
-                    <div className='text-2xl font-bold text-blue-600 dark:text-blue-400'>
-                      {servers
-                        .filter((s) => (s.status === 'connected' || s.status === 'ready') && s.enabled)
-                        .reduce((acc, s) => acc + (s.tools?.length || 0), 0)}
-                    </div>
-                    <div className='text-sm text-gray-500 dark:text-gray-400'>
-                      Available Tools
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <MCPInfoPanel
+                serverCount={servers.length}
+                activeCount={servers.filter((s) => s.status === 'connected' || s.status === 'ready').length}
+                totalTools={servers.reduce((acc, s) => acc + (s.tools?.length || 0), 0)}
+              />
             </div>
           </div>
         ) : (

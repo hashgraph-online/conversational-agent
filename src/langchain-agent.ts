@@ -22,11 +22,13 @@ import {
 } from './base-agent';
 import { MCPClientManager } from './mcp/MCPClientManager';
 import { convertMCPToolToLangChain } from './mcp/adapters/langchain';
+import { SmartMemoryManager } from './memory/SmartMemoryManager';
 
 export class LangChainAgent extends BaseAgent {
   private executor: AgentExecutor | undefined;
   private systemMessage = '';
   private mcpManager?: MCPClientManager;
+  private smartMemory: SmartMemoryManager | undefined;
 
   async boot(): Promise<void> {
     if (this.initialized) {
@@ -44,6 +46,14 @@ export class LangChainAgent extends BaseAgent {
         'gpt-4o-mini';
       this.tokenTracker = new TokenUsageCallbackHandler(modelName);
 
+      // Initialize smart memory manager
+      this.smartMemory = new SmartMemoryManager({
+        modelName: modelName as any,
+        maxTokens: 8000, // Conservative limit for most models
+        reserveTokens: 1000, // Reserve for response generation
+        storageLimit: 1000 // Store up to 1000 pruned messages
+      });
+
       const allTools = this.agentKit.getAggregatedLangChainTools();
       this.tools = this.filterTools(allTools);
 
@@ -52,6 +62,9 @@ export class LangChainAgent extends BaseAgent {
       }
 
       this.systemMessage = this.buildSystemPrompt();
+      
+      // Set the system prompt in smart memory
+      this.smartMemory.setSystemPrompt(this.systemMessage);
 
       await this.createExecutor();
 
@@ -67,16 +80,29 @@ export class LangChainAgent extends BaseAgent {
     message: string,
     context?: ConversationContext
   ): Promise<ChatResponse> {
-    if (!this.initialized || !this.executor) {
+    if (!this.initialized || !this.executor || !this.smartMemory) {
       throw new Error('Agent not initialized. Call boot() first.');
     }
 
     try {
       this.logger.info('LangChainAgent.chat called with:', { message, contextLength: context?.messages?.length || 0 });
       
+      // If context is provided, populate smart memory with previous messages
+      if (context?.messages && context.messages.length > 0) {
+        // Clear existing memory and add messages from context
+        this.smartMemory.clear();
+        for (const msg of context.messages) {
+          this.smartMemory.addMessage(msg);
+        }
+      }
+      
+      // Add the current user message to memory
+      const { HumanMessage } = await import('@langchain/core/messages');
+      this.smartMemory.addMessage(new HumanMessage(message));
+      
       const result = await this.executor.invoke({
         input: message,
-        chat_history: context?.messages || [],
+        chat_history: this.smartMemory.getMessages(),
       });
 
       this.logger.info('LangChainAgent executor result:', result);
@@ -85,7 +111,22 @@ export class LangChainAgent extends BaseAgent {
         output: result.output || '',
         message: result.output || '',
         notes: [],
+        intermediateSteps: result.intermediateSteps,
       };
+
+      // Extract tool calls from intermediate steps
+      if (result.intermediateSteps && Array.isArray(result.intermediateSteps)) {
+        const toolCalls = result.intermediateSteps.map((step: any, index: number) => ({
+          id: `call_${index}`,
+          name: step.action?.tool || 'unknown',
+          args: step.action?.toolInput || {},
+          output: typeof step.observation === 'string' ? step.observation : JSON.stringify(step.observation)
+        }));
+        
+        if (toolCalls.length > 0) {
+          response.tool_calls = toolCalls;
+        }
+      }
 
       const parsedSteps = result?.intermediateSteps?.[0]?.observation;
       if (
@@ -105,6 +146,12 @@ export class LangChainAgent extends BaseAgent {
         response.output = 'Agent action complete.';
       }
 
+      // Add the AI response to memory
+      if (response.output) {
+        const { AIMessage } = await import('@langchain/core/messages');
+        this.smartMemory.addMessage(new AIMessage(response.output));
+      }
+
       if (this.tokenTracker) {
         const tokenUsage = this.tokenTracker.getLatestTokenUsage();
         if (tokenUsage) {
@@ -112,6 +159,18 @@ export class LangChainAgent extends BaseAgent {
           response.cost = calculateTokenCostSync(tokenUsage);
         }
       }
+
+      // Add memory stats to response for debugging
+      const memoryStats = this.smartMemory.getMemoryStats();
+      response.metadata = {
+        ...response.metadata,
+        memoryStats: {
+          activeMessages: memoryStats.totalActiveMessages,
+          tokenUsage: memoryStats.currentTokenCount,
+          maxTokens: memoryStats.maxTokens,
+          usagePercentage: memoryStats.usagePercentage
+        }
+      };
 
       this.logger.info('LangChainAgent.chat returning response:', response);
       return response;
@@ -124,6 +183,11 @@ export class LangChainAgent extends BaseAgent {
   async shutdown(): Promise<void> {
     if (this.mcpManager) {
       await this.mcpManager.disconnectAll();
+    }
+
+    if (this.smartMemory) {
+      this.smartMemory.dispose();
+      this.smartMemory = undefined;
     }
 
     this.executor = undefined;
@@ -238,6 +302,7 @@ export class LangChainAgent extends BaseAgent {
       prompt,
     });
 
+    // Create executor without memory - we handle memory manually with SmartMemoryManager
     this.executor = new AgentExecutor({
       agent,
       tools: langchainTools,

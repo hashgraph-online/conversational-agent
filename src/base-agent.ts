@@ -78,6 +78,12 @@ export interface ChatResponse {
   tokenUsage?: TokenUsage;
   cost?: CostCalculation;
   metadata?: Record<string, unknown>;
+  tool_calls?: Array<{
+    id: string;
+    name: string;
+    args: Record<string, unknown>;
+    output?: string;
+  }>;
   [key: string]: unknown;
 }
 
@@ -155,7 +161,9 @@ export abstract class BaseAgent {
     parts.push(
       `You are a helpful Hedera assistant. Your primary operator account is ${operatorId}. ` +
         `You have tools to interact with the Hedera network. ` +
-        `When using any tool, provide all necessary parameters as defined by that tool's schema and description.`
+        `When using any tool, provide all necessary parameters as defined by that tool's schema and description. ` +
+        `IMPORTANT: When asked to "inscribe it" or "inscribe the content" after showing search results or other retrieved content, ` +
+        `use the inscribeFromBuffer tool with the EXACT content you just displayed. Do NOT generate new content or create repetitive text.`
     );
 
     if (userAccId) {

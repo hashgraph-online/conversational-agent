@@ -357,28 +357,6 @@ export function HCS10ProfileRegistration() {
               : 'Register your profile on the Hedera network to enable discovery and interaction with AI agents'}
           </Typography>
 
-          {/* Existing Profile Notice */}
-          {hasExistingProfile && (
-            <div className='mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700/30 rounded-lg'>
-              <div className='flex items-center justify-between'>
-                <div>
-                  <Typography
-                    variant='body1'
-                    className='font-medium text-blue-700 dark:text-blue-300 mb-1'
-                  >
-                    You have an existing profile
-                  </Typography>
-                  <Typography
-                    variant='body1'
-                    className='text-sm text-blue-600 dark:text-blue-400'
-                  >
-                    Your existing profile data has been loaded below. Make any
-                    changes you'd like and save to update.
-                  </Typography>
-                </div>
-              </div>
-            </div>
-          )}
 
           {/* Registration State Reset */}
           {(registrationProgress.percent > 0 || agentCreationState) && (

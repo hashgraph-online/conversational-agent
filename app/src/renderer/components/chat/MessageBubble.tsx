@@ -10,8 +10,23 @@ import { useAgentStore } from '../../stores/agentStore';
 import { useConfigStore } from '../../stores/configStore';
 import { CodeBlock } from '../ui/CodeBlock';
 
+interface UserProfile {
+  display_name?: string;
+  alias?: string;
+  bio?: string;
+  profileImage?: string;
+  type?: number;
+  aiAgent?: {
+    type: number;
+    capabilities?: number[];
+    model?: string;
+    creator?: string;
+  };
+}
+
 interface MessageBubbleProps {
   message: Message;
+  userProfile?: UserProfile | null;
 }
 
 /**
@@ -52,7 +67,7 @@ function cleanMessageContent(content: string): string {
 /**
  * Individual message component with user/assistant styling
  */
-const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
+const MessageBubble: React.FC<MessageBubbleProps> = ({ message, userProfile }) => {
   const isUser = message.role === 'user';
   const isSystem = message.role === 'system';
   const addNotification = useNotificationStore(
@@ -171,20 +186,47 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
           isUser ? 'flex-row-reverse space-x-reverse' : 'flex-row'
         )}
       >
-        <div
-          className={cn(
-            'flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center',
-            isUser
-              ? 'bg-gradient-to-r from-blue-500 to-purple-500'
-              : 'bg-gradient-to-r from-teal-500 to-green-500'
-          )}
-          aria-hidden='true'
-        >
-          {isUser ? (
-            <FiUser className='w-4 h-4 text-white' />
-          ) : (
-            <FiCpu className='w-4 h-4 text-white' />
-          )}
+        <div className="flex-shrink-0">
+          {isUser && userProfile?.profileImage ? (
+            <img 
+              src={userProfile.profileImage.startsWith('hcs://') 
+                ? userProfile.profileImage.replace('hcs://1/', 'https://kiloscribe.com/api/inscription-cdn/')
+                : userProfile.profileImage.startsWith('ipfs://') 
+                ? userProfile.profileImage.replace('ipfs://', 'https://gateway.pinata.cloud/ipfs/')
+                : userProfile.profileImage
+              }
+              alt={userProfile.display_name || userProfile.alias || 'User'}
+              className="w-8 h-8 rounded-full object-cover border-2 border-blue-500/20"
+              onError={(e) => {
+                // Fallback to default avatar on error
+                const target = e.target as HTMLImageElement;
+                target.parentElement?.querySelector('.avatar-fallback')?.classList.remove('hidden');
+                target.style.display = 'none';
+              }}
+            />
+          ) : null}
+          <div
+            className={cn(
+              'avatar-fallback flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center',
+              isUser
+                ? 'bg-gray-300 dark:bg-gray-600'
+                : 'bg-blue-500',
+              isUser && userProfile?.profileImage ? 'hidden' : ''
+            )}
+            aria-hidden='true'
+          >
+            {isUser ? (
+              userProfile?.display_name || userProfile?.alias ? (
+                <span className="text-gray-700 dark:text-white text-sm font-semibold">
+                  {(userProfile.display_name || userProfile.alias || 'U')[0].toUpperCase()}
+                </span>
+              ) : (
+                <FiUser className='w-4 h-4 text-gray-700 dark:text-white' />
+              )
+            ) : (
+              <FiCpu className='w-4 h-4 text-white' />
+            )}
+          </div>
         </div>
 
         <div
@@ -197,11 +239,11 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
             className={cn(
               'px-4 py-3 rounded-2xl shadow-sm',
               isUser
-                ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-br-md'
-                : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-bl-md'
+                ? 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white rounded-tr-md'
+                : 'bg-blue-500 text-white rounded-tl-md'
             )}
           >
-            <div className='space-y-2'>
+            <div className={contentParts.length > 1 ? 'space-y-2' : ''}>
               {contentParts.map((part, index) => {
                 if (part.type === 'code') {
                   return (
@@ -217,14 +259,12 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
 
                 if (isUser) {
                   return (
-                    <Typography
+                    <span
                       key={`text-${index}`}
-                      variant='body1'
-                      color='white'
-                      className='whitespace-pre-wrap break-words'
+                      className='whitespace-pre-wrap break-words text-gray-900 dark:text-white'
                     >
                       {part.content}
-                    </Typography>
+                    </span>
                   );
                 }
 

@@ -27,6 +27,7 @@ import { ConfigService } from '../services/ConfigService';
 import { registerTransactionHandlers } from '../handlers/transactionHandlers';
 import { MirrorNodeService } from '../services/MirrorNodeService';
 import { setupHCS10Handlers } from './hcs10Handlers';
+import { UpdateService } from '../services/UpdateService';
 
 const DEFAULT_SERVICE = 'conversational-agent';
 
@@ -925,6 +926,7 @@ export function setupIPCHandlers(masterPassword: string): void {
   registerTransactionHandlers();
   setupMirrorNodeHandlers();
   setupThemeHandlers();
+  setupUpdateHandlers();
   setupHCS10Handlers();
 }
 
@@ -1027,6 +1029,106 @@ function setupThemeHandlers(): void {
       const errorMessage = error instanceof Error ? error.message : 'Failed to open external URL';
       logger.error('Open external error:', error);
       return { success: false, error: errorMessage };
+    }
+  });
+}
+
+/**
+ * Sets up update-related IPC handlers
+ */
+export function setupUpdateHandlers(): void {
+  const updateService = UpdateService.getInstance();
+  const logger = new Logger({ module: 'UpdateHandlers' });
+
+  // Get app version
+  ipcMain.handle('get-app-version', async (): Promise<string> => {
+    return app.getVersion();
+  });
+
+  // Check for updates
+  ipcMain.handle('check-for-updates', async (): Promise<void> => {
+    try {
+      logger.info('Checking for updates via IPC');
+      await updateService.checkForUpdates();
+    } catch (error) {
+      logger.error('Failed to check for updates:', error);
+      throw error;
+    }
+  });
+
+  // Download update
+  ipcMain.handle('download-update', async (): Promise<void> => {
+    try {
+      logger.info('Downloading update via IPC');
+      await updateService.downloadUpdate();
+    } catch (error) {
+      logger.error('Failed to download update:', error);
+      throw error;
+    }
+  });
+
+  // Install update
+  ipcMain.handle('install-update', async (): Promise<void> => {
+    try {
+      logger.info('Installing update via IPC');
+      await updateService.installUpdate();
+    } catch (error) {
+      logger.error('Failed to install update:', error);
+      throw error;
+    }
+  });
+
+  // Open repository URL
+  ipcMain.handle('open-repository-url', async (): Promise<void> => {
+    try {
+      const repositoryUrl = updateService.getRepositoryUrl();
+      logger.info(`Opening repository URL: ${repositoryUrl}`);
+      await shell.openExternal(repositoryUrl);
+    } catch (error) {
+      logger.error('Failed to open repository URL:', error);
+      throw error;
+    }
+  });
+
+  // Get current update info
+  ipcMain.handle('get-update-info', async (): Promise<any> => {
+    try {
+      return {
+        currentVersion: updateService.getCurrentVersion(),
+        updateInfo: updateService.getUpdateInfo(),
+        isUpdateSupported: updateService.isUpdateSupported()
+      };
+    } catch (error) {
+      logger.error('Failed to get update info:', error);
+      throw error;
+    }
+  });
+
+  // Set update channel
+  ipcMain.handle('set-update-channel', async (
+    event: IpcMainInvokeEvent,
+    channel: 'stable' | 'beta'
+  ): Promise<void> => {
+    try {
+      logger.info(`Setting update channel to: ${channel}`);
+      updateService.setUpdateChannel(channel);
+    } catch (error) {
+      logger.error('Failed to set update channel:', error);
+      throw error;
+    }
+  });
+
+  // Set auto download
+  ipcMain.handle('set-auto-download', async (
+    event: IpcMainInvokeEvent,
+    enabled: boolean
+  ): Promise<void> => {
+    try {
+      logger.info(`Setting auto download to: ${enabled}`);
+      updateService.setAutoDownload(enabled);
+    } catch (error) {
+      logger.error('Failed to set auto download:', error);
+      throw error;
     }
   });
 }

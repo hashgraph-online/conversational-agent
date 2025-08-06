@@ -56,6 +56,7 @@ export class MCPService {
   private connectionHealthMap: Map<string, MCPConnectionHealth> = new Map()
   private connectionStartTimes: Map<string, Date> = new Map()
   private connectingServers: Set<string> = new Set()
+  private initializedServers: Set<string> = new Set()
 
   private constructor() {
     this.logger = new Logger({ module: 'MCPService' })
@@ -117,7 +118,10 @@ export class MCPService {
   async saveServers(servers: MCPServerConfig[]): Promise<void> {
     try {
       this.serverConfigs = servers
-      await fs.promises.writeFile(this.configPath, JSON.stringify(servers, null, 2))
+      // Write to a temp file first, then rename for atomic operation
+      const tempPath = `${this.configPath}.tmp`
+      await fs.promises.writeFile(tempPath, JSON.stringify(servers, null, 2))
+      await fs.promises.rename(tempPath, this.configPath)
       this.logger.info(`Saved ${servers.length} MCP server configurations`)
     } catch (error) {
       this.logger.error('Failed to save MCP server configurations:', error)
@@ -363,6 +367,7 @@ export class MCPService {
       return new Promise((resolve) => {
         const timeout = setTimeout(() => {
           this.servers.delete(serverId)
+          this.initializedServers.delete(serverId)
           childProcess.kill()
           resolve({
             success: false,
@@ -398,6 +403,7 @@ export class MCPService {
             clearTimeout(timeout)
             this.connectingServers.delete(serverId) // Remove from connecting set
             this.servers.delete(serverId)
+            this.initializedServers.delete(serverId)
             serverConfig.status = 'error'
             serverConfig.errorMessage = error.message
             this.updateConnectionHealth(serverId, 'error', error.message)
@@ -419,6 +425,7 @@ export class MCPService {
 
         childProcess.on('close', (code: number | null) => {
           this.servers.delete(serverId)
+          this.initializedServers.delete(serverId)
           this.connectingServers.delete(serverId) // Remove from connecting set
           if (!connected) {
             connected = true
@@ -449,6 +456,7 @@ export class MCPService {
       if (process) {
         process.kill('SIGTERM')
         this.servers.delete(serverId)
+        this.initializedServers.delete(serverId)
         this.logger.info(`Disconnected from MCP server: ${serverId}`)
       }
     } catch (error) {
@@ -468,13 +476,17 @@ export class MCPService {
       }
 
       return new Promise((resolve, reject) => {
+        let resolved = false
         const timeout = setTimeout(() => {
-          this.logger.warn(`Tools request timed out for server ${serverId}`)
-          resolve([]) // Return empty array instead of rejecting
-        }, 15000) // Increase timeout to 15 seconds
+          if (!resolved) {
+            this.logger.warn(`Tools request timed out for server ${serverId}`)
+            resolved = true
+            resolve([]) // Return empty array instead of rejecting
+          }
+        }, 30000) // Increase timeout to 30 seconds
 
         let responseBuffer = ''
-        let initialized = false
+        let initialized = this.initializedServers.has(serverId)
 
         const onData = (data: Buffer) => {
           responseBuffer += data.toString()
@@ -491,6 +503,7 @@ export class MCPService {
               // Handle initialization response first
               if (!initialized && response.result && response.result.protocolVersion) {
                 initialized = true
+                this.initializedServers.add(serverId)
                 this.logger.info(`MCP Server ${serverId} initialized with protocol version ${response.result.protocolVersion}`)
                 
                 // Now request tools
@@ -505,11 +518,14 @@ export class MCPService {
 
               // Handle tools list response
               if (response.result && Array.isArray(response.result.tools)) {
-                clearTimeout(timeout)
-                // Don't remove the data listener immediately - let it stay active
-                this.logger.info(`Retrieved ${response.result.tools.length} tools from server ${serverId}`)
-                resolve(response.result.tools)
-                return
+                if (!resolved) {
+                  clearTimeout(timeout)
+                  resolved = true
+                  // Don't remove the data listener immediately - let it stay active
+                  this.logger.info(`Retrieved ${response.result.tools.length} tools from server ${serverId}`)
+                  resolve(response.result.tools)
+                  return
+                }
               }
 
               // Handle error responses
@@ -517,10 +533,13 @@ export class MCPService {
                 this.logger.error(`MCP Server ${serverId} error:`, response.error)
                 if (response.error.code === -32601) {
                   // Method not found - server might not support tools/list
-                  clearTimeout(timeout)
-                  // Don't remove the data listener - let it stay active
-                  resolve([])
-                  return
+                  if (!resolved) {
+                    clearTimeout(timeout)
+                    resolved = true
+                    // Don't remove the data listener - let it stay active
+                    resolve([])
+                    return
+                  }
                 }
               }
             } catch (parseError) {
@@ -530,30 +549,47 @@ export class MCPService {
           }
         }
 
-        process.stdout?.on('data', onData)
-        process.stderr?.on('data', (data: Buffer) => {
-          this.logger.debug(`MCP Server ${serverId} stderr:`, data.toString())
-        })
-
-        // Start with initialization
-        const initRequest = {
-          jsonrpc: '2.0',
-          id: 1,
-          method: 'initialize',
-          params: {
-            protocolVersion: '2024-11-05',
-            capabilities: {
-              tools: {}
-            },
-            clientInfo: {
-              name: 'conversational-agent',
-              version: '1.0.0'
-            }
-          }
+        // Only add listeners if not already initialized (to avoid duplicates)
+        if (!initialized) {
+          process.stdout?.on('data', onData)
+          process.stderr?.on('data', (data: Buffer) => {
+            this.logger.debug(`MCP Server ${serverId} stderr:`, data.toString())
+          })
+        } else {
+          // For already initialized servers, use once() to get just the response
+          process.stdout?.once('data', onData)
         }
 
-        this.logger.debug(`Sending initialize request to server ${serverId}`)
-        process.stdin?.write(JSON.stringify(initRequest) + '\n')
+        // If already initialized, just request tools
+        if (initialized) {
+          this.logger.debug(`Server ${serverId} already initialized, requesting tools directly`)
+          const toolsRequest = {
+            jsonrpc: '2.0',
+            id: Date.now(),
+            method: 'tools/list'
+          }
+          process.stdin?.write(JSON.stringify(toolsRequest) + '\n')
+        } else {
+          // Start with initialization
+          const initRequest = {
+            jsonrpc: '2.0',
+            id: 1,
+            method: 'initialize',
+            params: {
+              protocolVersion: '2024-11-05',
+              capabilities: {
+                tools: {}
+              },
+              clientInfo: {
+                name: 'conversational-agent',
+                version: '1.0.0'
+              }
+            }
+          }
+
+          this.logger.debug(`Sending initialize request to server ${serverId}`)
+          process.stdin?.write(JSON.stringify(initRequest) + '\n')
+        }
       })
     } catch (error) {
       this.logger.error(`Failed to get tools from server ${serverId}:`, error)
@@ -619,8 +655,6 @@ export class MCPService {
         const currentServerConfig = this.serverConfigs.find(s => s.id === serverId)
         if (currentServerConfig) {
           currentServerConfig.status = 'connected'
-          // Don't clear tools on error - preserve existing tools if any
-          // currentServerConfig.tools remains unchanged
           currentServerConfig.lastConnected = new Date()
           currentServerConfig.updatedAt = new Date()
           this.updateConnectionHealth(serverId, 'success')
@@ -629,7 +663,7 @@ export class MCPService {
           await this.saveServers(this.serverConfigs)
         }
       }
-    }, 2000) // Wait 2 seconds for server to be fully ready
+    }, 5000) // Wait 5 seconds for server to be fully ready
   }
 
   /**

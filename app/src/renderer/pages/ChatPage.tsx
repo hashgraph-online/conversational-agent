@@ -3,12 +3,12 @@ import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import Typography from '../components/ui/Typography'
 import { Button } from '../components/ui/Button'
-import { Input } from '../components/ui/input'
 import { Badge } from '../components/ui/badge'
 import { Tooltip, TooltipContent, TooltipTrigger } from '../components/ui/tooltip'
 import { Alert, AlertDescription } from '../components/ui/alert'
 import { useAgentStore } from '../stores/agentStore'
 import { useConfigStore } from '../stores/configStore'
+import { HCS10Client } from '@hashgraphonline/standards-sdk'
 import { 
   FiSettings, 
   FiRefreshCw, 
@@ -33,6 +33,20 @@ import { Disclaimer } from '../components/chat/Disclaimer'
 
 interface ChatPageProps {}
 
+interface UserProfile {
+  display_name?: string
+  alias?: string
+  bio?: string
+  profileImage?: string
+  type?: number
+  aiAgent?: {
+    type: number
+    capabilities?: number[]
+    model?: string
+    creator?: string
+  }
+}
+
 const ChatPage: React.FC<ChatPageProps> = () => {
   const navigate = useNavigate()
   const { 
@@ -53,11 +67,46 @@ const ChatPage: React.FC<ChatPageProps> = () => {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [selectedFiles, setSelectedFiles] = useState<File[]>([])
   const [fileError, setFileError] = useState<string | null>(null)
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
+  const [isLoadingProfile, setIsLoadingProfile] = useState(false)
   const messagesEndRef = React.useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   
   const isConfigComplete = isConfigured()
   
+
+  // Fetch user profile when config is available
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      if (config?.hedera?.accountId && config?.hedera?.network && !isLoadingProfile) {
+        setIsLoadingProfile(true)
+        try {
+          const client = new HCS10Client({
+            network: config.hedera.network as 'mainnet' | 'testnet',
+            operatorId: config.hedera.accountId,
+            operatorPrivateKey: config.hedera.privateKey,
+            logLevel: 'info'
+          })
+          
+          const profileResult = await client.retrieveProfile(config.hedera.accountId)
+          
+          if (profileResult.success && profileResult.profile) {
+            setUserProfile(profileResult.profile)
+            console.log('User profile loaded:', profileResult.profile)
+            console.log('Profile image URL:', profileResult.profile.profileImage)
+          } else {
+            console.log('No profile found for user:', profileResult)
+          }
+        } catch (error) {
+          console.error('Failed to fetch user profile:', error)
+        } finally {
+          setIsLoadingProfile(false)
+        }
+      }
+    }
+
+    fetchUserProfile()
+  }, [config?.hedera?.accountId, config?.hedera?.network, config?.hedera?.privateKey])
 
   useEffect(() => {
     const initializeAgent = async () => {
@@ -198,12 +247,6 @@ const ChatPage: React.FC<ChatPageProps> = () => {
     }
   }
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault()
-      handleSendMessage()
-    }
-  }
 
   const handleConnect = async () => {
     try {
@@ -364,21 +407,21 @@ const ChatPage: React.FC<ChatPageProps> = () => {
   }
 
   return (
-    <div className="flex flex-col h-full bg-gray-50 dark:bg-gray-950 relative overflow-hidden">
-      {/* Animated background */}
-      <div className="absolute inset-0 opacity-[0.01] dark:opacity-[0.02] pointer-events-none">
+    <div className="flex flex-col bg-gray-50 dark:bg-gray-950 relative -m-6" style={{ height: 'calc(100vh - 4rem)' }}>
+      {/* Subtle animated background */}
+      <div className="absolute inset-0 opacity-[0.005] dark:opacity-[0.01] pointer-events-none">
         <motion.div
           className="absolute inset-0"
           animate={{
             backgroundPosition: ['0% 0%', '100% 100%'],
           }}
           transition={{
-            duration: 20,
+            duration: 30,
             repeat: Infinity,
             repeatType: 'reverse',
           }}
           style={{
-            backgroundImage: `repeating-linear-gradient(45deg, transparent, transparent 35px, rgba(85, 153, 254, 0.1) 35px, rgba(85, 153, 254, 0.1) 70px)`,
+            backgroundImage: `repeating-linear-gradient(45deg, transparent, transparent 35px, rgba(85, 153, 254, 0.05) 35px, rgba(85, 153, 254, 0.05) 70px)`,
             backgroundSize: '200% 200%',
           }}
         />
@@ -387,8 +430,8 @@ const ChatPage: React.FC<ChatPageProps> = () => {
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-3">
             <motion.div 
-              className="w-10 h-10 bg-gradient-to-br from-[#a679f0] to-[#5599fe] rounded-xl flex items-center justify-center shadow-md"
-              whileHover={{ scale: 1.1, rotate: 5 }}
+              className="w-10 h-10 bg-gradient-to-br from-[#a679f0]/80 to-[#5599fe]/80 rounded-xl flex items-center justify-center shadow-sm"
+              whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
               <FiZap className="w-5 h-5 text-white" />
@@ -448,51 +491,50 @@ const ChatPage: React.FC<ChatPageProps> = () => {
         </div>
       </header>
 
-      <div className="flex-1 overflow-y-auto relative">
+      <div className="flex-1 overflow-y-auto relative min-h-0">
         {messages.length === 0 ? (
           <div className="h-full flex items-center justify-center p-8">
-            <div className="text-center space-y-6 max-w-2xl relative z-10">
-              {/* Floating orbs */}
+            <div className="text-center space-y-6 max-w-2xl relative z-10 pt-8">
+              {/* Subtle floating orbs */}
               <motion.div
-                className="absolute -top-20 -right-20 w-64 h-64 bg-[#a679f0]/10 rounded-full blur-3xl"
+                className="absolute -top-10 -right-20 w-64 h-64 bg-[#a679f0]/5 rounded-full blur-3xl"
                 animate={{
-                  scale: [1, 1.2, 1],
-                  opacity: [0.1, 0.2, 0.1],
+                  scale: [1, 1.1, 1],
+                  opacity: [0.05, 0.1, 0.05],
                 }}
                 transition={{
-                  duration: 4,
+                  duration: 6,
                   repeat: Infinity,
                   ease: 'easeInOut',
                 }}
               />
               <motion.div
-                className="absolute -bottom-20 -left-20 w-64 h-64 bg-[#48df7b]/10 rounded-full blur-3xl"
+                className="absolute -bottom-10 -left-20 w-64 h-64 bg-[#48df7b]/5 rounded-full blur-3xl"
                 animate={{
-                  scale: [1.2, 1, 1.2],
-                  opacity: [0.1, 0.2, 0.1],
+                  scale: [1.1, 1, 1.1],
+                  opacity: [0.05, 0.1, 0.05],
                 }}
                 transition={{
-                  duration: 4,
+                  duration: 6,
                   repeat: Infinity,
                   ease: 'easeInOut',
-                  delay: 2,
+                  delay: 3,
                 }}
               />
               
               <motion.div 
-                className="w-16 h-16 bg-gradient-to-br from-[#a679f0] to-[#5599fe] rounded-2xl flex items-center justify-center mx-auto shadow-lg"
+                className="w-16 h-16 bg-gradient-to-br from-[#a679f0]/70 to-[#5599fe]/70 rounded-2xl flex items-center justify-center mx-auto shadow-md"
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.5 }}
-                whileHover={{ scale: 1.1 }}
+                whileHover={{ scale: 1.05 }}
               >
                 <FiMessageSquare className="w-8 h-8 text-white" />
               </motion.div>
               <div className="space-y-3">
                 <Typography 
                   variant="h4" 
-                  className="font-bold animate-gradient bg-gradient-to-r from-[#a679f0] via-[#5599fe] to-[#48df7b] bg-clip-text text-transparent"
-                  style={{ backgroundSize: '200% 200%' }}
+                  className="font-bold text-gray-900 dark:text-white"
                 >
                   Welcome to OpenARC
                 </Typography>
@@ -504,10 +546,10 @@ const ChatPage: React.FC<ChatPageProps> = () => {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-8">
                 {[
-                  { icon: FiCpu, text: "Inscribe data using HCS-1", gradient: 'from-[#a679f0] to-[#5599fe]' },
-                  { icon: FiCode, text: "Deploy an HCS-20 tick", gradient: 'from-[#5599fe] to-[#48df7b]' },
-                  { icon: FiShield, text: "Mint NFTs on Hedera", gradient: 'from-[#48df7b] to-[#5599fe]' },
-                  { icon: FiMessageSquare, text: "Check my HCS inscriptions", gradient: 'from-[#5599fe] to-[#a679f0]' }
+                  { icon: FiCpu, text: "Inscribe this poem", color: 'bg-purple-500/70' },
+                  { icon: FiCode, text: "What's the price of HBAR?", color: 'bg-blue-500/70' },
+                  { icon: FiShield, text: "Send 1 HBAR to 0.0.800", color: 'bg-green-500/70' },
+                  { icon: FiMessageSquare, text: "Create an NFT collection", color: 'bg-indigo-500/70' }
                 ].map((suggestion, index) => {
                   const Icon = suggestion.icon
                   
@@ -517,24 +559,19 @@ const ChatPage: React.FC<ChatPageProps> = () => {
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.5, delay: index * 0.1 }}
-                      whileHover={{ scale: 1.05, y: -2 }}
+                      whileHover={{ scale: 1.02, y: -1 }}
                       whileTap={{ scale: 0.98 }}
                       onClick={() => setInputValue(suggestion.text)}
-                      className="p-4 bg-white/80 dark:bg-gray-900/50 backdrop-blur-sm rounded-xl border border-gray-200 dark:border-gray-800 hover:border-[#5599fe]/50 hover:shadow-xl transition-all text-left group relative overflow-hidden"
+                      className="p-4 bg-white/80 dark:bg-gray-900/50 backdrop-blur-sm rounded-xl border border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700 hover:shadow-lg transition-all text-left group relative overflow-hidden"
                     >
-                      <div className={cn(
-                        "absolute inset-0 opacity-0 group-hover:opacity-[0.05] transition-opacity duration-500",
-                        `bg-gradient-to-br ${suggestion.gradient}`
-                      )} />
-                      
                       <div className="relative">
                         <div className={cn(
-                          "w-10 h-10 rounded-lg flex items-center justify-center mb-3 shadow-md group-hover:shadow-lg transition-all duration-300",
-                          `bg-gradient-to-br ${suggestion.gradient}`
+                          "w-10 h-10 rounded-lg flex items-center justify-center mb-3 shadow-sm group-hover:shadow-md transition-all duration-300",
+                          suggestion.color
                         )}>
                           <Icon className="w-5 h-5 text-white" />
                         </div>
-                        <Typography variant="body2" className="group-hover:text-transparent group-hover:bg-gradient-to-r group-hover:from-[#5599fe] group-hover:to-[#a679f0] group-hover:bg-clip-text transition-all duration-300">
+                        <Typography variant="body2" className="text-gray-700 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white transition-colors duration-300">
                           {suggestion.text}
                         </Typography>
                       </div>
@@ -547,7 +584,7 @@ const ChatPage: React.FC<ChatPageProps> = () => {
         ) : (
           <div className="py-6 pr-6 space-y-4">
             {messages.map((message) => (
-              <MessageBubble key={message.id} message={message} />
+              <MessageBubble key={message.id} message={message} userProfile={userProfile} />
             ))}
             
             {isLoading && (
@@ -561,22 +598,22 @@ const ChatPage: React.FC<ChatPageProps> = () => {
                   <div className="flex items-center gap-3">
                     <div className="flex gap-1">
                       <motion.div 
-                        className="w-2 h-2 bg-gradient-to-r from-[#a679f0] to-[#5599fe] rounded-full"
-                        animate={{ y: [-4, 0, -4] }}
+                        className="w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full"
+                        animate={{ y: [-3, 0, -3] }}
                         transition={{ duration: 0.6, repeat: Infinity, delay: 0 }}
                       />
                       <motion.div 
-                        className="w-2 h-2 bg-gradient-to-r from-[#5599fe] to-[#48df7b] rounded-full"
-                        animate={{ y: [-4, 0, -4] }}
+                        className="w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full"
+                        animate={{ y: [-3, 0, -3] }}
                         transition={{ duration: 0.6, repeat: Infinity, delay: 0.15 }}
                       />
                       <motion.div 
-                        className="w-2 h-2 bg-gradient-to-r from-[#48df7b] to-[#a679f0] rounded-full"
-                        animate={{ y: [-4, 0, -4] }}
+                        className="w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full"
+                        animate={{ y: [-3, 0, -3] }}
                         transition={{ duration: 0.6, repeat: Infinity, delay: 0.3 }}
                       />
                     </div>
-                    <Typography variant="caption" className="bg-gradient-to-r from-[#5599fe] to-[#a679f0] bg-clip-text text-transparent font-medium">
+                    <Typography variant="caption" className="text-gray-600 dark:text-gray-400 font-medium">
                       Agent is thinking...
                     </Typography>
                   </div>
@@ -589,10 +626,14 @@ const ChatPage: React.FC<ChatPageProps> = () => {
         )}
       </div>
 
-      {/* Disclaimer */}
-      <Disclaimer />
-
-      <div className="border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4">
+      {/* Input area fixed at bottom */}
+      <div className="border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 flex-shrink-0">
+        {/* Disclaimer */}
+        <div className="px-4 pt-2">
+          <Disclaimer />
+        </div>
+        
+        <div className="p-4 pt-0">
         <div className="max-w-4xl mx-auto">
           {fileError && (
             <Alert className="mb-3 border-orange-200 bg-orange-50 dark:border-orange-800 dark:bg-orange-950/20">
@@ -632,16 +673,40 @@ const ChatPage: React.FC<ChatPageProps> = () => {
             </div>
           )}
           
-          <div className="flex gap-3">
+          <div className="flex gap-3 items-end">
             <div className="flex-1 relative">
-              <Input
-                type="text"
+              <textarea
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
-                onKeyPress={handleKeyPress}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault()
+                    handleSendMessage()
+                  }
+                }}
                 placeholder={isConnected ? "Type a message..." : "Connect to agent to start chatting..."}
                 disabled={!isConnected || isSubmitting}
-                className="px-4 py-3 pr-12 rounded-xl"
+                rows={1}
+                className={cn(
+                  "w-full px-4 py-3 pr-12 rounded-xl resize-none",
+                  "min-h-[48px] max-h-[200px]",
+                  "bg-gray-100 dark:bg-gray-800",
+                  "border border-gray-200 dark:border-gray-700",
+                  "focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500",
+                  "placeholder:text-gray-500 dark:placeholder:text-gray-400",
+                  "text-gray-900 dark:text-white",
+                  "transition-all duration-200",
+                  "disabled:opacity-50 disabled:cursor-not-allowed"
+                )}
+                style={{
+                  height: 'auto',
+                  overflowY: inputValue.split('\n').length > 4 ? 'auto' : 'hidden'
+                }}
+                onInput={(e) => {
+                  const target = e.target as HTMLTextAreaElement
+                  target.style.height = 'auto'
+                  target.style.height = Math.min(target.scrollHeight, 200) + 'px'
+                }}
               />
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -650,7 +715,7 @@ const ChatPage: React.FC<ChatPageProps> = () => {
                     disabled={!isConnected || isSubmitting}
                     variant="ghost"
                     size="icon"
-                    className="absolute right-2 top-1/2 transform -translate-y-1/2 h-8 w-8"
+                    className="absolute right-2 bottom-2 h-8 w-8"
                   >
                     <FiPaperclip className="w-4 h-4" />
                   </Button>
@@ -663,9 +728,9 @@ const ChatPage: React.FC<ChatPageProps> = () => {
             <Button
               onClick={handleSendMessage}
               disabled={!isConnected || isSubmitting || (!inputValue.trim() && selectedFiles.length === 0)}
-              variant="gradient"
+              variant="default"
               size="default"
-              className="px-6"
+              className="px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white border-0 h-[48px]"
             >
               <FiSend className="w-4 h-4" />
               Send
@@ -698,6 +763,7 @@ const ChatPage: React.FC<ChatPageProps> = () => {
           className="hidden"
           accept="*/*"
         />
+        </div>
       </div>
     </div>
   )

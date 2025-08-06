@@ -10,6 +10,13 @@
     "publish": "npm run prepare-icons && electron-forge publish",
     "dev": "npx electron-forge start",
     "build": "tsc && npm run prepare-icons && electron-forge package",
+    "dist": "npm run build-for-builder && electron-builder",
+    "dist:dir": "npm run build-for-builder && electron-builder --dir",
+    "dist:mac": "npm run build-for-builder && electron-builder --mac",
+    "dist:win": "npm run build-for-builder && electron-builder --win",
+    "dist:linux": "npm run build-for-builder && electron-builder --linux",
+    "release": "npm run build-for-builder && electron-builder --publish=always",
+    "build-for-builder": "tsc && vite build --config vite.main.config.ts && vite build --config vite.preload.config.ts && vite build --config vite.renderer.config.ts && npm run prepare-icons",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "test": "jest",
@@ -20,7 +27,8 @@
     "test:a11y": "npm run test:accessibility && npm run test:responsive",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
-    "prepare-icons": "node scripts/prepare-icons.js"
+    "prepare-icons": "node scripts/prepare-icons.js",
+    "test:update-system": "node scripts/test-update-system.js"
   },
   "keywords": [
     "electron",
@@ -31,7 +39,7 @@
   ],
   "author": "Hashgraph Online",
   "license": "MIT",
-  "packageManager": "pnpm@10.11.1",
+  "packageManager": "pnpm@10.14.0+sha512.ad27a79641b49c3e481a16a805baa71817a04bbe06a38d17e60e2eaee83f6a146c6a688125f5792e48dd5ba30e7da52a5cda4c3992b9ccf333f9ce223af84748",
   "devDependencies": {
     "@electron-forge/cli": "^7.8.2",
     "@electron-forge/maker-deb": "^7.8.2",
@@ -40,6 +48,7 @@
     "@electron-forge/maker-squirrel": "^7.8.2",
     "@electron-forge/maker-zip": "^7.8.2",
     "@electron-forge/plugin-vite": "^7.8.2",
+    "@electron/notarize": "^3.0.1",
     "@electron/rebuild": "^4.0.1",
     "@storybook/addon-links": "9.1.0",
     "@storybook/react": "9.1.0",
@@ -59,6 +68,7 @@
     "cross-env": "^10.0.0",
     "drizzle-kit": "^0.29.0",
     "electron": "^37",
+    "electron-builder": "^25.1.8",
     "jest": "^30.0.5",
     "jest-environment-jsdom": "^30.0.5",
     "node-fetch": "^2.7.0",
@@ -72,6 +82,7 @@
   },
   "dependencies": {
     "@hashgraphonline/conversational-agent": "file:..",
+    "@hashgraphonline/standards-agent-kit": "0.2.120",
     "@hashgraphonline/standards-sdk": "0.0.167",
     "@hookform/resolvers": "^5.2.0",
     "@langchain/anthropic": "^0.3.25",

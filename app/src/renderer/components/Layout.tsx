@@ -1,10 +1,12 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
+import { useNavigate } from 'react-router-dom'
 import Sidebar from './navigation/Sidebar'
 import Typography from './ui/Typography'
-import { FiSearch, FiMoon, FiSun } from 'react-icons/fi'
+import { FiSearch, FiMoon, FiSun, FiUser } from 'react-icons/fi'
 import { cn } from '../lib/utils'
 import { useConfigStore } from '../stores/configStore'
+import { HCS10Client } from '@hashgraphonline/standards-sdk'
 
 interface LayoutProps {
   children: React.ReactNode
@@ -44,6 +46,97 @@ const ThemeToggle: React.FC = () => {
           <FiSun className="w-5 h-5" />
         )}
       </motion.div>
+    </motion.button>
+  )
+}
+
+interface UserProfile {
+  display_name?: string
+  alias?: string
+  profileImage?: string
+}
+
+const ProfileButton: React.FC = () => {
+  const navigate = useNavigate()
+  const { config } = useConfigStore()
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
+  const [isLoadingProfile, setIsLoadingProfile] = useState(false)
+
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      if (config?.hedera?.accountId && config?.hedera?.network && !isLoadingProfile) {
+        setIsLoadingProfile(true)
+        try {
+          const client = new HCS10Client({
+            network: config.hedera.network as 'mainnet' | 'testnet',
+            operatorId: config.hedera.accountId,
+            operatorPrivateKey: config.hedera.privateKey,
+            logLevel: 'info'
+          })
+          
+          const profileResult = await client.retrieveProfile(config.hedera.accountId)
+          
+          if (profileResult.success && profileResult.profile) {
+            setUserProfile(profileResult.profile)
+          }
+        } catch (error) {
+          console.error('Failed to fetch user profile:', error)
+        } finally {
+          setIsLoadingProfile(false)
+        }
+      }
+    }
+
+    fetchUserProfile()
+  }, [config?.hedera?.accountId, config?.hedera?.network, config?.hedera?.privateKey])
+
+  return (
+    <motion.button
+      onClick={() => navigate('/hcs10-profile')}
+      whileHover={{ scale: 1.1 }}
+      whileTap={{ scale: 0.95 }}
+      className={cn(
+        "ml-3 p-2 rounded-xl transition-all duration-200",
+        "bg-gradient-to-r from-[#a679f0]/10 to-[#5599fe]/10 hover:from-[#a679f0]/20 hover:to-[#5599fe]/20",
+        "text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white",
+        "border border-gray-200/50 dark:border-white/10"
+      )}
+      aria-label="View profile"
+      title="My Profile"
+    >
+      {userProfile?.profileImage ? (
+        <img 
+          src={userProfile.profileImage.startsWith('hcs://') 
+            ? userProfile.profileImage.replace('hcs://1/', 'https://kiloscribe.com/api/inscription-cdn/')
+            : userProfile.profileImage.startsWith('ipfs://') 
+            ? userProfile.profileImage.replace('ipfs://', 'https://gateway.pinata.cloud/ipfs/')
+            : userProfile.profileImage
+          }
+          alt={userProfile.display_name || userProfile.alias || 'Profile'}
+          className="w-6 h-6 rounded-full object-cover"
+          onError={(e) => {
+            const target = e.target as HTMLImageElement
+            target.style.display = 'none'
+            const fallback = target.parentElement?.querySelector('.profile-icon-fallback') as HTMLElement
+            if (fallback) fallback.style.display = 'flex'
+          }}
+        />
+      ) : null}
+      <div 
+        className={cn(
+          "profile-icon-fallback w-6 h-6 rounded-full flex items-center justify-center",
+          userProfile?.profileImage ? 'hidden' : 'flex'
+        )}
+        style={{ display: userProfile?.profileImage ? 'none' : 'flex' }}
+      >
+        {userProfile?.display_name || userProfile?.alias ? (
+          <span className="text-sm font-semibold">
+            {(userProfile.display_name || userProfile.alias)[0].toUpperCase()}
+          </span>
+        ) : (
+          <FiUser className="w-5 h-5" />
+        )}
+      </div>
     </motion.button>
   )
 }
@@ -88,7 +181,10 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             </motion.div>
           </div>
 
-          <ThemeToggle />
+          <div className="flex items-center">
+            <ProfileButton />
+            <ThemeToggle />
+          </div>
         </header>
 
         <main className="flex-1 overflow-y-auto">

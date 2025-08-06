@@ -186,11 +186,13 @@ export class ConversationalAgent {
       throw new Error('Agent not initialized. Call initialize() first.');
     }
 
-    const messages = chatHistory.map((msg) =>
-      msg.type === 'human'
-        ? new HumanMessage(msg.content)
-        : new AIMessage(msg.content)
-    );
+    const messages = chatHistory.map((msg) => {
+      if (msg.type === 'human') {
+        return new HumanMessage(msg.content);
+      } else {
+        return new AIMessage(msg.content);
+      }
+    });
 
     const context: ConversationContext = {
       messages,

@@ -20,7 +20,6 @@ const AcknowledgementsPage: React.FC = () => {
   const coreAcknowledgements = [
     {
       name: 'Hiero JavaScript SDK',
-      version: '2.69.0',
       description: 'The official JavaScript/TypeScript SDK for interacting with Hedera networks',
       link: 'https://github.com/hiero-ledger/hiero-sdk-js',
       icon: HiCommandLine,
@@ -28,7 +27,6 @@ const AcknowledgementsPage: React.FC = () => {
     },
     {
       name: 'Hedera Agent Kit',
-      version: 'v2.0.3',
       description: 'The foundational toolkit that powers OpenARC\'s interaction with the Hedera network',
       link: 'https://github.com/hedera-dev/hedera-agent-kit',
       icon: HiCube,
@@ -36,16 +34,15 @@ const AcknowledgementsPage: React.FC = () => {
     },
     {
       name: 'Hashgraph Online Standards SDK',
-      version: '0.0.165',
       description: 'Implementation of HCS standards including HCS-1, HCS-2, HCS-10, and HCS-20',
-      link: 'https://github.com/hashgraphonline/standards-sdk',
+      link: 'https://github.com/hashgraph-online/standards-sdk',
       icon: HiCodeBracket,
       gradient: 'from-[#5599fe] to-[#48df7b]'
     },
     {
       name: 'HCS Improvement Proposals',
       description: 'The standards that enable decentralized agent communication and inscription on Hedera',
-      link: 'https://hcs-improvement-proposals.pages.dev',
+      link: 'https://hashgraphonline.com/docs/standards/',
       icon: HiDocumentText,
       gradient: 'from-[#48df7b] to-[#5599fe]'
     }
@@ -78,28 +75,28 @@ const AcknowledgementsPage: React.FC = () => {
     {
       category: 'Core Technologies',
       items: [
-        { name: 'LangChain', version: '0.3.3' },
-        { name: 'OpenAI', version: '0.6.3' },
-        { name: 'Model Context Protocol', version: '1.17.0' },
-        { name: 'Electron Log', version: '5.4.2' }
+        { name: 'LangChain' },
+        { name: 'OpenAI' },
+        { name: 'Model Context Protocol' },
+        { name: 'Electron Log' }
       ]
     },
     {
       category: 'Frontend',
       items: [
-        { name: 'React', version: '19.1.1' },
-        { name: 'Electron', version: '32.2.7' },
-        { name: 'Tailwind CSS', version: '4.1.11' },
-        { name: 'Framer Motion', version: '12.23.12' }
+        { name: 'React' },
+        { name: 'Electron' },
+        { name: 'Tailwind CSS' },
+        { name: 'Framer Motion' }
       ]
     },
     {
       category: 'UI Components',
       items: [
-        { name: 'Radix UI', version: 'Various' },
-        { name: 'React Icons', version: '5.5.0' },
-        { name: 'Lucide React', version: '0.536.0' },
-        { name: 'React Hook Form', version: '7.61.1' }
+        { name: 'Radix UI' },
+        { name: 'React Icons' },
+        { name: 'Lucide React' },
+        { name: 'React Hook Form' }
       ]
     }
   ]
@@ -281,11 +278,6 @@ const AcknowledgementsPage: React.FC = () => {
                           <Typography variant="h6" className="font-bold">
                             {item.name}
                           </Typography>
-                          {item.version && (
-                            <Badge variant="secondary" className="text-xs">
-                              {item.version}
-                            </Badge>
-                          )}
                         </div>
                         <Typography variant="body2" color="muted" className="mb-3">
                           {item.description}
@@ -362,11 +354,8 @@ const AcknowledgementsPage: React.FC = () => {
                     </Typography>
                     <div className="space-y-2">
                       {category.items.map((item) => (
-                        <div key={item.name} className="flex items-center justify-between">
+                        <div key={item.name} className="flex items-center">
                           <Typography variant="body2">{item.name}</Typography>
-                          <Typography variant="caption" color="muted">
-                            {item.version}
-                          </Typography>
                         </div>
                       ))}
                     </div>
@@ -510,7 +499,7 @@ const AcknowledgementsPage: React.FC = () => {
                   <Button
                     variant="gradient"
                     size="sm"
-                    onClick={() => window.open('https://github.com/hashgraphonline/conversational-agent', '_blank')}
+                    onClick={() => window.open('https://github.com/hashgraph-online/conversational-agent', '_blank')}
                   >
                     <HiCodeBracket className="w-4 h-4" />
                     View Source

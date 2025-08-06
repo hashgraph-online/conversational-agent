@@ -7,12 +7,10 @@ import {
   FiServer,
   FiPackage,
   FiArrowRight,
-  FiUser,
 } from 'react-icons/fi';
 import { motion } from 'framer-motion';
 import { cn } from '../lib/utils';
 import { MyAgentsList } from '../components/hcs10/MyAgentsList';
-import TypingEffect from '../components/ui/TypingEffect';
 
 interface HomePageProps {}
 
@@ -49,13 +47,6 @@ const HomePage: React.FC<HomePageProps> = () => {
       description: 'Install and manage agent plugins',
       color: 'green',
       link: '/plugins',
-    },
-    {
-      icon: FiUser,
-      title: 'HCS-10 Profile',
-      description: 'Register your AI agent on the Hedera network',
-      color: 'orange',
-      link: '/hcs10-profile',
     },
   ];
 
@@ -201,26 +192,25 @@ const HomePage: React.FC<HomePageProps> = () => {
                 style={{ opacity: isActive ? 0.05 : undefined }}
               />
 
-              {/* Icon */}
-              <div className='relative mb-4'>
-                <div
-                  className={cn(
-                    'absolute inset-0 rounded-xl blur-xl opacity-30 group-hover:opacity-50 transition-all duration-500',
-                    `bg-gradient-to-br ${colorClasses[feature.color]}`
-                  )}
-                />
-                <div
-                  className={cn(
-                    'relative w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-500',
-                    'group-hover:scale-110',
-                    `bg-gradient-to-br ${colorClasses[feature.color]}`
-                  )}
-                >
-                  <Icon className='w-6 h-6 text-white' />
+              {/* Icon and Title Row */}
+              <div className='flex items-center gap-3 mb-3'>
+                <div className='relative'>
+                  <div
+                    className={cn(
+                      'absolute inset-0 rounded-xl blur-xl opacity-30 group-hover:opacity-50 transition-all duration-500',
+                      `bg-gradient-to-br ${colorClasses[feature.color]}`
+                    )}
+                  />
+                  <div
+                    className={cn(
+                      'relative w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-500',
+                      'group-hover:scale-110',
+                      `bg-gradient-to-br ${colorClasses[feature.color]}`
+                    )}
+                  >
+                    <Icon className='w-6 h-6 text-white' />
+                  </div>
                 </div>
-              </div>
-
-              <div className='mb-2'>
                 <Typography
                   variant='h5'
                   className='font-semibold group-hover:text-transparent group-hover:bg-gradient-to-r group-hover:from-[#5599fe] group-hover:to-[#a679f0] group-hover:bg-clip-text transition-all duration-300'
@@ -245,47 +235,6 @@ const HomePage: React.FC<HomePageProps> = () => {
           );
         })}
       </div>
-
-      {/* Fun AI status indicator */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.4 }}
-        className='mt-8 p-4 bg-gradient-to-br from-[#5599fe]/5 via-[#a679f0]/5 to-[#48df7b]/5 dark:from-[#5599fe]/10 dark:via-[#a679f0]/10 dark:to-[#48df7b]/10 rounded-2xl border border-gray-200/50 dark:border-white/10 backdrop-blur-sm relative overflow-hidden'
-      >
-        <div className='absolute inset-0 opacity-10'>
-          <div
-            className='absolute inset-0'
-            style={{
-              backgroundImage:
-                'radial-gradient(circle, #5599fe 1px, transparent 1px)',
-              backgroundSize: '20px 20px',
-            }}
-          />
-        </div>
-
-        <div className='relative z-10 flex items-center gap-3'>
-          <div className='flex items-center gap-2'>
-            <div className='w-2 h-2 rounded-full bg-green-500 animate-pulse' />
-            <span className='text-xs text-gray-500 dark:text-gray-400'>
-              AI System Status
-            </span>
-          </div>
-          <div className='font-mono text-sm text-gray-700 dark:text-gray-300'>
-            <TypingEffect
-              texts={[
-                'INIT: Hedera connection established',
-                'SCAN: HCS-10 agents detected',
-                'AUTH: Cryptographic verification ready',
-                'SYNC: Real-time messaging active',
-              ]}
-              typingSpeed={30}
-              deletingSpeed={20}
-              delayBetweenTexts={2000}
-            />
-          </div>
-        </div>
-      </motion.div>
 
       <div className='mt-8 relative z-10'>
         <MyAgentsList />

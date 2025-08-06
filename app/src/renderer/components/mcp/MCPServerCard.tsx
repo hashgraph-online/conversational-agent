@@ -108,36 +108,37 @@ export const MCPServerCard: React.FC<MCPServerCardProps> = ({
     }
   };
 
+  const borderGradient = server.enabled 
+    ? (server.status === 'connected' || server.status === 'ready' 
+      ? 'linear-gradient(180deg, #a679f0 0%, #5599fe 50%, #48df7b 100%)' // purple-blue-green gradient (connected)
+      : 'linear-gradient(180deg, #a679f0 0%, #5599fe 100%)') // purple-blue gradient (connecting)
+    : 'linear-gradient(180deg, #9ca3af 0%, #d1d5db 100%)'; // gray gradient (disabled)
+
   return (
-    <Card className='p-6'>
-      <div className='flex items-start justify-between mb-4'>
-        <div className='flex items-center gap-3'>
-          <div className='p-2 bg-hedera-smoke-100 dark:bg-hedera-smoke-700 rounded-lg'>
-            {serverTypeIcons[server.type]}
-          </div>
-          <div>
-            <Typography disableMargin variant='h6' className='mb-1'>
-              {server.name}
-            </Typography>
-            <div className='flex items-center gap-3 text-sm text-gray-600 dark:text-gray-400'>
-              <div className='flex items-center gap-1.5'>
-                <span className='flex items-center'>{statusIcons[server.status]}</span>
-                <StatusIndicator
-                  status={statusColors[server.status]}
-                  size='sm'
-                />
-                <span className='leading-none'>
-                  {server.status === 'handshaking'
-                    ? 'Handshaking'
-                    : server.status === 'ready'
-                    ? 'Ready'
-                    : server.status.charAt(0).toUpperCase() +
-                      server.status.slice(1)}
-                </span>
-              </div>
-              <span className='leading-none'>•</span>
-              <span className='leading-none'>{server.type}</span>
+    <Card className='p-4 relative overflow-hidden'>
+      <div className='absolute left-0 top-0 bottom-0 w-0.5' style={{ background: borderGradient }} />
+      <div className='flex items-start justify-between mb-3'>
+        <div>
+          <Typography disableMargin variant='body2' className='font-medium mb-0.5'>
+            {server.name}
+          </Typography>
+          <div className='flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400'>
+            <div className='flex items-center gap-1'>
+              <StatusIndicator
+                status={statusColors[server.status]}
+                size='sm'
+              />
+              <span className='leading-none'>
+                {server.status === 'handshaking'
+                  ? 'Handshaking'
+                  : server.status === 'ready'
+                  ? 'Ready'
+                  : server.status.charAt(0).toUpperCase() +
+                    server.status.slice(1)}
+              </span>
             </div>
+            <span className='leading-none text-gray-400'>•</span>
+            <span className='leading-none capitalize'>{server.type}</span>
           </div>
         </div>
 
@@ -166,15 +167,21 @@ export const MCPServerCard: React.FC<MCPServerCardProps> = ({
               size='sm'
               onClick={async () => {
                 try {
+                  console.log(`[MCPServerCard] Refreshing tools for ${server.id}...`);
                   const { refreshServerTools, reloadServers } = useMCPStore.getState();
                   await refreshServerTools(server.id);
                   // Reload servers to get latest tools from JSON file
-                  await reloadServers();
+                  setTimeout(async () => {
+                    await reloadServers();
+                  }, 1000);
                 } catch (error) {
                   console.error('Failed to refresh tools:', error);
                 }
               }}
-              className='text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200'
+              className={cn(
+                'text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200',
+                (!server.tools || server.tools.length === 0) && 'text-amber-600 dark:text-amber-400 animate-pulse'
+              )}
               title='Refresh tools'
             >
               <FiRefreshCw className='w-4 h-4' />
@@ -199,85 +206,106 @@ export const MCPServerCard: React.FC<MCPServerCardProps> = ({
         </div>
       </div>
 
-      <div className='space-y-3'>
+      <div className='space-y-2'>
         {server.description && (
           <div>
             <Typography
               disableMargin
-              variant='body1'
-              className='text-gray-700 dark:text-gray-300'
+              variant='caption'
+              className='text-gray-600 dark:text-gray-400'
             >
               {server.description}
             </Typography>
           </div>
         )}
         
-        <div>
+        <div className='bg-gray-50 dark:bg-gray-800/50 rounded-md p-2'>
           <Typography
             disableMargin
-            variant='body1'
+            variant='caption'
             color='muted'
-            className='mb-1'
+            className='text-xs mb-0.5'
           >
             Configuration
           </Typography>
           <Typography
             disableMargin
-            variant='body1'
-            className='font-mono text-sm bg-hedera-smoke-50 dark:bg-hedera-smoke-800 px-2 py-1 rounded'
+            variant='caption'
+            className='font-mono text-xs text-gray-700 dark:text-gray-300'
           >
             {getConfigSummary()}
           </Typography>
         </div>
 
-        {server.tools && server.tools.length > 0 && (
-          <div>
-            <div className='flex items-center justify-between mb-2'>
+        {server.tools && server.tools.length > 0 ? (
+          <div className='bg-blue-50 dark:bg-blue-900/10 rounded-md p-2'>
+            <div className='flex items-center justify-between mb-1.5'>
               <Typography
                 disableMargin
-                variant='body1'
-                color='muted'
+                variant='caption'
+                className='text-xs font-medium text-blue-700 dark:text-blue-300'
               >
-                Available Tools ({server.tools.length})
+                {server.tools.length} Available Tools
               </Typography>
-              <Button
-                variant='ghost'
-                size='sm'
+              <button
                 onClick={() => setIsToolsModalOpen(true)}
-                className='text-primary-600 hover:text-primary-800 dark:text-primary-400 dark:hover:text-primary-300'
+                className='text-xs text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300'
               >
-                <FiTool className='w-4 h-4 mr-1' />
-                View Details
-              </Button>
+                View all →
+              </button>
             </div>
             <div className='flex flex-wrap gap-1'>
-              {server.tools.slice(0, 3).map((tool, index) => (
+              {server.tools.slice(0, 4).map((tool, index) => (
                 <span
                   key={index}
-                  className='px-2 py-1 bg-primary-50 text-primary-700 dark:bg-primary-900 dark:text-primary-300 text-xs rounded-full'
+                  className='px-1.5 py-0.5 bg-white/70 dark:bg-gray-800/70 text-blue-700 dark:text-blue-300 text-xs rounded border border-blue-200 dark:border-blue-700'
                   title={tool.description}
                 >
                   {tool.name}
                 </span>
               ))}
-              {server.tools.length > 3 && (
-                <button
-                  onClick={() => setIsToolsModalOpen(true)}
-                  className='px-2 py-1 bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400 text-xs rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors cursor-pointer'
-                >
-                  +{server.tools.length - 3} more
-                </button>
+              {server.tools.length > 4 && (
+                <span className='px-1.5 py-0.5 text-blue-600 dark:text-blue-400 text-xs'>
+                  +{server.tools.length - 4} more
+                </span>
               )}
             </div>
           </div>
-        )}
+        ) : (server.status === 'connected' || server.status === 'ready') ? (
+          <div className='bg-amber-50 dark:bg-amber-900/10 rounded-md p-2'>
+            <div className='flex items-center justify-between'>
+              <Typography
+                disableMargin
+                variant='caption'
+                className='text-xs text-amber-700 dark:text-amber-300'
+              >
+                Tools loading...
+              </Typography>
+              <button
+                onClick={async () => {
+                  try {
+                    const { refreshServerTools, reloadServers } = useMCPStore.getState();
+                    await refreshServerTools(server.id);
+                    // Reload servers to get latest tools from JSON file
+                    await reloadServers();
+                  } catch (error) {
+                    console.error('Failed to refresh tools:', error);
+                  }
+                }}
+                className='text-xs text-amber-600 hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300'
+              >
+                Refresh tools →
+              </button>
+            </div>
+          </div>
+        ) : null}
 
         {server.errorMessage && (
-          <div className='mb-3 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg'>
+          <div className='p-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md'>
             <Typography
               disableMargin
               variant='caption'
-              className='text-red-600 dark:text-red-400'
+              className='text-xs text-red-600 dark:text-red-400'
             >
               {server.errorMessage}
             </Typography>
@@ -285,45 +313,32 @@ export const MCPServerCard: React.FC<MCPServerCardProps> = ({
         )}
 
         {server.status === 'connecting' && (
-          <div className='p-3 bg-blue-50 border border-blue-200 dark:bg-blue-900/20 dark:border-blue-800 rounded-lg'>
-            <div className='flex items-center gap-2'>
-              <FiActivity className='w-4 h-4 animate-pulse text-blue-600 dark:text-blue-400' />
-              <Typography
-                disableMargin
-                variant='body1'
-                color='muted'
-                className='mb-0'
-              >
-                Establishing connection...
-              </Typography>
-            </div>
+          <div className='p-2 bg-amber-50 border border-amber-200 dark:bg-amber-900/20 dark:border-amber-800 rounded-md'>
+            <Typography
+              disableMargin
+              variant='caption'
+              className='text-xs text-amber-700 dark:text-amber-300'
+            >
+              Establishing connection...
+            </Typography>
           </div>
         )}
 
         {server.status === 'handshaking' && (
-          <div className='p-3 bg-blue-50 border border-blue-200 dark:bg-blue-900/20 dark:border-blue-800 rounded-lg'>
-            <div className='flex items-center gap-2'>
-              <FiActivity className='w-4 h-4 animate-spin text-blue-600 dark:text-blue-400' />
-              <Typography
-                disableMargin
-                variant='body1'
-                color='muted'
-                className='mb-0'
-              >
-                Performing handshake...
-              </Typography>
-            </div>
+          <div className='p-2 bg-amber-50 border border-amber-200 dark:bg-amber-900/20 dark:border-amber-800 rounded-md'>
+            <Typography
+              disableMargin
+              variant='caption'
+              className='text-xs text-amber-700 dark:text-amber-300'
+            >
+              Performing handshake...
+            </Typography>
           </div>
         )}
 
-        <div className='flex items-center justify-between pt-3 border-t border-hedera-smoke-200 dark:border-hedera-smoke-700'>
-          <div className='flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400'>
-            <span>Last connected: {formatDate(server.lastConnected)}</span>
-            {server.connectionHealth && (
-              <span>
-                Attempts: {server.connectionHealth.connectionAttempts}
-              </span>
-            )}
+        <div className='flex items-center justify-between pt-2 mt-2 border-t border-gray-200 dark:border-gray-700'>
+          <div className='text-xs text-gray-500 dark:text-gray-400'>
+            <span>{formatDate(server.lastConnected)}</span>
           </div>
 
           <div className='flex items-center gap-2'>
@@ -334,8 +349,8 @@ export const MCPServerCard: React.FC<MCPServerCardProps> = ({
                 onChange={handleToggle}
                 className='sr-only peer'
               />
-              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 dark:peer-focus:ring-primary-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-primary-600"></div>
-              <span className='ml-3 text-sm font-medium text-gray-900 dark:text-gray-300'>
+              <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-blue-500"></div>
+              <span className='ml-2 text-xs font-medium text-gray-700 dark:text-gray-300'>
                 {server.enabled ? 'Enabled' : 'Disabled'}
               </span>
             </label>

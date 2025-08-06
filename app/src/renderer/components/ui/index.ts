@@ -9,3 +9,6 @@ export * from './switch';
 export * from './Spinner';
 export * from './StatusIndicator';
 export * from './Typography';
+export * from './UpdateNotification';
+export * from './UpdateDialog';
+export * from './Progress';

@@ -106,6 +106,16 @@ const electronBridge = {
   // External links
   openExternal: (url: string) => ipcRenderer.invoke('open-external', url),
   
+  // Update operations
+  getAppVersion: () => ipcRenderer.invoke('get-app-version'),
+  checkForUpdates: () => ipcRenderer.invoke('check-for-updates'),
+  downloadUpdate: () => ipcRenderer.invoke('download-update'),
+  installUpdate: () => ipcRenderer.invoke('install-update'),
+  openRepositoryUrl: () => ipcRenderer.invoke('open-repository-url'),
+  getUpdateInfo: () => ipcRenderer.invoke('get-update-info'),
+  setUpdateChannel: (channel: 'stable' | 'beta') => ipcRenderer.invoke('set-update-channel', channel),
+  setAutoDownload: (enabled: boolean) => ipcRenderer.invoke('set-auto-download', enabled),
+  
   // General IPC methods
   invoke: (channel: string, ...args: any[]) => {
     return ipcRenderer.invoke(channel, ...args);

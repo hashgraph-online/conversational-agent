@@ -12,6 +12,13 @@ import { Button } from '../ui'
 import { Input } from '../ui'
 import { Textarea } from '../ui/textarea'
 import Typography from '../ui/Typography'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../ui/select'
 import { cn } from '../../lib/utils'
 import { AddMCPServerProps, MCPServerType, MCPServerFormData } from '../../types/mcp'
 import { MCPServerFormValidator, FieldError } from '../../lib/mcp-validation'
@@ -146,17 +153,39 @@ export const AddMCPServer: React.FC<AddMCPServerPropsExtended> = ({
 
   useEffect(() => {
     if (editingServer) {
-      reset({
+      const formData: any = {
         name: editingServer.name,
         type: editingServer.type,
         ...editingServer.config
-      })
+      }
+      
+      if (editingServer.type === 'custom' && editingServer.config.env) {
+        formData.env = Object.entries(editingServer.config.env)
+          .map(([key, value]) => `${key}=${value}`)
+          .join('\n')
+      }
+      
+      if (editingServer.type === 'custom' && editingServer.config.args) {
+        formData.args = editingServer.config.args.join(' ')
+      }
+      
+      reset(formData)
       setSelectedType(editingServer.type)
     } else if (template) {
       const templateData: any = {
         name: template.name,
         type: template.type,
         ...template.config
+      }
+      
+      if (template.type === 'custom' && template.config?.env) {
+        templateData.env = Object.entries(template.config.env)
+          .map(([key, value]) => `${key}=${value}`)
+          .join('\n')
+      }
+      
+      if (template.type === 'custom' && template.config?.args) {
+        templateData.args = template.config.args.join(' ')
       }
       
       if (templateData.rootPath === '$HOME') {
@@ -649,48 +678,44 @@ export const AddMCPServer: React.FC<AddMCPServerPropsExtended> = ({
               <FieldRequirement requirement={fieldRequirements.name} />
             </div>
             
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+            <div className="space-y-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                 Server Type
               </label>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {serverTypes.map(({ type, name, description, icon }) => (
-                  <label
-                    key={type}
-                    className={cn(
-                      'relative flex items-start p-4 border rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800',
-                      selectedType === type
-                        ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
-                        : 'border-gray-200 dark:border-gray-700'
-                    )}
-                  >
-                    <input
-                      type="radio"
-                      value={type}
-                      {...register('type')}
-                      className="sr-only"
-                    />
-                    <div className="flex items-center gap-3">
-                      <div className={cn(
-                        'p-2 rounded-lg',
-                        selectedType === type
-                          ? 'bg-primary-100 text-primary-600 dark:bg-primary-800 dark:text-primary-400'
-                          : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400'
-                      )}>
+              <Select
+                value={selectedType}
+                onValueChange={(value) => {
+                  setValue('type', value as MCPServerType)
+                  setSelectedType(value as MCPServerType)
+                }}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue>
+                    {(() => {
+                      const selected = serverTypes.find(t => t.type === selectedType)
+                      return selected ? (
+                        <div className="flex items-center gap-2">
+                          {selected.icon}
+                          <span>{selected.name}</span>
+                        </div>
+                      ) : 'Select a server type'
+                    })()}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {serverTypes.map(({ type, name, description, icon }) => (
+                    <SelectItem key={type} value={type}>
+                      <div className="flex items-center gap-2">
                         {icon}
+                        <div>
+                          <div className="font-medium">{name}</div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400">{description}</div>
+                        </div>
                       </div>
-                      <div>
-                        <Typography variant="body1" className="font-medium">
-                          {name}
-                        </Typography>
-                        <Typography variant="body1" color="secondary">
-                          {description}
-                        </Typography>
-                      </div>
-                    </div>
-                  </label>
-                ))}
-              </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             
             {renderConfigFields()}

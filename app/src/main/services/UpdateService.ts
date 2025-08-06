@@ -38,12 +38,27 @@ export class UpdateService {
   }
 
   private setupAutoUpdater(): void {
+    // Configure GitHub Releases as update server
     if (process.env.NODE_ENV === 'development') {
-      autoUpdater.updateConfigPath = 'app-update.yml';
+      // For development, you can use a local update server or skip updates
+      autoUpdater.updateConfigPath = 'dev-app-update.yml';
+    } else {
+      // Production: Use GitHub Releases
+      autoUpdater.setFeedURL({
+        provider: 'github',
+        owner: 'hashgraph-online',
+        repo: 'conversational-agent',
+        private: false,
+        releaseType: 'release' // Use 'prerelease' for beta channel
+      });
     }
 
     autoUpdater.autoDownload = false;
     autoUpdater.autoInstallOnAppQuit = true;
+    
+    // Configure additional settings
+    autoUpdater.fullChangelog = true;
+    autoUpdater.allowDowngrade = false;
 
     autoUpdater.on('checking-for-update', () => {
       this.logger.info('Checking for update...');
@@ -163,8 +178,54 @@ export class UpdateService {
   setUpdateChannel(channel: 'stable' | 'beta'): void {
     if (channel === 'beta') {
       autoUpdater.allowPrerelease = true;
+      // Update feed URL for prerelease
+      if (process.env.NODE_ENV !== 'development') {
+        autoUpdater.setFeedURL({
+          provider: 'github',
+          owner: 'hashgraph-online',
+          repo: 'conversational-agent',
+          private: false,
+          releaseType: 'prerelease'
+        });
+      }
     } else {
       autoUpdater.allowPrerelease = false;
+      // Update feed URL for stable release
+      if (process.env.NODE_ENV !== 'development') {
+        autoUpdater.setFeedURL({
+          provider: 'github',
+          owner: 'hashgraph-online',
+          repo: 'conversational-agent',
+          private: false,
+          releaseType: 'release'
+        });
+      }
     }
+  }
+
+  /**
+   * Force check for updates, bypassing cache
+   */
+  async forceCheckForUpdates(): Promise<void> {
+    try {
+      autoUpdater.checkForUpdatesAndNotify();
+    } catch (error) {
+      this.logger.error('Failed to force check for updates:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get the GitHub repository URL for releases
+   */
+  getRepositoryUrl(): string {
+    return 'https://github.com/hashgraph-online/conversational-agent/releases';
+  }
+
+  /**
+   * Check if updates are supported on current platform
+   */
+  isUpdateSupported(): boolean {
+    return process.platform === 'darwin' || process.platform === 'win32' || process.platform === 'linux';
   }
 }
