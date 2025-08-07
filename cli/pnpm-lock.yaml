@@ -5839,6 +5839,9 @@ packages:
   throat@5.0.0:
     resolution: {integrity: sha512-fcwX4mndzpLQKBS1DVYhGAcYaYt7vsHNIvQV+WXMvnow5cgjPphq5CaayLaGsjRdSCKZFNGt7/GYAuXaNOiYCA==}
 
+  tiktoken@1.0.21:
+    resolution: {integrity: sha512-/kqtlepLMptX0OgbYD9aMYbM7EFrMZCL7EoHM8Psmg2FuhXoo/bH64KqOiZGGwa6oS9TPdSEDKBnV2LuB8+5vQ==}
+
   time-zone@1.0.0:
     resolution: {integrity: sha512-TIsDdtKo6+XrPtiTm1ssmMngN1sAhyKnTO2kunQWqNPWIVvCm15Wmw4SWInwTVgJ5u/Tr04+8Ei9TNcw4x4ONA==}
     engines: {node: '>=4'}
@@ -7417,6 +7420,7 @@ snapshots:
       electron-log: 5.4.2
       hedera-agent-kit: 2.0.3(bn.js@5.2.2)(openai@5.10.2(ws@8.18.2)(zod@3.25.76))(react-native@0.80.1(@babel/core@7.28.0)(@types/react@18.3.23)(react@18.3.1))(react@18.3.1)(ws@8.18.2)(zod-to-json-schema@3.24.6(zod@3.25.76))
       langchain: 0.3.30(@langchain/core@0.3.66(openai@5.10.2(ws@8.18.2)(zod@3.25.76)))(axios@1.11.0)(openai@5.10.2(ws@8.18.2)(zod@3.25.76))(ws@8.18.2)
+      tiktoken: 1.0.21
       zod: 3.25.76
     transitivePeerDependencies:
       - '@arcjet/redact'
@@ -14510,6 +14514,8 @@ snapshots:
       real-require: 0.2.0
 
   throat@5.0.0: {}
+
+  tiktoken@1.0.21: {}
 
   time-zone@1.0.0: {}
 

@@ -283,8 +283,8 @@ const ChatPage: React.FC<ChatPageProps> = () => {
                 Welcome to Agent Chat
               </Typography>
               <Typography variant="body1" color="muted" className="max-w-md mx-auto">
-                To start chatting with your AI assistant, you'll need to configure your Hedera account 
-                and OpenAI API credentials. This ensures secure, private conversations.
+                To start chatting, you'll need to set up your account and API credentials. 
+                This ensures your conversations are secure and private.
               </Typography>
             </div>
             <Button
@@ -293,7 +293,7 @@ const ChatPage: React.FC<ChatPageProps> = () => {
               size="lg"
             >
               <FiSettings className="w-5 h-5" />
-              Configure Settings
+              Get Started
             </Button>
           </div>
         </div>
@@ -331,7 +331,7 @@ const ChatPage: React.FC<ChatPageProps> = () => {
                   Connecting to Agent
                 </Typography>
                 <Typography variant="body1" color="muted" className="max-w-md mx-auto">
-                  Initializing your AI assistant. This may take a moment...
+                  Getting your assistant ready. This may take a moment...
                 </Typography>
                 <div className="flex flex-col gap-2 mt-4">
                   <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
@@ -340,7 +340,7 @@ const ChatPage: React.FC<ChatPageProps> = () => {
                       animate={{ opacity: [0.3, 1, 0.3] }}
                       transition={{ duration: 1.5, repeat: Infinity }}
                     />
-                    Loading MCP servers...
+                    Loading extensions...
                   </div>
                   <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
                     <motion.div
@@ -348,7 +348,7 @@ const ChatPage: React.FC<ChatPageProps> = () => {
                       animate={{ opacity: [0.3, 1, 0.3] }}
                       transition={{ duration: 1.5, repeat: Infinity, delay: 0.5 }}
                     />
-                    Establishing Hedera connection...
+                    Connecting to network...
                   </div>
                   <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
                     <motion.div
@@ -356,7 +356,7 @@ const ChatPage: React.FC<ChatPageProps> = () => {
                       animate={{ opacity: [0.3, 1, 0.3] }}
                       transition={{ duration: 1.5, repeat: Infinity, delay: 1 }}
                     />
-                    Configuring AI model...
+                    Setting up your assistant...
                   </div>
                 </div>
               </div>
@@ -372,8 +372,8 @@ const ChatPage: React.FC<ChatPageProps> = () => {
                 </Typography>
                 <Typography variant="body1" color="muted" className="max-w-md mx-auto">
                   {connectionError 
-                    ? `Connection failed: ${connectionError}. Please check your configuration and try again.`
-                    : 'Your AI assistant is ready to start. Click below to establish a secure connection and begin chatting.'
+                    ? `Connection failed: ${connectionError}. Please check your settings and try again.`
+                    : 'Your assistant is ready to start. Click below to connect and begin chatting.'
                   }
                 </Typography>
               </div>
@@ -388,7 +388,7 @@ const ChatPage: React.FC<ChatPageProps> = () => {
                     "w-5 h-5",
                     status === 'connecting' && "animate-spin"
                   )} />
-                  {status === 'connecting' ? 'Connecting...' : 'Connect to Agent'}
+                  {status === 'connecting' ? 'Connecting...' : 'Connect to Assistant'}
                 </Button>
                 <Button
                   onClick={handleGoToSettings}
@@ -438,7 +438,7 @@ const ChatPage: React.FC<ChatPageProps> = () => {
             </motion.div>
             <div>
               <Typography variant="h6" className="font-bold">
-                AI Assistant
+                Your Assistant
               </Typography>
               <div className="flex items-center gap-2">
                 <div className={cn(
@@ -614,7 +614,7 @@ const ChatPage: React.FC<ChatPageProps> = () => {
                       />
                     </div>
                     <Typography variant="caption" className="text-gray-600 dark:text-gray-400 font-medium">
-                      Agent is thinking...
+                      Assistant is thinking...
                     </Typography>
                   </div>
                 </div>
@@ -684,7 +684,7 @@ const ChatPage: React.FC<ChatPageProps> = () => {
                     handleSendMessage()
                   }
                 }}
-                placeholder={isConnected ? "Type a message..." : "Connect to agent to start chatting..."}
+                placeholder={isConnected ? "Type a message..." : "Connect to start chatting..."}
                 disabled={!isConnected || isSubmitting}
                 rows={1}
                 className={cn(
@@ -739,7 +739,7 @@ const ChatPage: React.FC<ChatPageProps> = () => {
           
           <div className="mt-2 flex items-center justify-between">
             <Typography variant="caption" color="muted">
-              Press Enter to send, Shift+Enter for new line • Click 📎 to attach files
+              Press Enter to send, Shift+Enter for new line • Click 📎 to add files
             </Typography>
             <Typography 
               variant="caption" 

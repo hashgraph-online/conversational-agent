@@ -86,23 +86,23 @@ export class SafeConversationalAgent {
             this.agent = ConversationalAgent.withMCP(
               {
                 ...this.config,
-                disableLogging: true,
-                verbose: false,
+                disableLogging: false,
+                verbose: true,
               },
               enabledServers
             );
           } else {
             this.agent = new ConversationalAgent({
               ...this.config,
-              disableLogging: true,
-              verbose: false,
+              disableLogging: false,
+              verbose: true,
             });
           }
         } else {
           this.agent = new ConversationalAgent({
             ...this.config,
-            disableLogging: true,
-            verbose: false,
+            disableLogging: false,
+            verbose: true,
           });
         }
 
