@@ -634,16 +634,43 @@ const ServerCard: React.FC<ServerCardProps> = ({ server, onInstall, isInstalling
 
   return (
     <div className={cn(
-      "p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:shadow-md transition-shadow bg-white dark:bg-gray-800",
+      "p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:shadow-md transition-shadow bg-white dark:bg-gray-800 relative",
       !isInstallable && "opacity-75"
     )}>
+      {/* Install button in upper right corner */}
+      <div className="absolute top-3 right-3">
+        {isInstalled ? (
+          <div className="h-8 w-8 rounded-lg bg-[#5599fe]/10 flex items-center justify-center">
+            <FiCheck className="w-4 h-4 text-[#5599fe]" />
+          </div>
+        ) : isInstalling ? (
+          <div className="h-8 w-8 rounded-lg bg-muted flex items-center justify-center">
+            <FiRefreshCw className="w-4 h-4 animate-spin text-muted-foreground" />
+          </div>
+        ) : !isInstallable ? (
+          <div className="h-8 w-8 rounded-lg bg-muted/50 flex items-center justify-center">
+            <FiX className="w-3 h-3 text-muted-foreground" />
+          </div>
+        ) : (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onInstall}
+            className="h-8 w-8 p-0 rounded-lg hover:bg-[#5599fe]/10 hover:text-[#5599fe] transition-colors"
+            title="Install server"
+          >
+            <FiDownload className="w-4 h-4" />
+          </Button>
+        )}
+      </div>
+      
       <div className="mb-3">
         <div className="flex items-start justify-between mb-2">
-          <Typography variant="h6" className="line-clamp-1">
+          <Typography variant="h6" className="line-clamp-1 pr-10">
             {server.name}
           </Typography>
           {server.rating && (
-            <div className="flex items-center gap-1 text-yellow-500">
+            <div className="flex items-center gap-1 text-yellow-500 mr-10">
               <FiStar className="w-3 h-3 fill-current" />
               <Typography variant="caption">
                 {server.rating.toFixed(1)}
@@ -725,60 +752,22 @@ const ServerCard: React.FC<ServerCardProps> = ({ server, onInstall, isInstalling
         </div>
       )}
 
-      <div className="flex items-center gap-2">
-        <Button
-          variant={isInstalled ? "secondary" : "default"}
-          size="sm"
-          onClick={onInstall}
-          disabled={isInstalling || !isInstallable || isInstalled}
-          className={cn(
-            "flex-1 flex items-center justify-center gap-2",
-            isInstalled && "bg-green-100 hover:bg-green-100 dark:bg-green-900/20 dark:hover:bg-green-900/20 text-green-700 dark:text-green-300"
-          )}
-          title={
-            !isInstallable 
-              ? 'This server cannot be installed (no npm package or GitHub repository)' 
-              : isInstalled 
-              ? 'Server is already installed' 
-              : undefined
-          }
-        >
-          {isInstalling ? (
-            <>
-              <FiRefreshCw className="w-4 h-4 animate-spin" />
-              Installing...
-            </>
-          ) : isInstalled ? (
-            <>
-              <FiCheck className="w-4 h-4" />
-              Installed
-            </>
-          ) : !isInstallable ? (
-            <>
-              <FiX className="w-4 h-4" />
-              Not Available
-            </>
-          ) : (
-            <>
-              <FiDownload className="w-4 h-4" />
-              Install
-            </>
-          )}
-        </Button>
-        {(server.repository?.url || server.url) && (
+      {(server.repository?.url || server.url) && (
+        <div className="pt-2 border-t border-gray-100 dark:border-gray-700">
           <Button
-            variant="outline"
+            variant="ghost"
             size="sm"
             onClick={() => {
               const url = server.repository?.url || server.url
               if (url) window.open(url, '_blank')
             }}
-            className="flex items-center gap-1"
+            className="h-6 px-2 text-xs text-muted-foreground hover:text-foreground"
           >
-            <FiExternalLink className="w-3 h-3" />
+            <FiExternalLink className="w-3 h-3 mr-1" />
+            View Source
           </Button>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   )
 }

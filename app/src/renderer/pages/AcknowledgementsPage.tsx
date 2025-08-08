@@ -222,32 +222,18 @@ const AcknowledgementsPage: React.FC = () => {
         />
       </div>
 
-      <div className="flex-1 overflow-y-auto">
-        <div className="max-w-4xl mx-auto p-8">
+      <div className="min-h-screen bg-background">
+        <div className="container mx-auto px-6 py-8 max-w-6xl">
           {/* Header */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="text-center mb-12"
-          >
-            <div className="flex justify-center mb-6">
-              <motion.div 
-                className="w-20 h-20 bg-gradient-to-br from-pink-500 to-rose-600 rounded-2xl flex items-center justify-center shadow-lg"
-                whileHover={{ scale: 1.1, rotate: 5 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <HiHeart className="w-10 h-10 text-white" />
-              </motion.div>
-            </div>
-            <Typography variant="h2" className="font-bold mb-4 bg-gradient-to-r from-pink-500 to-rose-600 bg-clip-text text-transparent">
+          <div className="mb-8">
+            <Typography variant="h1" className="text-3xl font-bold mb-4 bg-gradient-to-r from-[#a679f0] via-[#5599fe] to-[#48df7b] bg-clip-text text-transparent">
               Acknowledgements
             </Typography>
-            <Typography variant="body1" color="muted" className="max-w-2xl mx-auto">
+            <Typography variant="body1" className="text-muted-foreground">
               OpenARC is built on the shoulders of giants. We're grateful to the open-source community 
               and the Hedera ecosystem for making this project possible.
             </Typography>
-          </motion.div>
+          </div>
 
           {/* Core Acknowledgements */}
           <motion.section

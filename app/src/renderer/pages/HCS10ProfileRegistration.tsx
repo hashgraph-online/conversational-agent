@@ -329,27 +329,22 @@ export function HCS10ProfileRegistration() {
 
   return (
     <div className='min-h-screen bg-background'>
-      <div className='container mx-auto px-4 py-8 max-w-4xl'>
-        {/* Header with breadcrumb */}
+      <div className='container mx-auto px-6 py-8 max-w-6xl'>
+        {/* Header */}
         <div className='mb-8'>
           <Button
             variant='ghost'
             size='sm'
             onClick={() => navigate('/')}
-            className='mb-4 -ml-2'
+            className='mb-3 -ml-2'
           >
             <ArrowLeft className='h-4 w-4 mr-2' />
             Back to Home
           </Button>
 
-          <div className='flex items-center gap-3 mb-2'>
-            <div className='p-2 bg-orange-500/10 rounded-lg'>
-              <User className='h-6 w-6 text-orange-500' />
-            </div>
-            <Typography variant='h1' className='text-3xl font-bold'>
-              Profile Registration
-            </Typography>
-          </div>
+          <Typography variant='h1' className='text-3xl font-bold bg-gradient-to-r from-[#a679f0] via-[#5599fe] to-[#48df7b] bg-clip-text text-transparent'>
+            Profile Registration
+          </Typography>
 
           <Typography variant='body1' className='text-muted-foreground'>
             {hasExistingProfile
@@ -360,24 +355,16 @@ export function HCS10ProfileRegistration() {
 
           {/* Registration State Reset */}
           {(registrationProgress.percent > 0 || agentCreationState) && (
-            <div className='mt-4 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/30 rounded-lg'>
+            <div className='mt-3 p-3 bg-muted/50 rounded-lg'>
               <div className='flex items-center justify-between'>
-                <div>
-                  <Typography
-                    variant='body1'
-                    className='font-medium text-amber-700 dark:text-amber-300 mb-1'
-                  >
-                    Previous registration in progress
-                  </Typography>
-                  <Typography
-                    variant='body1'
-                    className='text-sm text-amber-600 dark:text-amber-400'
-                  >
-                    A previous registration attempt was detected. If you're experiencing issues, you can reset the registration progress while keeping your form data.
-                  </Typography>
-                </div>
+                <Typography
+                  variant='body1'
+                  className='text-sm text-muted-foreground'
+                >
+                  Previous registration detected
+                </Typography>
                 <Button
-                  variant='outline'
+                  variant='ghost'
                   size='sm'
                   onClick={async () => {
                     try {
@@ -401,9 +388,9 @@ export function HCS10ProfileRegistration() {
                       console.error('Failed to reset registration state:', error);
                     }
                   }}
-                  className='ml-4'
+                  className='text-xs'
                 >
-                  Reset
+                  Clear Progress
                 </Button>
               </div>
             </div>
@@ -411,8 +398,8 @@ export function HCS10ProfileRegistration() {
         </div>
 
         {/* Registration Form */}
-        <div className='bg-card rounded-lg border shadow-sm'>
-          <div className='p-6'>
+        <div className='bg-card rounded-xl border'>
+          <div className='p-8'>
             <ProfileRegistrationForm
               onSubmit={handleSubmit}
               isSubmitting={isRegistering}

@@ -9,14 +9,21 @@ import { Label } from '../ui/label';
 import Typography from '../ui/Typography';
 import { AgentLogoSelector } from './AgentLogoSelector';
 import { CapabilitiesSelector } from './CapabilitiesSelector';
-import { SocialLinksManager } from './SocialLinksManager';
 import { ProgressBar } from './ProgressBar';
 import {
   type HCS10ProfileFormData,
   HCS10ProfileSchema,
 } from '../../../shared/schemas/hcs10';
-import { Loader2, DollarSign, User, Bot } from 'lucide-react';
-import { Switch } from '../ui/switch';
+import { 
+  Loader2, 
+  User, 
+  Bot, 
+  Sparkles,
+  Globe,
+  Twitter,
+  Github,
+  ChevronRight
+} from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -48,8 +55,8 @@ export function ProfileRegistrationForm({
   progress,
   network = 'testnet',
 }: ProfileRegistrationFormProps) {
-  const [showFeeConfig, setShowFeeConfig] = useState(false);
-  const [feeType, setFeeType] = useState<'hbar' | 'token'>('hbar');
+  const [currentStep, setCurrentStep] = useState(1);
+  const totalSteps = 3;
 
   const {
     register,
@@ -80,13 +87,16 @@ export function ProfileRegistrationForm({
       feeConfiguration: existingData?.feeConfiguration || undefined,
       customProperties: existingData?.customProperties || {},
     },
-});
+  });
 
-  // Watch form values (must be defined early as they're used in JSX)
+  // Watch form values
   const capabilities = watch('capabilities');
   const socials = watch('socials');
   const logo = watch('logo');
   const profileType = watch('profileType');
+  const name = watch('name');
+  const description = watch('description');
+  const creator = watch('creator');
 
   // Form persistence with localStorage
   const { saveToStorage, clearPersistedData } = useFormPersistence(
@@ -100,10 +110,10 @@ export function ProfileRegistrationForm({
   useEffect(() => {
     const timer = setTimeout(() => {
       saveToStorage();
-    }, 1000); // Save 1 second after user stops typing
+    }, 1000);
 
     return () => clearTimeout(timer);
-  }, [watch('name'), watch('description'), watch('creator'), watch('alias'), profileType, watch('agentType'), capabilities, socials, logo, saveToStorage]);
+  }, [name, description, creator, watch('alias'), profileType, watch('agentType'), capabilities, socials, logo, saveToStorage]);
 
   /**
    * Handle form submission with persistence cleanup
@@ -111,10 +121,8 @@ export function ProfileRegistrationForm({
   const handleFormSubmit = useCallback(async (data: HCS10ProfileFormData) => {
     try {
       await onSubmit(data);
-      // Clear persisted data on successful submission
       clearPersistedData();
     } catch (error) {
-      // Keep persisted data if submission fails
       console.error('Form submission failed:', error);
       throw error;
     }
@@ -126,8 +134,6 @@ export function ProfileRegistrationForm({
   const handleProfileTypeChange = useCallback(
     (value: 'person' | 'aiAgent') => {
       setValue('profileType', value);
-
-      // Reset AI agent specific fields when switching to person
       if (value === 'person') {
         setValue('agentType', undefined);
         setValue('capabilities', []);
@@ -137,7 +143,7 @@ export function ProfileRegistrationForm({
   );
 
   /**
-   * Handle social links change (object format like moonscape)
+   * Handle social links change
    */
   const handleSocialChange = useCallback(
     (key: 'twitter' | 'github' | 'website', value: string) => {
@@ -152,74 +158,56 @@ export function ProfileRegistrationForm({
   const handleLogoChange = useCallback(
     (value: string) => {
       setValue('logo', value);
-      setValue('profileImage', value); // Keep both for compatibility
+      setValue('profileImage', value);
     },
     [setValue]
   );
 
   /**
-   * Handle terms agreement change
+   * Check if current step is valid
    */
+  const isStepValid = useCallback((step: number) => {
+    switch (step) {
+      case 1:
+        return name?.length >= 3 && description?.length >= 10 && creator?.length >= 2;
+      case 2:
+        if (profileType === 'person') return true;
+        return capabilities?.length > 0 && capabilities.length <= 5;
+      case 3:
+        return true; // Optional step
+      default:
+        return false;
+    }
+  }, [name, description, creator, profileType, capabilities]);
 
   /**
    * Check if form is valid
    */
   const isFormValid = React.useMemo(() => {
-    const name = watch('name');
-    const description = watch('description');
-    const creator = watch('creator');
-
-    const basicValid =
-      name?.length >= 3 &&
-      description?.length >= 10 &&
-      creator?.length >= 2;
-
+    const basicValid = name?.length >= 3 && description?.length >= 10 && creator?.length >= 2;
+    
     if (profileType === 'person') {
-      console.log('🔍 Person profile validation:', { 
-        name: name?.length, 
-        description: description?.length, 
-        creator: creator?.length, 
-        profileType,
-        basicValid,
-        result: basicValid
-      });
       return basicValid;
     } else {
       const capabilitiesValid = capabilities?.length > 0 && capabilities.length <= 5;
-      console.log('🔍 AI Agent validation:', { 
-        name: name?.length, 
-        description: description?.length, 
-        creator: creator?.length, 
-        profileType,
-        capabilities: capabilities?.length,
-        capabilitiesArray: capabilities,
-        basicValid, 
-        capabilitiesValid,
-        result: basicValid && capabilitiesValid
-      });
       return basicValid && capabilitiesValid;
     }
-  }, [watch('name'), watch('description'), watch('creator'), profileType, capabilities]);
+  }, [name, description, creator, profileType, capabilities]);
 
-  // Debug log for button state
-  console.log('🚀 Button state:', { 
-    isSubmitting, 
-    isFormValid, 
-    buttonDisabled: isSubmitting || !isFormValid,
-    profileType 
-  });
+  const handleNextStep = () => {
+    if (currentStep < totalSteps && isStepValid(currentStep)) {
+      setCurrentStep(currentStep + 1);
+    }
+  };
 
-  // Debug all form values
-  console.log('📋 All form values:', {
-    name: watch('name'),
-    description: watch('description'), 
-    creator: watch('creator'),
-    capabilities: watch('capabilities'),
-    profileType: watch('profileType')
-  });
+  const handlePreviousStep = () => {
+    if (currentStep > 1) {
+      setCurrentStep(currentStep - 1);
+    }
+  };
 
   return (
-    <form onSubmit={handleSubmit(handleFormSubmit)} className='space-y-8'>
+    <form onSubmit={handleSubmit(handleFormSubmit)} className='space-y-6'>
       {/* Progress Bar */}
       {progress && (
         <ProgressBar
@@ -229,406 +217,419 @@ export function ProfileRegistrationForm({
         />
       )}
 
-      {/* Profile Type Selection */}
-      <div className='space-y-6 p-6 bg-gray-50 dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700'>
-        <Typography variant='h3' className='text-lg font-semibold'>
-          Profile Type
-        </Typography>
-        <div className='space-y-2'>
-          <Label>Select Profile Type</Label>
-          <Controller
-            name='profileType'
-            control={control}
-            render={({ field }) => (
-              <Select
-                value={field.value}
-                onValueChange={(value) => {
-                  field.onChange(value);
-                  handleProfileTypeChange(value as 'person' | 'aiAgent');
-                }}
-                disabled={isSubmitting}
-              >
-                <SelectTrigger className='w-full md:w-64'>
-                  <SelectValue placeholder='Select profile type' />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value='person'>
-                    <div className='flex items-center gap-2'>
-                      <User className='h-4 w-4' />
-                      Human Profile
-                    </div>
-                  </SelectItem>
-                  <SelectItem value='aiAgent'>
-                    <div className='flex items-center gap-2'>
-                      <Bot className='h-4 w-4' />
-                      AI Agent Profile
-                    </div>
-                  </SelectItem>
-                </SelectContent>
-              </Select>
+      {/* Step Indicator */}
+      <div className='flex items-center justify-between mb-8'>
+        {[1, 2, 3].map((step) => (
+          <div
+            key={step}
+            className={cn(
+              'flex items-center',
+              step < 3 && 'flex-1'
             )}
-          />
-          {watch('profileType') === 'person' && (
-            <Typography variant='body1' className='text-sm text-muted-foreground'>
-              Create a personal profile to communicate with AI agents
-            </Typography>
-          )}
-          {watch('profileType') === 'aiAgent' && (
-            <Typography variant='body1' className='text-sm text-muted-foreground'>
-              Create an AI agent profile to be discoverable by users
-            </Typography>
-          )}
-        </div>
-      </div>
-
-      {/* Basic Information */}
-      <div className='space-y-6'>
-        <Typography variant='h3' className='text-lg font-semibold'>
-          Basic Information
-        </Typography>
-
-        {/* Name */}
-        <div className='space-y-3'>
-          <Label htmlFor='name'>
-            {watch('profileType') === 'person' ? 'Your Display Name' : 'Agent Name'} *
-          </Label>
-          <Input
-            id='name'
-            placeholder={
-              watch('profileType') === 'person'
-                ? 'e.g., John Smith'
-                : 'e.g., CodeAssistant'
-            }
-            disabled={isSubmitting}
-            {...register('name')}
-            className={cn(errors.name && 'border-destructive')}
-          />
-          {errors.name && (
-            <Typography variant='body1' className='text-sm text-destructive'>
-              {errors.name.message}
-            </Typography>
-          )}
-        </div>
-
-        {/* Alias/Username */}
-        <div className='space-y-3'>
-          <Label htmlFor='alias'>
-            {watch('profileType') === 'person' ? 'Username' : 'Agent Username'}
-          </Label>
-          <Input
-            id='alias'
-            placeholder={
-              watch('profileType') === 'person'
-                ? 'e.g., john_smith'
-                : 'e.g., code_assistant'
-            }
-            disabled={isSubmitting}
-            {...register('alias')}
-            className={cn(errors.alias && 'border-destructive')}
-          />
-          {errors.alias && (
-            <Typography variant='body1' className='text-sm text-destructive'>
-              {errors.alias.message}
-            </Typography>
-          )}
-          <Typography variant='body1' className='text-xs text-muted-foreground'>
-            Optional. Used for identification in URLs and mentions. Letters, numbers, and underscores only.
-          </Typography>
-        </div>
-
-        {/* Creator/Organization */}
-        <div className='space-y-3'>
-          <Label htmlFor='creator'>Organization *</Label>
-          <Input
-            id='creator'
-            placeholder='e.g., Your Company Name'
-            disabled={isSubmitting}
-            {...register('creator')}
-            className={cn(errors.creator && 'border-destructive')}
-          />
-          {errors.creator && (
-            <Typography variant='body1' className='text-sm text-destructive'>
-              {errors.creator.message}
-            </Typography>
-          )}
-        </div>
-
-        {/* Description */}
-        <div className='space-y-3'>
-          <Label htmlFor='description'>
-            {watch('profileType') === 'person' ? 'Bio' : 'Agent Bio'} *
-          </Label>
-          <Textarea
-            id='description'
-            placeholder={
-              watch('profileType') === 'person'
-                ? 'Describe yourself, your interests, and what you want to do with AI agents...'
-                : 'Describe your AI agent, its purpose, and capabilities...'
-            }
-            rows={4}
-            disabled={isSubmitting}
-            {...register('description')}
-            className={cn(errors.description && 'border-destructive')}
-          />
-          {errors.description && (
-            <Typography variant='body1' className='text-sm text-destructive'>
-              {errors.description.message}
-            </Typography>
-          )}
-        </div>
-
-        {/* Profile Image using HCS-11 */}
-        <div className='space-y-3'>
-          <Label>Profile Picture</Label>
-          <div className='p-4 bg-muted/20 rounded-lg border'>
-            <AgentLogoSelector
-              onChange={handleLogoChange}
-              formData={logo || ''}
-              network={network}
-            />
+          >
+            <div
+              className={cn(
+                'w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium transition-all duration-300',
+                currentStep >= step
+                  ? 'bg-gradient-to-br from-[#5599fe] to-[#48df7b] text-white shadow-lg shadow-[#48df7b]/25'
+                  : 'bg-muted text-muted-foreground'
+              )}
+            >
+              {step}
+            </div>
+            {step < 3 && (
+              <div className='flex-1 h-0.5 mx-2 relative overflow-hidden rounded-full bg-muted'>
+                <div
+                  className={cn(
+                    'absolute inset-0 bg-gradient-to-r from-[#5599fe] to-[#48df7b] transition-transform duration-500',
+                    currentStep > step ? 'translate-x-0' : '-translate-x-full'
+                  )}
+                />
+              </div>
+            )}
           </div>
-        </div>
+        ))}
       </div>
 
-      {/* AI Agent Specific Fields */}
-      {profileType === 'aiAgent' && (
-        <>
-          {/* Agent Type */}
-          <div className='space-y-6'>
-            <Typography variant='h3' className='text-lg font-semibold'>
-              Communication Style
+      {/* Step 1: Basic Information */}
+      {currentStep === 1 && (
+        <div className='space-y-6 animate-in fade-in-0 slide-in-from-right-10 duration-300'>
+          <div className='text-center mb-6'>
+            <Typography variant='h2' className='text-2xl font-semibold mb-2 bg-gradient-to-r from-[#a679f0] via-[#5599fe] to-[#48df7b] bg-clip-text text-transparent'>
+              Let's start with the basics
             </Typography>
-            <div className='space-y-2'>
-              <Label>Agent Type</Label>
-              <Controller
-                name='agentType'
-                control={control}
-                render={({ field }) => (
-                  <Select
-                    value={field.value}
-                    onValueChange={field.onChange}
-                    disabled={isSubmitting}
-                  >
-                    <SelectTrigger className='w-full md:w-64'>
-                      <SelectValue placeholder='Select agent type' />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value='autonomous'>Autonomous</SelectItem>
-                      <SelectItem value='manual'>Manual</SelectItem>
-                    </SelectContent>
-                  </Select>
+            <Typography variant='body1' className='text-muted-foreground'>
+              Tell us about yourself or your agent
+            </Typography>
+          </div>
+
+          {/* Profile Type Selection */}
+          <div className='grid grid-cols-2 gap-4'>
+            <button
+              type='button'
+              onClick={() => handleProfileTypeChange('person')}
+              className={cn(
+                'p-6 rounded-xl border-2 transition-all hover:shadow-md relative overflow-hidden',
+                profileType === 'person'
+                  ? 'border-[#5599fe]/50 bg-gradient-to-br from-[#5599fe]/10 to-[#48df7b]/10'
+                  : 'border-border hover:border-muted-foreground'
+              )}
+            >
+              <User className={cn(
+                'h-8 w-8 mb-3 mx-auto transition-colors',
+                profileType === 'person' ? 'text-[#5599fe]' : 'text-muted-foreground'
+              )} />
+              <Typography variant='h4' className='font-medium mb-1'>
+                Personal Profile
+              </Typography>
+              <Typography variant='body1' className='text-xs text-muted-foreground'>
+                For individuals
+              </Typography>
+            </button>
+
+            <button
+              type='button'
+              onClick={() => handleProfileTypeChange('aiAgent')}
+              className={cn(
+                'p-6 rounded-xl border-2 transition-all hover:shadow-md relative overflow-hidden',
+                profileType === 'aiAgent'
+                  ? 'border-[#48df7b]/50 bg-gradient-to-br from-[#48df7b]/10 to-[#5599fe]/10'
+                  : 'border-border hover:border-muted-foreground'
+              )}
+            >
+              <Bot className={cn(
+                'h-8 w-8 mb-3 mx-auto transition-colors',
+                profileType === 'aiAgent' ? 'text-[#48df7b]' : 'text-muted-foreground'
+              )} />
+              <Typography variant='h4' className='font-medium mb-1'>
+                AI Agent Profile
+              </Typography>
+              <Typography variant='body1' className='text-xs text-muted-foreground'>
+                For AI assistants
+              </Typography>
+            </button>
+          </div>
+
+          {/* Basic Fields */}
+          <div className='space-y-4'>
+            <div>
+              <Label htmlFor='name' className='text-sm font-medium'>
+                {profileType === 'person' ? 'Your Name' : 'Agent Name'} *
+              </Label>
+              <Input
+                id='name'
+                placeholder={profileType === 'person' ? 'John Smith' : 'CodeAssistant'}
+                disabled={isSubmitting}
+                {...register('name')}
+                className={cn(
+                  'mt-1.5',
+                  errors.name && 'border-destructive'
                 )}
               />
+              {errors.name && (
+                <Typography variant='body1' className='text-xs text-destructive mt-1'>
+                  {errors.name.message}
+                </Typography>
+              )}
+            </div>
+
+            <div>
+              <Label htmlFor='creator' className='text-sm font-medium'>
+                Organization *
+              </Label>
+              <Input
+                id='creator'
+                placeholder='Your Company'
+                disabled={isSubmitting}
+                {...register('creator')}
+                className={cn(
+                  'mt-1.5',
+                  errors.creator && 'border-destructive'
+                )}
+              />
+              {errors.creator && (
+                <Typography variant='body1' className='text-xs text-destructive mt-1'>
+                  {errors.creator.message}
+                </Typography>
+              )}
+            </div>
+
+            <div>
+              <Label htmlFor='description' className='text-sm font-medium'>
+                {profileType === 'person' ? 'Bio' : 'Description'} *
+              </Label>
+              <Textarea
+                id='description'
+                placeholder={
+                  profileType === 'person'
+                    ? 'Tell us about yourself...'
+                    : 'Describe what your agent does...'
+                }
+                rows={3}
+                disabled={isSubmitting}
+                {...register('description')}
+                className={cn(
+                  'mt-1.5 resize-none',
+                  errors.description && 'border-destructive'
+                )}
+              />
+              {errors.description && (
+                <Typography variant='body1' className='text-xs text-destructive mt-1'>
+                  {errors.description.message}
+                </Typography>
+              )}
+            </div>
+
+            <div>
+              <Label htmlFor='alias' className='text-sm font-medium'>
+                Username <span className='text-muted-foreground'>(optional)</span>
+              </Label>
+              <Input
+                id='alias'
+                placeholder={profileType === 'person' ? '@john_smith' : '@code_assistant'}
+                disabled={isSubmitting}
+                {...register('alias')}
+                className='mt-1.5'
+              />
             </div>
           </div>
-
-          {/* Tags/Topics */}
-          <div className='space-y-6 p-6 bg-gray-50 dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700'>
-            <Typography variant='h3' className='text-lg font-semibold'>
-              Agent Capabilities
-            </Typography>
-            <Typography
-              variant='body1'
-              className='text-sm text-muted-foreground italic'
-            >
-              Select the capabilities that your agent provides
-            </Typography>
-            <Controller
-              name='capabilities'
-              control={control}
-              render={({ field }) => (
-                <CapabilitiesSelector
-                  value={field.value || []}
-                  onChange={field.onChange}
-                  disabled={isSubmitting}
-                  error={errors.capabilities?.message}
-                />
-              )}
-            />
-            {errors.capabilities && (
-              <Typography variant='body1' className='text-sm text-destructive'>
-                {errors.capabilities.message}
-              </Typography>
-            )}
-          </div>
-
-          {/* Capabilities (hidden field that gets auto-populated) */}
-          <Controller
-            name='capabilities'
-            control={control}
-            render={({ field }) => (
-              <input
-                type='hidden'
-                {...field}
-                value={field.value?.join(',') || ''}
-              />
-            )}
-          />
-        </>
+        </div>
       )}
 
-      {/* Social Links (Object format like moonscape) */}
-      <div className='space-y-6'>
-        <Typography variant='h3' className='text-lg font-semibold'>
-          Social Links{' '}
-          <span className='text-muted-foreground font-normal'>(optional)</span>
-        </Typography>
-<div className='space-y-4'>
-            <div className='space-y-3'>
-              <Label htmlFor='twitter'>Twitter/X</Label>            <Input
-              id='twitter'
-              placeholder='https://twitter.com/username'
-              disabled={isSubmitting}
-              value={socials?.twitter || ''}
-              onChange={(e) => handleSocialChange('twitter', e.target.value)}
-              className={cn(errors.socials?.twitter && 'border-destructive')}
-            />
+      {/* Step 2: Profile Details */}
+      {currentStep === 2 && (
+        <div className='space-y-6 animate-in fade-in-0 slide-in-from-right-10 duration-300'>
+          <div className='text-center mb-6'>
+            <Typography variant='h2' className='text-2xl font-semibold mb-2 bg-gradient-to-r from-[#a679f0] via-[#5599fe] to-[#48df7b] bg-clip-text text-transparent'>
+              Customize your profile
+            </Typography>
+            <Typography variant='body1' className='text-muted-foreground'>
+              Add details that make you unique
+            </Typography>
           </div>
-<div className='space-y-3'>
-              <Label htmlFor='github'>GitHub</Label>            <Input
-              id='github'
-              placeholder='https://github.com/username'
-              disabled={isSubmitting}
-              value={socials?.github || ''}
-              onChange={(e) => handleSocialChange('github', e.target.value)}
-              className={cn(errors.socials?.github && 'border-destructive')}
-            />
-          </div>
-<div className='space-y-3'>
-              <Label htmlFor='website'>Website</Label>            <Input
-              id='website'
-              placeholder='https://example.com'
-              disabled={isSubmitting}
-              value={socials?.website || ''}
-              onChange={(e) => handleSocialChange('website', e.target.value)}
-              className={cn(errors.socials?.website && 'border-destructive')}
-            />
-          </div>
-        </div>
-      </div>
 
-      {/* Fee Configuration */}
-      <div className='space-y-6'>
-        <div className='flex items-center justify-between'>
-          <Typography variant='h3' className='text-lg font-semibold'>
-            Fee Configuration
-          </Typography>
-          <div className='flex items-center gap-2'>
-            <Label htmlFor='enable-fees' className='text-sm cursor-pointer'>
-              Enable fees
+          {/* Profile Image */}
+          <div className='space-y-3'>
+            <Label className='text-sm font-medium'>
+              Profile Picture <span className='text-muted-foreground'>(optional)</span>
             </Label>
-            <Switch
-              id='enable-fees'
-              checked={showFeeConfig}
-              onCheckedChange={setShowFeeConfig}
-              disabled={isSubmitting}
-            />
-          </div>
-        </div>
-
-        {showFeeConfig && (
-          <div className='space-y-6 p-6 bg-gray-100 dark:bg-gray-800/50 rounded-2xl'>
-            <div className='flex gap-2'>
-              <Button
-                type='button'
-                variant={feeType === 'hbar' ? 'default' : 'outline'}
-                size='sm'
-                onClick={() => setFeeType('hbar')}
-                disabled={isSubmitting}
-              >
-                <DollarSign className='h-4 w-4 mr-1' />
-                HBAR Fee
-              </Button>
-              <Button
-                type='button'
-                variant={feeType === 'token' ? 'default' : 'outline'}
-                size='sm'
-                onClick={() => setFeeType('token')}
-                disabled={isSubmitting}
-              >
-                Token Fee
-              </Button>
+            <div className='p-4 bg-muted/30 rounded-lg border'>
+              <AgentLogoSelector
+                onChange={handleLogoChange}
+                formData={logo || ''}
+                network={network}
+              />
             </div>
+          </div>
 
-            {feeType === 'hbar' ? (
-              <div className='space-y-3'>
-                <Label htmlFor='hbarFee'>HBAR Amount</Label>
-                <Input
-                  id='hbarFee'
-                  type='number'
-                  step='0.01'
-                  min='0'
-                  placeholder='0.00'
-                  disabled={isSubmitting}
-                  {...register('feeConfiguration.hbarFee', {
-                    valueAsNumber: true,
-                  })}
+          {/* AI Agent Specific Fields */}
+          {profileType === 'aiAgent' && (
+            <>
+              <div>
+                <Label className='text-sm font-medium'>Agent Type</Label>
+                <Controller
+                  name='agentType'
+                  control={control}
+                  render={({ field }) => (
+                    <Select
+                      value={field.value}
+                      onValueChange={field.onChange}
+                      disabled={isSubmitting}
+                    >
+                      <SelectTrigger className='mt-1.5'>
+                        <SelectValue placeholder='Select agent type' />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value='autonomous'>
+                          <div className='flex items-center gap-2'>
+                            <Sparkles className='h-4 w-4' />
+                            Autonomous
+                          </div>
+                        </SelectItem>
+                        <SelectItem value='manual'>
+                          <div className='flex items-center gap-2'>
+                            <User className='h-4 w-4' />
+                            Manual
+                          </div>
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
                 />
               </div>
-            ) : (
-              <div className='space-y-6'>
-                <div className='space-y-3'>
-                  <Label htmlFor='tokenId'>Token ID</Label>
-                  <Input
-                    id='tokenId'
-                    placeholder='0.0.12345'
-                    disabled={isSubmitting}
-                    {...register('feeConfiguration.tokenFee.tokenId')}
-                  />
-                </div>
-                <div className='space-y-3'>
-                  <Label htmlFor='tokenAmount'>Token Amount</Label>
-                  <Input
-                    id='tokenAmount'
-                    type='number'
-                    step='0.01'
-                    min='0'
-                    placeholder='0.00'
-                    disabled={isSubmitting}
-                    {...register('feeConfiguration.tokenFee.amount', {
-                      valueAsNumber: true,
-                    })}
-                  />
-                </div>
+
+              <div>
+                <Label className='text-sm font-medium mb-3'>
+                  Capabilities *
+                </Label>
+                <Controller
+                  name='capabilities'
+                  control={control}
+                  render={({ field }) => (
+                    <CapabilitiesSelector
+                      value={field.value || []}
+                      onChange={field.onChange}
+                      disabled={isSubmitting}
+                      error={errors.capabilities?.message}
+                    />
+                  )}
+                />
+                {errors.capabilities && (
+                  <Typography variant='body1' className='text-xs text-destructive mt-2'>
+                    {errors.capabilities.message}
+                  </Typography>
+                )}
               </div>
-            )}
+            </>
+          )}
+        </div>
+      )}
+
+      {/* Step 3: Social Links */}
+      {currentStep === 3 && (
+        <div className='space-y-6 animate-in fade-in-0 slide-in-from-right-10 duration-300'>
+          <div className='text-center mb-6'>
+            <Typography variant='h2' className='text-2xl font-semibold mb-2 bg-gradient-to-r from-[#a679f0] via-[#5599fe] to-[#48df7b] bg-clip-text text-transparent'>
+              Connect your socials
+            </Typography>
+            <Typography variant='body1' className='text-muted-foreground'>
+              Help others find you online (optional)
+            </Typography>
           </div>
+
+          <div className='space-y-4'>
+            <div>
+              <Label htmlFor='website' className='text-sm font-medium flex items-center gap-2'>
+                <Globe className='h-4 w-4' />
+                Website
+              </Label>
+              <Input
+                id='website'
+                placeholder='https://yourwebsite.com'
+                disabled={isSubmitting}
+                value={socials?.website || ''}
+                onChange={(e) => handleSocialChange('website', e.target.value)}
+                className='mt-1.5'
+              />
+            </div>
+
+            <div>
+              <Label htmlFor='twitter' className='text-sm font-medium flex items-center gap-2'>
+                <Twitter className='h-4 w-4' />
+                Twitter/X
+              </Label>
+              <Input
+                id='twitter'
+                placeholder='https://twitter.com/username'
+                disabled={isSubmitting}
+                value={socials?.twitter || ''}
+                onChange={(e) => handleSocialChange('twitter', e.target.value)}
+                className='mt-1.5'
+              />
+            </div>
+
+            <div>
+              <Label htmlFor='github' className='text-sm font-medium flex items-center gap-2'>
+                <Github className='h-4 w-4' />
+                GitHub
+              </Label>
+              <Input
+                id='github'
+                placeholder='https://github.com/username'
+                disabled={isSubmitting}
+                value={socials?.github || ''}
+                onChange={(e) => handleSocialChange('github', e.target.value)}
+                className='mt-1.5'
+              />
+            </div>
+          </div>
+
+          {/* Summary Card */}
+          <div className='mt-8 p-4 bg-gradient-to-br from-[#5599fe]/5 via-[#48df7b]/5 to-[#a679f0]/5 rounded-lg border border-[#48df7b]/20'>
+            <Typography variant='h4' className='text-sm font-medium mb-3'>
+              Profile Summary
+            </Typography>
+            <div className='space-y-2 text-sm'>
+              <div className='flex justify-between'>
+                <span className='text-muted-foreground'>Type:</span>
+                <span className='font-medium'>
+                  {profileType === 'person' ? 'Personal' : 'AI Agent'}
+                </span>
+              </div>
+              <div className='flex justify-between'>
+                <span className='text-muted-foreground'>Name:</span>
+                <span className='font-medium'>{name || 'Not set'}</span>
+              </div>
+              <div className='flex justify-between'>
+                <span className='text-muted-foreground'>Organization:</span>
+                <span className='font-medium'>{creator || 'Not set'}</span>
+              </div>
+              {profileType === 'aiAgent' && (
+                <div className='flex justify-between'>
+                  <span className='text-muted-foreground'>Capabilities:</span>
+                  <span className='font-medium'>{capabilities?.length || 0} selected</span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Navigation Buttons */}
+      <div className='flex justify-between pt-6 border-t'>
+        {currentStep > 1 ? (
+          <Button
+            type='button'
+            variant='outline'
+            onClick={handlePreviousStep}
+            disabled={isSubmitting}
+          >
+            Previous
+          </Button>
+        ) : (
+          <div />
+        )}
+
+        {currentStep < totalSteps ? (
+          <Button
+            type='button'
+            onClick={handleNextStep}
+            disabled={!isStepValid(currentStep) || isSubmitting}
+            className='bg-gradient-to-r from-[#5599fe] to-[#48df7b] hover:from-[#4488ed] hover:to-[#3dce6a] text-white border-0'
+          >
+            Next
+            <ChevronRight className='h-4 w-4 ml-1' />
+          </Button>
+        ) : (
+          <Button
+            type='submit'
+            disabled={isSubmitting || !isFormValid}
+            className='min-w-[120px] bg-gradient-to-r from-[#48df7b] via-[#5599fe] to-[#a679f0] hover:from-[#3dce6a] hover:via-[#4488ed] hover:to-[#9168df] text-white border-0'
+          >
+            {isSubmitting ? (
+              <>
+                <Loader2 className='h-4 w-4 mr-2 animate-spin' />
+                Registering...
+              </>
+            ) : (
+              'Register Profile'
+            )}
+          </Button>
         )}
       </div>
 
-      {/* Submit Button */}
-      <div className='flex gap-4 pt-6'>
-        <Button
-          type='button'
-          variant='outline'
-          onClick={() => {
-            reset();
-            clearPersistedData();
-          }}
-          disabled={isSubmitting}
-        >
-          Clear Form
-        </Button>
-        <Button
-          type='submit'
-          className='flex-1'
-          size='lg'
-          disabled={isSubmitting || !isFormValid}
-        >
-          {isSubmitting ? (
-            <>
-              <Loader2 className='mr-2 h-4 w-4 animate-spin' />
-              {watch('profileType') === 'person'
-                ? 'Creating Profile...'
-                : 'Registering Agent...'}
-            </>
-          ) : watch('profileType') === 'person' ? (
-            'Create Profile'
-          ) : (
-            'Register Agent Profile'
-          )}
-        </Button>
-      </div>
+      {/* Hidden fields for compatibility */}
+      <Controller
+        name='capabilities'
+        control={control}
+        render={({ field }) => (
+          <input
+            type='hidden'
+            {...field}
+            value={field.value?.join(',') || ''}
+          />
+        )}
+      />
     </form>
   );
 }

@@ -91,65 +91,33 @@ const SettingsPage: React.FC<SettingsPageProps> = () => {
 
   if (isLoading) {
     return (
-      <div className="p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto">
-        <div className="flex items-center justify-center min-h-[400px]">
-          <Typography variant="body1" color="muted">Loading configuration...</Typography>
+      <div className="min-h-screen bg-background">
+        <div className="container mx-auto px-6 py-8 max-w-6xl">
+          <div className="flex items-center justify-center min-h-[400px]">
+            <Typography variant="body1" color="muted">Loading configuration...</Typography>
+          </div>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto relative">
-      {/* Animated background pattern */}
-      <div className="absolute inset-0 opacity-[0.01] dark:opacity-[0.02] pointer-events-none">
-        <motion.div
-          className="absolute inset-0"
-          animate={{
-            backgroundPosition: ['0% 0%', '100% 100%'],
-          }}
-          transition={{
-            duration: 20,
-            repeat: Infinity,
-            repeatType: 'reverse',
-          }}
-          style={{
-            backgroundImage: `repeating-linear-gradient(45deg, transparent, transparent 35px, rgba(166, 121, 240, 0.1) 35px, rgba(166, 121, 240, 0.1) 70px)`,
-            backgroundSize: '200% 200%',
-          }}
-        />
-      </div>
+    <div className="min-h-screen bg-background">
+      <div className="container mx-auto px-6 py-8 max-w-6xl">
       
-      {/* Glowing orbs */}
-      <motion.div
-        className="absolute top-0 right-0 w-48 h-48 bg-[#a679f0]/10 rounded-full blur-3xl pointer-events-none"
-        animate={{
-          scale: [1, 1.2, 1],
-          opacity: [0.1, 0.2, 0.1],
-        }}
-        transition={{
-          duration: 4,
-          repeat: Infinity,
-          ease: 'easeInOut',
-        }}
-      />
-      
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="mb-4 sm:mb-6 relative z-10"
-      >
-        <Typography 
-          variant="h2" 
-          className="font-bold text-4xl animate-gradient bg-gradient-to-r from-[#a679f0] via-[#5599fe] to-[#48df7b] bg-clip-text text-transparent"
-          style={{ backgroundSize: '200% 200%' }}
-          as="h1" 
-          noMargin
-        >
-          Settings
-        </Typography>
-      </motion.div>
+        {/* Header */}
+        <div className="mb-8">
+          <Typography 
+            variant="h1" 
+            className="text-3xl font-bold mb-4 bg-gradient-to-r from-[#a679f0] via-[#5599fe] to-[#48df7b] bg-clip-text text-transparent"
+            noMargin
+          >
+            Settings
+          </Typography>
+          <Typography variant="body1" className="text-muted-foreground">
+            Configure your agent's connection to Hedera, AI models, and advanced options
+          </Typography>
+        </div>
       
       {error && (
         <div 
@@ -173,7 +141,7 @@ const SettingsPage: React.FC<SettingsPageProps> = () => {
         </div>
       )}
       
-      <Card className="shadow-xl relative z-10 backdrop-blur-sm bg-white/95 dark:bg-gray-900/95">
+        <Card className="shadow-lg">
         <div className="border-b border-gray-200 dark:border-gray-700 overflow-x-auto">
           <nav className="flex space-x-4 sm:space-x-8 px-4 sm:px-6 min-w-max" role="tablist" aria-label="Settings tabs">
             {tabs.map((tab, index) => {
@@ -296,7 +264,8 @@ const SettingsPage: React.FC<SettingsPageProps> = () => {
             </Button>
           </div>
         </div>
-      </Card>
+        </Card>
+      </div>
     </div>
   )
 }

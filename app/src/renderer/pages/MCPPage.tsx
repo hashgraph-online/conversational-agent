@@ -140,21 +140,22 @@ const MCPPage: React.FC = () => {
   };
 
   return (
-    <div className='min-h-screen'>
-      <div className='sticky top-0 z-10 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700'>
-        <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
-          <div className='flex items-center justify-between h-16'>
-            <Typography variant='h4' className='font-semibold'>
+    <div className='min-h-screen bg-background'>
+      <div className='container mx-auto px-6 py-8 max-w-6xl'>
+        {/* Header */}
+        <div className='mb-8'>
+          <div className='flex items-center justify-between mb-4'>
+            <Typography variant='h1' className='text-3xl font-bold bg-gradient-to-r from-[#a679f0] via-[#5599fe] to-[#48df7b] bg-clip-text text-transparent'>
               MCP Servers
             </Typography>
 
             <div className='flex items-center gap-2'>
-              <div className='bg-gray-100 dark:bg-gray-800 rounded-lg p-1 flex'>
+              <div className='bg-muted rounded-lg p-0.5 flex'>
                 <Button
                   variant={viewMode === 'servers' ? 'default' : 'ghost'}
                   size='sm'
                   onClick={() => setViewMode('servers')}
-                  className='text-sm'
+                  className='text-xs'
                 >
                   <FiList className='w-4 h-4 mr-1.5' />
                   My Servers
@@ -163,7 +164,7 @@ const MCPPage: React.FC = () => {
                   variant={viewMode === 'browse' ? 'default' : 'ghost'}
                   size='sm'
                   onClick={() => setViewMode('browse')}
-                  className='text-sm'
+                  className='text-xs'
                 >
                   <FiGrid className='w-4 h-4 mr-1.5' />
                   Browse
@@ -175,7 +176,7 @@ const MCPPage: React.FC = () => {
                   variant='default'
                   size='sm'
                   onClick={() => setIsAddModalOpen(true)}
-                  className='ml-2'
+                  className='text-xs bg-[#5599fe] text-white hover:bg-[#4488ed]'
                 >
                   <FiPlus className='w-4 h-4 mr-1.5' />
                   Add Server
@@ -183,79 +184,40 @@ const MCPPage: React.FC = () => {
               )}
             </div>
           </div>
+          <Typography variant='body1' className='text-muted-foreground'>
+            Extend your agent's capabilities with Model Context Protocol servers
+          </Typography>
         </div>
-      </div>
-
-      <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6'>
-        {/* Educational Section for New Users - Simplified */}
+        {/* Educational Section for New Users */}
         {servers.length === 0 && !isLoading && (
-          <div className='mb-6 bg-blue-50 dark:bg-blue-900/10 rounded-lg p-4 border border-blue-200 dark:border-blue-800'>
-            <div className='flex items-start gap-3'>
-              <FiInfo className='w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0' />
-              <div className='flex-1'>
-                <Typography variant='body2' className='font-medium mb-2 text-gray-900 dark:text-white'>
-                  What are MCP Servers?
-                </Typography>
-                <Typography variant='caption' className='text-gray-600 dark:text-gray-400 mb-3 block'>
-                  MCP servers are extensions that give your AI agent new abilities like reading files, browsing the web, or executing code. 
-                  Think of them as "plugins" that transform your AI from a chatbot into a powerful assistant.
-                </Typography>
-                
-                <div className='flex gap-2'>
-                  <Button
-                    variant='default'
-                    size='sm'
-                    onClick={() => setIsAddModalOpen(true)}
-                  >
-                    <FiPlus className='w-3 h-3 mr-1' />
-                    Add Server
-                  </Button>
-                  <Button
-                    variant='secondary'
-                    size='sm'
-                    onClick={() => setViewMode('browse')}
-                  >
-                    <FiGrid className='w-3 h-3 mr-1' />
-                    Browse
-                  </Button>
-                </div>
-              </div>
+          <div className='mb-6 p-3 bg-gradient-to-br from-[#5599fe]/10 to-[#5599fe]/5 rounded-lg border border-[#5599fe]/20'>
+            <div className='flex items-center gap-2'>
+              <FiInfo className='h-4 w-4 text-[#5599fe]' />
+              <Typography variant='body2' className='text-sm'>
+                <span className='font-medium'>Get Started:</span> MCP servers extend your agent with new capabilities like file access, web browsing, and code execution.
+              </Typography>
             </div>
           </div>
         )}
 
         {error && (
-          <div className='mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg flex items-start gap-3'>
-            <FiAlertCircle className='w-5 h-5 text-red-500 mt-0.5 flex-shrink-0' />
-            <div className='flex-1'>
-              <Typography
-                variant='body1'
-                className='text-red-700 dark:text-red-300'
-              >
-                {error}
-              </Typography>
-            </div>
+          <div className='mb-6 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg flex items-center gap-2'>
+            <FiAlertCircle className='h-4 w-4 text-red-500 flex-shrink-0' />
+            <Typography variant='body2' className='text-sm text-red-700 dark:text-red-300 flex-1'>
+              {error}
+            </Typography>
             <button
               onClick={clearError}
               className='text-red-500 hover:text-red-700 p-1'
             >
-              <FiX className='w-4 h-4' />
+              <FiX className='h-4 w-4' />
             </button>
           </div>
         )}
 
         {viewMode === 'servers' ? (
-          <div className='grid gap-6 xl:grid-cols-4 lg:grid-cols-3'>
-            <div className='xl:col-span-3 lg:col-span-2'>
-              {/* Mini help text for users with servers - Simplified */}
-              {servers.length > 0 && (
-                <div className='mb-3 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg'>
-                  <Typography variant='caption' className='text-gray-600 dark:text-gray-400'>
-                    💡 Enable servers to give your AI new abilities. Click on any server to see its tools.
-                  </Typography>
-                </div>
-              )}
-              
+          <div className='grid gap-6 lg:grid-cols-3'>
+            <div className='lg:col-span-2'>
               <MCPServerList
                 servers={servers}
                 loading={isLoading}
@@ -266,20 +228,18 @@ const MCPPage: React.FC = () => {
               />
             </div>
 
-            <div className='xl:col-span-1 lg:col-span-1'>
+            <div className='space-y-4'>
               {testingServerId && (
-                <div className='mb-4'>
-                  <MCPConnectionTester
-                    serverId={testingServerId}
-                    serverName={
-                      servers.find((s) => s.id === testingServerId)?.name ||
-                      'Server'
-                    }
-                    onTest={() => handleTestConnection(testingServerId)}
-                    result={connectionTests[testingServerId]?.result}
-                    loading={false}
-                  />
-                </div>
+                <MCPConnectionTester
+                  serverId={testingServerId}
+                  serverName={
+                    servers.find((s) => s.id === testingServerId)?.name ||
+                    'Server'
+                  }
+                  onTest={() => handleTestConnection(testingServerId)}
+                  result={connectionTests[testingServerId]?.result}
+                  loading={false}
+                />
               )}
 
               <MCPInfoPanel
