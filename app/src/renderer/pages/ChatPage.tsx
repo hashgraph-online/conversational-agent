@@ -316,7 +316,7 @@ const ChatPage: React.FC<ChatPageProps> = () => {
         </header>
 
         <div className="flex-1 flex items-center justify-center p-8">
-          {status === 'connecting' ? (
+          {status === 'connecting' || status === 'disconnecting' ? (
             <div className="text-center space-y-6 max-w-lg animate-fade-in">
               <div className="w-20 h-20 bg-gradient-to-br from-[#a679f0] to-[#5599fe] rounded-2xl flex items-center justify-center mx-auto">
                 <motion.div
@@ -328,10 +328,12 @@ const ChatPage: React.FC<ChatPageProps> = () => {
               </div>
               <div className="space-y-3">
                 <Typography variant="h3" gradient className="font-bold">
-                  Connecting to Agent
+                  {status === 'disconnecting' ? 'Switching Mode' : 'Connecting to Agent'}
                 </Typography>
                 <Typography variant="body1" color="muted" className="max-w-md mx-auto">
-                  Getting your assistant ready. This may take a moment...
+                  {status === 'disconnecting' 
+                    ? 'Reconfiguring your assistant for the new operational mode...'
+                    : 'Getting your assistant ready. This may take a moment...'}
                 </Typography>
                 <div className="flex flex-col gap-2 mt-4">
                   <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
@@ -536,7 +538,7 @@ const ChatPage: React.FC<ChatPageProps> = () => {
                   variant="h4" 
                   className="font-bold text-gray-900 dark:text-white"
                 >
-                  Welcome to OpenARC
+                  Welcome to HashgraphOnline
                 </Typography>
                 <Typography variant="body1" color="muted">
                   I can help you with Hedera network operations, HCS-1 inscriptions, HCS-20 ticks, 

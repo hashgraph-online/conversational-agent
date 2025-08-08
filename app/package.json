@@ -1,7 +1,7 @@
 {
   "name": "app",
   "version": "1.0.0",
-  "description": "Desktop application for OpenARC (Autonomous Runtime Core)",
+  "description": "Desktop application for HashgraphOnline",
   "main": ".vite/build/main.js",
   "scripts": {
     "start": "npx electron-forge start",
@@ -82,8 +82,8 @@
   },
   "dependencies": {
     "@hashgraphonline/conversational-agent": "file:..",
-    "@hashgraphonline/standards-agent-kit": "0.2.120",
-    "@hashgraphonline/standards-sdk": "0.0.167",
+    "@hashgraphonline/standards-agent-kit": "0.2.121",
+    "@hashgraphonline/standards-sdk": "0.0.168",
     "@hookform/resolvers": "^5.2.0",
     "@langchain/anthropic": "^0.3.25",
     "@noble/hashes": "1.8.0",

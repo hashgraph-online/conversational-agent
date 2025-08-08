@@ -8,7 +8,7 @@ export interface ParsedTransaction {
   details: Record<string, any>;
   transfers?: Array<{
     accountId: string;
-    amount: number;
+    amount: string | number; // Can be string from standards-sdk or number for display
   }>;
   tokenTransfers?: Array<{
     tokenId: string;

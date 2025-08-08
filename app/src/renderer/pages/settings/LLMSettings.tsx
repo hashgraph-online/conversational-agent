@@ -7,7 +7,7 @@ import { useConfigStore } from '../../stores/configStore'
 import { Input } from '../../components/ui'
 import { Button } from '../../components/ui'
 import Typography from '../../components/ui/Typography'
-import { ModelSelector } from '../../components/ui/ModelSelector'
+import { ModelSelectorWithOpenRouter } from '../../components/ui/ModelSelectorWithOpenRouter'
 import { ApiKeyGuide } from '../../components/ui/ApiKeyGuide'
 import { getModelInfo } from '../../lib/models'
 
@@ -313,10 +313,11 @@ export const LLMSettings: React.FC<LLMSettingsProps> = () => {
             </div>
 
             {currentApiKey && (
-              <ModelSelector
+              <ModelSelectorWithOpenRouter
                 provider={watchProvider}
                 selectedModel={currentModel || ''}
                 onModelChange={(model) => setValue(`${watchProvider}Model` as keyof LLMSettingsForm, model)}
+                useOpenRouter={true}
               />
             )}
 

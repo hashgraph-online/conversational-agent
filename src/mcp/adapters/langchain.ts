@@ -2,6 +2,8 @@ import { DynamicStructuredTool } from '@langchain/core/tools';
 import { z } from 'zod';
 import type { MCPToolInfo, MCPServerConfig } from '../types';
 import type { MCPClientManager } from '../MCPClientManager';
+import { ContentStoreService, shouldUseReference } from '@hashgraphonline/standards-sdk';
+import type { ContentSource } from '../../types/content-reference';
 
 /**
  * Convert an MCP tool to a LangChain DynamicStructuredTool
@@ -40,8 +42,10 @@ export function convertMCPToolToLangChain(
           input
         );
 
+        let responseText = '';
+        
         if (typeof result === 'string') {
-          return result;
+          responseText = result;
         } else if (
           result &&
           typeof result === 'object' &&
@@ -59,12 +63,40 @@ export function convertMCPToolToLangChain(
                   'text' in item
               )
               .map((item) => item.text);
-            return textParts.join('\n');
+            responseText = textParts.join('\n');
+          } else {
+            responseText = JSON.stringify(content);
           }
-          return JSON.stringify(content);
+        } else {
+          responseText = JSON.stringify(result);
         }
 
-        return JSON.stringify(result);
+        // Check if content should be stored as reference
+        const responseBuffer = Buffer.from(responseText, 'utf8');
+        
+        // Use a lower threshold for MCP tools (10KB) to avoid token limit issues
+        const MCP_REFERENCE_THRESHOLD = 10 * 1024; // 10KB
+        const shouldStoreMCPContent = responseBuffer.length > MCP_REFERENCE_THRESHOLD;
+        
+        if (shouldStoreMCPContent || shouldUseReference(responseBuffer)) {
+          const contentStore = ContentStoreService.getInstance();
+          if (contentStore) {
+            try {
+              const referenceId = await contentStore.storeContent(responseBuffer, {
+                contentType: 'text' as ContentSource,
+                source: 'mcp',
+                mcpToolName: `${tool.serverName}_${tool.name}`,
+                originalSize: responseBuffer.length
+              });
+              return `content-ref:${referenceId}`;
+            } catch (storeError) {
+              // If storage fails, fall back to returning the content
+              console.warn('Failed to store large MCP content as reference:', storeError);
+            }
+          }
+        }
+
+        return responseText;
       } catch (error) {
         const errorMessage =
           error instanceof Error ? error.message : 'Unknown error';

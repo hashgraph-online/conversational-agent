@@ -28,6 +28,7 @@ import { registerTransactionHandlers } from '../handlers/transactionHandlers';
 import { MirrorNodeService } from '../services/MirrorNodeService';
 import { setupHCS10Handlers } from './hcs10Handlers';
 import { UpdateService } from '../services/UpdateService';
+import { OpenRouterService } from '../services/OpenRouterService';
 
 const DEFAULT_SERVICE = 'conversational-agent';
 
@@ -299,6 +300,81 @@ export function setupConnectionHandlers(): void {
   });
 
   ipcMain.handle('anthropic:test', async (
+    event: IpcMainInvokeEvent,
+    credentials: { apiKey: string; model: string }
+  ): Promise<{ success: boolean; error?: string }> => {
+    try {
+      if (!credentials.apiKey || !credentials.apiKey.startsWith('sk-ant-')) {
+        return { success: false, error: 'Invalid Anthropic API key format' };
+      }
+      
+      return { success: true };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Anthropic connection failed';
+      return { success: false, error: errorMessage };
+    }
+  });
+
+  ipcMain.handle('connection:test-hedera', async (
+    event: IpcMainInvokeEvent,
+    credentials: { accountId: string; privateKey: string; network: 'mainnet' | 'testnet' }
+  ): Promise<{ success: boolean; balance?: string; error?: string }> => {
+    const logger = new Logger({ module: 'HederaConnectionTest' });
+    
+    try {
+      if (!credentials.accountId || !credentials.privateKey) {
+        return { success: false, error: 'Account ID and private key are required' };
+      }
+      
+      const mirrorNode = new HederaMirrorNode(credentials.network, logger);
+      
+      try {
+        const accountInfo = await mirrorNode.requestAccount(credentials.accountId);
+        
+        if (!accountInfo) {
+          return { 
+            success: false, 
+            error: 'Account not found. Please verify the account ID exists on the selected network.'
+          };
+        }
+        
+        const balanceInHbar = (accountInfo.balance / 100000000).toFixed(2);
+        
+        return { 
+          success: true, 
+          balance: `${balanceInHbar} HBAR`
+        };
+      } catch (mirrorError) {
+        logger.error('Mirror node error:', mirrorError);
+        return { 
+          success: false, 
+          error: 'Network error. Please check your connection and try again.'
+        };
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Hedera connection failed';
+      logger.error('Hedera test error:', error);
+      return { success: false, error: errorMessage };
+    }
+  });
+
+  ipcMain.handle('connection:test-openai', async (
+    event: IpcMainInvokeEvent,
+    credentials: { apiKey: string; model: string }
+  ): Promise<{ success: boolean; error?: string }> => {
+    try {
+      if (!credentials.apiKey || !credentials.apiKey.startsWith('sk-')) {
+        return { success: false, error: 'Invalid OpenAI API key format' };
+      }
+      
+      return { success: true };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'OpenAI connection failed';
+      return { success: false, error: errorMessage };
+    }
+  });
+
+  ipcMain.handle('connection:test-anthropic', async (
     event: IpcMainInvokeEvent,
     credentials: { apiKey: string; model: string }
   ): Promise<{ success: boolean; error?: string }> => {
@@ -928,6 +1004,7 @@ export function setupIPCHandlers(masterPassword: string): void {
   setupThemeHandlers();
   setupUpdateHandlers();
   setupHCS10Handlers();
+  setupOpenRouterHandlers();
 }
 
 /**
@@ -1129,6 +1206,83 @@ export function setupUpdateHandlers(): void {
     } catch (error) {
       logger.error('Failed to set auto download:', error);
       throw error;
+    }
+  });
+}
+
+/**
+ * Sets up OpenRouter-related IPC handlers
+ */
+export function setupOpenRouterHandlers(): void {
+  const openRouterService = OpenRouterService.getInstance();
+  const logger = new Logger({ module: 'OpenRouterHandlers' });
+
+  ipcMain.handle('openrouter:getModels', async (
+    event: IpcMainInvokeEvent,
+    forceRefresh = false
+  ): Promise<IPCResponse> => {
+    try {
+      logger.info('Fetching models from OpenRouter');
+      const models = await openRouterService.getModels(forceRefresh);
+      return { 
+        success: true, 
+        data: models 
+      };
+    } catch (error) {
+      logger.error('Failed to fetch OpenRouter models:', error);
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Failed to fetch models' 
+      };
+    }
+  });
+
+  ipcMain.handle('openrouter:getModelsByProvider', async (
+    event: IpcMainInvokeEvent,
+    provider: string
+  ): Promise<IPCResponse> => {
+    try {
+      logger.info(`Fetching ${provider} models from OpenRouter`);
+      const models = await openRouterService.getModelsByProvider(provider);
+      const convertedModels = models.map(model => 
+        openRouterService.convertToInternalFormat(model, provider as 'openai' | 'anthropic')
+      );
+      return { 
+        success: true, 
+        data: convertedModels 
+      };
+    } catch (error) {
+      logger.error(`Failed to fetch ${provider} models:`, error);
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Failed to fetch models' 
+      };
+    }
+  });
+
+  ipcMain.handle('openrouter:getModel', async (
+    event: IpcMainInvokeEvent,
+    modelId: string
+  ): Promise<IPCResponse> => {
+    try {
+      logger.info(`Fetching model ${modelId} from OpenRouter`);
+      const model = await openRouterService.getModel(modelId);
+      if (!model) {
+        return { 
+          success: false, 
+          error: 'Model not found' 
+        };
+      }
+      return { 
+        success: true, 
+        data: model 
+      };
+    } catch (error) {
+      logger.error(`Failed to fetch model ${modelId}:`, error);
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Failed to fetch model' 
+      };
     }
   });
 }

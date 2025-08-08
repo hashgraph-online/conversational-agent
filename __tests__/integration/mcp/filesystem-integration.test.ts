@@ -1,7 +1,8 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, test, expect, beforeEach, afterEach } from 'vitest';
 import { ConversationalAgent } from '../../../src/conversational-agent';
 import { MCPServers } from '../../../src/mcp/helpers';
-import * as fs from 'fs/promises';
+import { mkdirSync, existsSync, rmSync, writeFileSync, readFileSync } from 'node:fs';
+import * as fsPromises from 'node:fs/promises';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
@@ -16,7 +17,7 @@ describe('MCP Filesystem Integration', () => {
   
   beforeEach(async () => {
     testDir = path.join(os.tmpdir(), 'mcp-test');
-    fs.mkdirSync(testDir, { recursive: true });
+    mkdirSync(testDir, { recursive: true });
 
     agent = new ConversationalAgent({
       accountId: '0.0.12345',
@@ -42,8 +43,8 @@ describe('MCP Filesystem Integration', () => {
     } catch (error) {
     }
 
-    if (fs.existsSync(testDir)) {
-      fs.rmSync(testDir, { recursive: true, force: true });
+    if (existsSync(testDir)) {
+      rmSync(testDir, { recursive: true, force: true });
     }
   });
 
@@ -70,8 +71,8 @@ describe('MCP Filesystem Integration', () => {
 
     await agent.initialize();
 
-    fs.writeFileSync(path.join(testDir, 'test1.txt'), 'Hello World');
-    fs.writeFileSync(path.join(testDir, 'test2.txt'), 'Another file');
+    await fsPromises.writeFile(path.join(testDir, 'test1.txt'), 'Hello World');
+    await fsPromises.writeFile(path.join(testDir, 'test2.txt'), 'Another file');
 
     const response = await agent.processMessage(
       `List the files in ${testDir}`
@@ -107,7 +108,7 @@ describe('MCP Filesystem Integration', () => {
 
     const testContent = 'This is test content for MCP file reading';
     const testFile = path.join(testDir, 'read-test.txt');
-    fs.writeFileSync(testFile, testContent);
+    writeFileSync(testFile, testContent);
 
     const response = await agent.processMessage(
       `Read the contents of the file ${testFile}`
@@ -151,8 +152,8 @@ describe('MCP Filesystem Integration', () => {
     expect(response).toBeDefined();
     expect(response.output).toBeDefined();
 
-    expect(fs.existsSync(testFile)).toBe(true);
-    const actualContent = fs.readFileSync(testFile, 'utf8');
+    expect(existsSync(testFile)).toBe(true);
+    const actualContent = readFileSync(testFile, 'utf8');
     expect(actualContent).toContain(testContent);
   }, 30000);
 

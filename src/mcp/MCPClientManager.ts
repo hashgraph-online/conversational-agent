@@ -2,6 +2,8 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 import type { MCPServerConfig, MCPToolInfo, MCPConnectionStatus } from './types';
 import { Logger } from '@hashgraphonline/standards-sdk';
+import type { ContentStorage } from '../memory/ContentStorage';
+import { MCPContentProcessor, ProcessedResponse } from './ContentProcessor';
 
 /**
  * Manages connections to MCP servers and tool discovery
@@ -10,9 +12,13 @@ export class MCPClientManager {
   private clients: Map<string, Client> = new Map();
   private tools: Map<string, MCPToolInfo[]> = new Map();
   private logger: Logger;
+  private contentProcessor?: MCPContentProcessor;
 
-  constructor(logger: Logger) {
+  constructor(logger: Logger, contentStorage?: ContentStorage) {
     this.logger = logger;
+    if (contentStorage) {
+      this.contentProcessor = new MCPContentProcessor(contentStorage, logger);
+    }
   }
 
   /**
@@ -91,6 +97,27 @@ export class MCPClientManager {
         arguments: args,
       });
 
+      if (this.contentProcessor) {
+        const processed = await this.contentProcessor.processResponse(result, serverName, toolName);
+        
+        if (processed.wasProcessed) {
+          this.logger.debug(
+            `Processed MCP response from ${serverName}::${toolName}`,
+            {
+              referenceCreated: processed.referenceCreated,
+              originalSize: processed.originalSize,
+              errors: processed.errors
+            }
+          );
+
+          if (processed.errors && processed.errors.length > 0) {
+            this.logger.warn(`Content processing warnings for ${serverName}::${toolName}:`, processed.errors);
+          }
+        }
+
+        return processed.content;
+      }
+
       return result;
     } catch (error) {
       this.logger.error(`Error executing MCP tool ${toolName}:`, error);
@@ -144,5 +171,38 @@ export class MCPClientManager {
    */
   getConnectedServers(): string[] {
     return Array.from(this.clients.keys());
+  }
+
+  /**
+   * Enable content processing with content storage
+   */
+  enableContentProcessing(contentStorage: ContentStorage): void {
+    this.contentProcessor = new MCPContentProcessor(contentStorage, this.logger);
+    this.logger.info('Content processing enabled for MCP responses');
+  }
+
+  /**
+   * Disable content processing
+   */
+  disableContentProcessing(): void {
+    delete this.contentProcessor;
+    this.logger.info('Content processing disabled for MCP responses');
+  }
+
+  /**
+   * Check if content processing is enabled
+   */
+  isContentProcessingEnabled(): boolean {
+    return this.contentProcessor !== undefined;
+  }
+
+  /**
+   * Analyze a response without processing it (for testing/debugging)
+   */
+  analyzeResponseContent(response: unknown): unknown {
+    if (!this.contentProcessor) {
+      throw new Error('Content processing is not enabled');
+    }
+    return this.contentProcessor.analyzeResponse(response);
   }
 }

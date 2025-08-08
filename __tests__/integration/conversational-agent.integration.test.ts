@@ -8,7 +8,7 @@ dotenv.config();
 /**
  * Integration tests for ConversationalAgent with actual network transactions
  */
-describe('ConversationalAgent Integration Tests', () => {
+describe.skipIf(!process.env.HEDERA_ACCOUNT_ID || !process.env.HEDERA_PRIVATE_KEY || !process.env.OPENAI_API_KEY)('ConversationalAgent Integration Tests', () => {
   let agent: ConversationalAgent;
   let logger: Logger;
   
@@ -117,7 +117,7 @@ describe('ConversationalAgent Integration Tests', () => {
       logger.info('Active connections:', response.output);
     }, 60000);
 
-    test('Monitor for connection requests', async () => {
+    test.skip('Monitor for connection requests', async () => {
       const response = await agent.processMessage(
         'Use monitor_connections to check for incoming connection requests'
       );

@@ -104,6 +104,12 @@ declare global {
         info?: any
         error?: string
       }>
+      executeTransactionBytes: (transactionBytes: string) => Promise<{
+        success: boolean
+        transactionId?: string
+        error?: string
+        status?: string
+      }>
       
       send: (channel: string, data?: any) => void
       invoke: (channel: string, data?: any) => Promise<any>

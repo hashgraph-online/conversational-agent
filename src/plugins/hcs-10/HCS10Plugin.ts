@@ -100,7 +100,7 @@ export class HCS10Plugin extends BasePlugin {
           logLevel: 'error',
         });
 
-        this.stateManager.initializeConnectionsManager(hcs10Client);
+        this.stateManager.initializeConnectionsManager(hcs10Client as any);
         this.context.logger.info(
           'ConnectionsManager initialized in HCS10Plugin'
         );

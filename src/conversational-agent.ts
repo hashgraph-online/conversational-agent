@@ -23,6 +23,7 @@ import type { IStateManager } from '@hashgraphonline/standards-agent-kit';
 import { PrivateKey } from '@hashgraph/sdk';
 import { getSystemMessage } from './config/system-message';
 import type { MCPServerConfig } from './mcp/types';
+import { ContentStoreManager } from './services/ContentStoreManager';
 
 const DEFAULT_MODEL_NAME = 'gpt-4o';
 const DEFAULT_TEMPERATURE = 0.1;
@@ -68,6 +69,7 @@ export class ConversationalAgent {
   public stateManager: IStateManager;
   private options: ConversationalAgentOptions;
   private logger: Logger;
+  private contentStoreManager?: ContentStoreManager;
 
   constructor(options: ConversationalAgentOptions) {
     this.options = options;
@@ -123,6 +125,13 @@ export class ConversationalAgent {
       this.agent = createAgent(agentConfig);
 
       this.configureHCS10Plugin(allPlugins);
+
+      // Initialize ContentStoreManager if MCP servers are configured
+      if (this.options.mcpServers && this.options.mcpServers.length > 0) {
+        this.contentStoreManager = new ContentStoreManager();
+        await this.contentStoreManager.initialize();
+        this.logger.info('ContentStoreManager initialized for MCP content reference support');
+      }
 
       await this.agent.boot();
     } catch (error) {
@@ -275,7 +284,7 @@ export class ConversationalAgent {
         operationalMode: operationalMode,
         ...(userAccountId && { userAccountId }),
         ...(scheduleUserTransactionsInBytesMode !== undefined && {
-          scheduleUserTransactions: scheduleUserTransactionsInBytesMode,
+          scheduleUserTransactionsInBytesMode: scheduleUserTransactionsInBytesMode,
         }),
       },
       ai: {
@@ -457,6 +466,20 @@ export class ConversationalAgent {
       return PrivateKey.fromStringECDSA(privateKey);
     } else {
       return PrivateKey.fromStringED25519(privateKey);
+    }
+  }
+
+  /**
+   * Clean up resources
+   */
+  async cleanup(): Promise<void> {
+    if (this.contentStoreManager) {
+      await this.contentStoreManager.dispose();
+      this.logger.info('ContentStoreManager cleaned up');
+    }
+    // Agent cleanup if needed
+    if (this.agent) {
+      // Add agent cleanup if available
     }
   }
 }

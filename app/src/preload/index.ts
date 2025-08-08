@@ -116,6 +116,25 @@ const electronBridge = {
   setUpdateChannel: (channel: 'stable' | 'beta') => ipcRenderer.invoke('set-update-channel', channel),
   setAutoDownload: (enabled: boolean) => ipcRenderer.invoke('set-auto-download', enabled),
   
+  // OpenRouter operations
+  getOpenRouterModels: (forceRefresh?: boolean) => ipcRenderer.invoke('openrouter:getModels', forceRefresh),
+  getOpenRouterModelsByProvider: (provider: string) => ipcRenderer.invoke('openrouter:getModelsByProvider', provider),
+  getOpenRouterModel: (modelId: string) => ipcRenderer.invoke('openrouter:getModel', modelId),
+  
+  // Transaction operations
+  executeScheduledTransaction: (scheduleId: string) => ipcRenderer.invoke('execute-scheduled-transaction', scheduleId),
+  deleteScheduledTransaction: (scheduleId: string) => ipcRenderer.invoke('delete-scheduled-transaction', scheduleId),
+  getScheduledTransaction: (scheduleId: string) => ipcRenderer.invoke('get-scheduled-transaction', scheduleId),
+  executeTransactionBytes: (transactionBytes: string) => ipcRenderer.invoke('execute-transaction-bytes', transactionBytes),
+  
+  // Mirror node operations
+  mirrorNode: {
+    getScheduleInfo: (scheduleId: string, network?: 'mainnet' | 'testnet') => 
+      ipcRenderer.invoke('mirrorNode:getScheduleInfo', scheduleId, network),
+    getTransactionByTimestamp: (timestamp: string, network?: 'mainnet' | 'testnet') => 
+      ipcRenderer.invoke('mirrorNode:getTransactionByTimestamp', timestamp, network)
+  },
+
   // General IPC methods
   invoke: (channel: string, ...args: any[]) => {
     return ipcRenderer.invoke(channel, ...args);

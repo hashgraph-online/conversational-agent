@@ -27,14 +27,14 @@ const config: ForgeConfig = {
     new MakerRpm({
       options: {
         categories: ['Utility'],
-        description: 'Desktop application for OpenARC (Autonomous Runtime Core)',
+        description: 'Desktop application for HashgraphOnline',
         icon: './assets/hol-app-bubble.png'
       }
     }),
     new MakerDeb({
       options: {
         categories: ['Utility'],
-        description: 'Desktop application for OpenARC (Autonomous Runtime Core)',
+        description: 'Desktop application for HashgraphOnline',
         icon: './assets/hol-app-bubble.png'
       }
     })

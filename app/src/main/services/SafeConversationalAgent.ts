@@ -88,6 +88,7 @@ export class SafeConversationalAgent {
                 ...this.config,
                 disableLogging: false,
                 verbose: true,
+                scheduleUserTransactionsInBytesMode: false
               },
               enabledServers
             );
@@ -96,6 +97,7 @@ export class SafeConversationalAgent {
               ...this.config,
               disableLogging: false,
               verbose: true,
+              scheduleUserTransactionsInBytesMode: false, // Always disable to get transaction bytes
             });
           }
         } else {
@@ -103,6 +105,7 @@ export class SafeConversationalAgent {
             ...this.config,
             disableLogging: false,
             verbose: true,
+            scheduleUserTransactionsInBytesMode: false, // Always disable to get transaction bytes
           });
         }
 
@@ -137,6 +140,9 @@ export class SafeConversationalAgent {
       const { getSystemMessage } = originalRequire(
         '@hashgraphonline/conversational-agent'
       );
+      const { ContentStoreManager } = originalRequire(
+        '@hashgraphonline/conversational-agent'
+      );
 
       const anthropicLLM = new ChatAnthropic({
         apiKey: this.config.openAIApiKey,
@@ -163,13 +169,44 @@ export class SafeConversationalAgent {
         ...corePlugins,
       ];
 
+      // Check if MCP servers are configured and add MCP support
+      let mcpConfig = {};
+      if (this.config.mcpServers && this.config.mcpServers.length > 0) {
+        this.logger.info('Adding MCP server support to Anthropic agent:', {
+          serverCount: this.config.mcpServers.length,
+          servers: this.config.mcpServers.map((s) => ({
+            id: s.id,
+            name: s.name,
+            enabled: s.enabled,
+          })),
+        });
+
+        const enabledServers = this.config.mcpServers.filter(
+          (server) => server.enabled
+        );
+
+        if (enabledServers.length > 0) {
+          mcpConfig = {
+            mcp: {
+              servers: enabledServers,
+              autoConnect: true,
+            },
+          };
+
+          // Initialize ContentStoreManager for content reference support
+          const contentStoreManager = new ContentStoreManager();
+          await contentStoreManager.initialize();
+          this.logger.info('ContentStoreManager initialized for MCP content reference support');
+        }
+      }
+
       this.agent = createAgent({
         framework: 'langchain',
         signer: serverSigner,
         execution: {
-          mode:
-            this.config.operationalMode === 'autonomous' ? 'direct' : 'bytes',
+          mode: 'bytes',
           operationalMode: this.config.operationalMode || 'autonomous',
+          scheduleUserTransactionsInBytesMode: false
         },
         ai: {
           provider: new LangChainProvider(anthropicLLM),
@@ -188,6 +225,7 @@ export class SafeConversationalAgent {
         extensions: {
           plugins: allPlugins,
         },
+        ...mcpConfig,
         debug: {
           verbose: false,
           silent: true,
@@ -211,8 +249,7 @@ export class SafeConversationalAgent {
         content,
         historyLength: chatHistory.length,
         operationalMode: this.config.operationalMode,
-        scheduleUserTransactionsInBytesMode:
-          this.config.operationalMode === 'returnBytes' ? false : true,
+        scheduleUserTransactionsInBytesMode: false,
         isCustom: this.isUsingCustomAgent,
       });
 

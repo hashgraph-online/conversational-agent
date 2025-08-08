@@ -29,14 +29,6 @@ interface MessageBubbleProps {
   userProfile?: UserProfile | null;
 }
 
-/**
- * Parses message content to extract schedule information.
- * Returns formatted message if schedule data is found, otherwise returns original content.
- * 
- * @param content - The message content to parse
- * @param isUser - Whether the message is from the user
- * @returns Formatted message string
- */
 function parseScheduleMessage(content: string, isUser: boolean): string {
   if (isUser || !content.trim().startsWith('{') || !content.includes('scheduleId')) {
     return content;
@@ -53,20 +45,12 @@ function parseScheduleMessage(content: string, isUser: boolean): string {
   return content;
 }
 
-/**
- * Removes hidden file content from messages for display purposes
- * @param content - The message content to clean
- * @returns Cleaned message content
- */
 function cleanMessageContent(content: string): string {
   const cleanedContent = content.replace(/\n\n<!-- HIDDEN_FILE_CONTENT -->[\s\S]*?<!-- END_HIDDEN_FILE_CONTENT -->/g, '');
   
   return cleanedContent.replace(/\n<!-- FILE_START:.*? -->[\s\S]*?<!-- FILE_END:.*? -->/g, '');
 }
 
-/**
- * Individual message component with user/assistant styling
- */
 const MessageBubble: React.FC<MessageBubbleProps> = ({ message, userProfile }) => {
   const isUser = message.role === 'user';
   const isSystem = message.role === 'system';
@@ -75,9 +59,21 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, userProfile }) =
   );
   const config = useConfigStore((state) => state.config);
   const operationalMode = config?.advanced?.operationalMode || 'autonomous';
+  
+  // Get agent store methods for transaction approval
+  const { approveTransaction, rejectTransaction } = useAgentStore();
 
   const contentParts = useMemo(() => {
-    const cleanedContent = cleanMessageContent(message.content);
+    let cleanedContent = cleanMessageContent(message.content);
+    
+    if (!isUser && message.metadata?.transactionBytes && operationalMode === 'returnBytes') {
+      cleanedContent = cleanedContent
+        .replace(/```[a-z]*\n[A-Za-z0-9+/=]+\n```/g, '')
+        .replace(/\n\nPlease sign and submit this transaction to complete the transfer\./g, '')
+        .replace(/\n\nPlease sign the transaction with your account\./g, '')
+        .trim();
+    }
+    
     const parsedContent = parseScheduleMessage(cleanedContent, isUser);
     
     const codePattern = /```([a-z]*)\n([\s\S]*?)```/g;
@@ -127,7 +123,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, userProfile }) =
 
     processed = processed.replace(
       /\[([^\]]+)\]\(([^)]+)\)/g,
-      '<a href="$2" target="_blank" rel="noopener noreferrer" class="underline text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300">$1</a>'
+      '<a href="$2" target="_blank" rel="noopener noreferrer" class="underline text-white hover:text-blue-100 font-semibold">$1</a>'
     );
 
     processed = processed.replace(/^### (.*$)/gm, '<h3 class="text-lg font-bold mt-4 mb-2">$1</h3>');
@@ -190,7 +186,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, userProfile }) =
           {isUser && userProfile?.profileImage ? (
             <img 
               src={userProfile.profileImage.startsWith('hcs://') 
-                ? userProfile.profileImage.replace('hcs://1/', 'https://kiloscribe.com/api/inscription-cdn/')
+                ? `${userProfile.profileImage.replace('hcs://1/', 'https://kiloscribe.com/api/inscription-cdn/')}?network=${config?.hedera?.network || 'testnet'}`
                 : userProfile.profileImage.startsWith('ipfs://') 
                 ? userProfile.profileImage.replace('ipfs://', 'https://gateway.pinata.cloud/ipfs/')
                 : userProfile.profileImage
@@ -198,7 +194,6 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, userProfile }) =
               alt={userProfile.display_name || userProfile.alias || 'User'}
               className="w-8 h-8 rounded-full object-cover border-2 border-blue-500/20"
               onError={(e) => {
-                // Fallback to default avatar on error
                 const target = e.target as HTMLImageElement;
                 target.parentElement?.querySelector('.avatar-fallback')?.classList.remove('hidden');
                 target.style.display = 'none';
@@ -366,41 +361,36 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, userProfile }) =
             </div>
           )}
 
-          {operationalMode === 'returnBytes' &&
-            message.metadata?.transactionBytes &&
-            !isUser && (
-              <TransactionDisplay
-                transactionBytes={message.metadata.transactionBytes}
-                onApprove={() => {
-                  addNotification({
-                    type: 'info',
-                    title: 'Transaction Bytes',
-                    message:
-                      'Transaction bytes are ready for signing. Implementation pending.',
-                  });
-                }}
-                onReject={() => {
-                  addNotification({
-                    type: 'info',
-                    title: 'Transaction Rejected',
-                    message: 'Transaction rejected by user.',
-                  });
-                }}
-                className='mt-3'
-              />
-            )}
 
           {operationalMode === 'returnBytes' &&
-            message.metadata?.scheduleId &&
+            (message.metadata?.scheduleId || message.metadata?.transactionBytes) &&
             !isUser && (
               <>
                 <TransactionApprovalButton
                   scheduleId={message.metadata.scheduleId}
-                  description={message.metadata.description}
+                  transactionBytes={message.metadata.transactionBytes}
+                  description={message.metadata.description || ''}
                   className='mt-3'
                 />
               </>
             )}
+
+          {(() => {
+            
+            return operationalMode === 'autonomous' &&
+              message.metadata?.pendingApproval &&
+              message.metadata?.transactionBytes &&
+              !isUser && (
+                <TransactionApprovalButton
+                  messageId={message.id}
+                  transactionBytes={message.metadata.transactionBytes}
+                  description={message.metadata.description || 'Transaction requires approval'}
+                  onApprove={approveTransaction}
+                  onReject={rejectTransaction}
+                  className='mt-3'
+                />
+              );
+          })()}
         </div>
       </div>
     </div>

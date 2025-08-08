@@ -53,3 +53,4 @@ coverage/
 # Misc
 thumbs.db
 .eslintcache
+.vite

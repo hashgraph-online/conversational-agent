@@ -27,7 +27,7 @@ const AcknowledgementsPage: React.FC = () => {
     },
     {
       name: 'Hedera Agent Kit',
-      description: 'The foundational toolkit that powers OpenARC\'s interaction with the Hedera network',
+      description: 'The foundational toolkit that powers HashgraphOnline\'s interaction with the Hedera network',
       link: 'https://github.com/hedera-dev/hedera-agent-kit',
       icon: HiCube,
       gradient: 'from-[#a679f0] to-[#5599fe]'
@@ -244,7 +244,7 @@ const AcknowledgementsPage: React.FC = () => {
               Acknowledgements
             </Typography>
             <Typography variant="body1" color="muted" className="max-w-2xl mx-auto">
-              OpenARC is built on the shoulders of giants. We're grateful to the open-source community 
+              HashgraphOnline is built on the shoulders of giants. We're grateful to the open-source community 
               and the Hedera ecosystem for making this project possible.
             </Typography>
           </motion.div>
@@ -484,7 +484,7 @@ const AcknowledgementsPage: React.FC = () => {
               <div className="text-center">
                 <Typography variant="h5" className="font-bold mb-4">Open Source License</Typography>
                 <Typography variant="body1" color="muted" className="mb-6">
-                  OpenARC is released under the Apache License 2.0, promoting open collaboration 
+                  HashgraphOnline is released under the Apache License 2.0, promoting open collaboration 
                   and innovation in the Hedera ecosystem.
                 </Typography>
                 <div className="flex justify-center gap-4">

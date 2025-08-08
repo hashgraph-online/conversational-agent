@@ -1,7 +1,14 @@
 import React from 'react';
 import Typography from '../ui/Typography';
 import { cn } from '../../lib/utils';
-import { FiArrowRight, FiDollarSign, FiInfo, FiHash, FiClock, FiExternalLink } from 'react-icons/fi';
+import {
+  FiArrowRight,
+  FiDollarSign,
+  FiInfo,
+  FiHash,
+  FiClock,
+  FiExternalLink,
+} from 'react-icons/fi';
 
 interface TransactionTransfer {
   accountId: string;
@@ -65,7 +72,7 @@ interface TransactionDetailsProps {
  */
 export const formatDate = (timestamp: string): string => {
   if (!timestamp) return '';
-  
+
   try {
     return new Date(timestamp).toLocaleString();
   } catch {
@@ -174,11 +181,11 @@ export const TransactionDetails: React.FC<TransactionDetailsProps> = ({
             </div>
             <a
               href={`https://hashscan.io/${network}/schedule/${scheduleId}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-brand-blue hover:text-brand-purple"
+              target='_blank'
+              rel='noopener noreferrer'
+              className='text-brand-blue hover:text-brand-purple'
             >
-              <FiExternalLink className="w-3.5 h-3.5" />
+              <FiExternalLink className='w-3.5 h-3.5' />
             </a>
           </div>
         )}
@@ -199,7 +206,10 @@ export const TransactionDetails: React.FC<TransactionDetailsProps> = ({
 
         {hasTransfers && (
           <div className='space-y-2'>
-            <Typography variant='caption' className='font-medium text-gray-700 dark:text-gray-300'>
+            <Typography
+              variant='caption'
+              className='font-medium text-gray-700 dark:text-gray-300'
+            >
               HBAR Transfers ({transfers.length})
             </Typography>
             <div className='bg-white dark:bg-gray-800 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 shadow-sm'>
@@ -235,7 +245,10 @@ export const TransactionDetails: React.FC<TransactionDetailsProps> = ({
 
         {hasTokenTransfers && (
           <div className='space-y-2'>
-            <Typography variant='caption' className='font-medium text-gray-700 dark:text-gray-300'>
+            <Typography
+              variant='caption'
+              className='font-medium text-gray-700 dark:text-gray-300'
+            >
               Token Transfers ({tokenTransfers.length})
             </Typography>
             <div className='bg-white dark:bg-gray-800 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 shadow-sm'>

@@ -1,7 +1,10 @@
 import { ipcMain } from 'electron';
 import { AgentService } from '../services/AgentService';
+import { HederaService } from '../services/HederaService';
+import { ConfigService } from '../services/ConfigService';
 import { Logger } from '../utils/logger';
 import type { ChatHistory } from '../services/AgentService';
+import type { TransactionExecutionResult } from '../services/HederaService';
 
 const logger = new Logger({ module: 'TransactionHandlers' });
 
@@ -10,6 +13,8 @@ const logger = new Logger({ module: 'TransactionHandlers' });
  */
 export function registerTransactionHandlers() {
   const agentService = AgentService.getInstance();
+  const hederaService = HederaService.getInstance();
+  const configService = ConfigService.getInstance();
 
   /**
    * Execute a scheduled transaction
@@ -114,6 +119,80 @@ export function registerTransactionHandlers() {
       return {
         success: false,
         error: errorMessage
+      };
+    }
+  });
+
+  /**
+   * Execute transaction bytes directly with stored credentials
+   */
+  ipcMain.handle('execute-transaction-bytes', async (_, transactionBytes: string): Promise<TransactionExecutionResult> => {
+    try {
+      logger.info('Executing transaction bytes:', {
+        bytesLength: transactionBytes?.length || 0
+      });
+
+      // Validate input
+      if (!transactionBytes || typeof transactionBytes !== 'string') {
+        return {
+          success: false,
+          error: 'Transaction bytes are required and must be a valid string'
+        };
+      }
+
+      // Get current configuration
+      const config = await configService.load();
+      if (!config) {
+        return {
+          success: false,
+          error: 'No configuration found. Please configure your Hedera credentials first.'
+        };
+      }
+
+      // Validate Hedera configuration
+      if (!config.hedera?.accountId || !config.hedera?.privateKey) {
+        return {
+          success: false,
+          error: 'Hedera account credentials not found. Please configure your account ID and private key.'
+        };
+      }
+
+      // Check if transaction was already executed
+      if (hederaService.isTransactionExecuted(transactionBytes)) {
+        const executed = hederaService.getExecutedTransaction(transactionBytes);
+        return {
+          success: false,
+          error: `Transaction already executed at ${executed?.timestamp.toISOString()} with ID: ${executed?.transactionId}`
+        };
+      }
+
+      // Execute the transaction
+      const result = await hederaService.executeTransactionBytes(
+        transactionBytes,
+        config.hedera.accountId,
+        config.hedera.privateKey,
+        config.hedera.network || 'testnet'
+      );
+
+      if (result.success) {
+        logger.info('Transaction executed successfully', {
+          transactionId: result.transactionId,
+          status: result.status
+        });
+      } else {
+        logger.error('Transaction execution failed', {
+          error: result.error,
+          status: result.status
+        });
+      }
+
+      return result;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      logger.error('Failed to execute transaction bytes:', error);
+      return {
+        success: false,
+        error: `Transaction execution failed: ${errorMessage}`
       };
     }
   });

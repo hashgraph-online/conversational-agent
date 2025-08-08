@@ -107,7 +107,7 @@ const ProfileButton: React.FC = () => {
       {userProfile?.profileImage ? (
         <img 
           src={userProfile.profileImage.startsWith('hcs://') 
-            ? userProfile.profileImage.replace('hcs://1/', 'https://kiloscribe.com/api/inscription-cdn/')
+            ? `${userProfile.profileImage.replace('hcs://1/', 'https://kiloscribe.com/api/inscription-cdn/')}?network=${config?.hedera?.network || 'testnet'}`
             : userProfile.profileImage.startsWith('ipfs://') 
             ? userProfile.profileImage.replace('ipfs://', 'https://gateway.pinata.cloud/ipfs/')
             : userProfile.profileImage

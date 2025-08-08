@@ -300,32 +300,27 @@ const SidebarContent: React.FC<SidebarProps & { location: any }> = ({
         </button>
 
         {isCollapsed ? (
-          <div className='flex justify-center pt-2'>
-            <div className='relative'>
-              <div className='absolute inset-0 bg-gradient-to-br from-[#a679f0] to-[#5599fe] rounded-2xl blur-xl opacity-50' />
+          <Link to='/dashboard' className='flex justify-center pt-2 group'>
+            <div className='relative transform transition-transform duration-200 group-hover:scale-105'>
+              <div className='absolute inset-0 bg-gradient-to-br from-[#a679f0] to-[#5599fe] rounded-2xl blur-xl opacity-50 group-hover:opacity-70 transition-opacity' />
               <Logo size='md' showText={false} className='relative' />
             </div>
-          </div>
+          </Link>
         ) : (
           <div className='flex items-start gap-3 pr-8'>
-            <div className='relative flex-shrink-0'>
-              <div className='absolute inset-0 bg-gradient-to-br from-[#a679f0] to-[#5599fe] rounded-2xl blur-xl opacity-50' />
-              <Logo size='lg' showText={false} className='relative' />
-            </div>
+            <Link to='/dashboard' className='relative flex-shrink-0 group'>
+              <div className='absolute inset-0 bg-gradient-to-br from-[#a679f0] to-[#5599fe] rounded-2xl blur-xl opacity-50 group-hover:opacity-70 transition-opacity' />
+              <Logo size='lg' showText={false} className='relative transform transition-transform duration-200 group-hover:scale-105' />
+            </Link>
             <div className='flex-1 min-w-0 flex flex-col'>
-              <div className='text-2xl font-bold bg-gradient-to-r from-[#5599fe] to-[#a679f0] bg-clip-text text-transparent font-mono tracking-wide break-words' style={{ lineHeight: '1' }}>
-                OpenARC
-              </div>
-              <div className='text-xs text-gray-500 dark:text-gray-400 font-mono opacity-80 tracking-wide' style={{ marginTop: '2px', lineHeight: '1' }}>
-                by{' '}
-                <Link
-                  to='https://hashgraphonline.com'
-                  target='_blank'
-                  rel='noopener noreferrer'
-                >
-                  HashgraphOnline
-                </Link>
-              </div>
+              <Link
+                to='/dashboard'
+                className='text-2xl font-bold bg-gradient-to-r from-[#5599fe] to-[#a679f0] bg-clip-text text-transparent font-mono tracking-wide hover:opacity-80 transition-opacity'
+                style={{ lineHeight: '1' }}
+              >
+                <div>Hashgraph</div>
+                <div>Online</div>
+              </Link>
             </div>
           </div>
         )}

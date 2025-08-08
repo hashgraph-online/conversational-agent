@@ -1,6 +1,7 @@
 import type { BaseChatModel } from '@langchain/core/language_models/chat_models';
 import type { StructuredTool } from '@langchain/core/tools';
-import { createOpenAIToolsAgent, AgentExecutor } from 'langchain/agents';
+import { createOpenAIToolsAgent } from 'langchain/agents';
+import { ContentAwareAgentExecutor } from './langchain/ContentAwareAgentExecutor';
 import {
   ChatPromptTemplate,
   MessagesPlaceholder,
@@ -25,7 +26,7 @@ import { convertMCPToolToLangChain } from './mcp/adapters/langchain';
 import { SmartMemoryManager } from './memory/SmartMemoryManager';
 
 export class LangChainAgent extends BaseAgent {
-  private executor: AgentExecutor | undefined;
+  private executor: ContentAwareAgentExecutor | undefined;
   private systemMessage = '';
   private mcpManager?: MCPClientManager;
   private smartMemory: SmartMemoryManager | undefined;
@@ -46,20 +47,26 @@ export class LangChainAgent extends BaseAgent {
         'gpt-4o-mini';
       this.tokenTracker = new TokenUsageCallbackHandler(modelName);
 
-      // Initialize smart memory manager
-      this.smartMemory = new SmartMemoryManager({
-        modelName: modelName as any,
-        maxTokens: 8000, // Conservative limit for most models
-        reserveTokens: 1000, // Reserve for response generation
-        storageLimit: 1000 // Store up to 1000 pruned messages
-      });
-
       const allTools = this.agentKit.getAggregatedLangChainTools();
       this.tools = this.filterTools(allTools);
 
       if (this.config.mcp?.servers && this.config.mcp.servers.length > 0) {
         await this.initializeMCP();
       }
+
+      this.smartMemory = new SmartMemoryManager({
+        modelName,
+        maxTokens: 90000,
+        reserveTokens: 10000,
+        storageLimit: 1000
+      });
+      
+      this.logger.info('SmartMemoryManager initialized:', {
+        modelName,
+        toolsCount: this.tools.length,
+        maxTokens: 90000,
+        reserveTokens: 10000
+      });
 
       this.systemMessage = this.buildSystemPrompt();
       
@@ -91,6 +98,7 @@ export class LangChainAgent extends BaseAgent {
       if (context?.messages && context.messages.length > 0) {
         // Clear existing memory and add messages from context
         this.smartMemory.clear();
+        
         for (const msg of context.messages) {
           this.smartMemory.addMessage(msg);
         }
@@ -99,6 +107,15 @@ export class LangChainAgent extends BaseAgent {
       // Add the current user message to memory
       const { HumanMessage } = await import('@langchain/core/messages');
       this.smartMemory.addMessage(new HumanMessage(message));
+      
+      const memoryStats = this.smartMemory.getMemoryStats();
+      this.logger.info('Memory stats before execution:', {
+        totalMessages: memoryStats.totalActiveMessages,
+        currentTokens: memoryStats.currentTokenCount,
+        maxTokens: memoryStats.maxTokens,
+        usagePercentage: memoryStats.usagePercentage,
+        toolsCount: this.tools.length
+      });
       
       const result = await this.executor.invoke({
         input: message,
@@ -160,15 +177,14 @@ export class LangChainAgent extends BaseAgent {
         }
       }
 
-      // Add memory stats to response for debugging
-      const memoryStats = this.smartMemory.getMemoryStats();
+      const finalMemoryStats = this.smartMemory.getMemoryStats();
       response.metadata = {
         ...response.metadata,
         memoryStats: {
-          activeMessages: memoryStats.totalActiveMessages,
-          tokenUsage: memoryStats.currentTokenCount,
-          maxTokens: memoryStats.maxTokens,
-          usagePercentage: memoryStats.usagePercentage
+          activeMessages: finalMemoryStats.totalActiveMessages,
+          tokenUsage: finalMemoryStats.currentTokenCount,
+          maxTokens: finalMemoryStats.maxTokens,
+          usagePercentage: finalMemoryStats.usagePercentage
         }
       };
 
@@ -245,6 +261,7 @@ export class LangChainAgent extends BaseAgent {
     }
   }
 
+
   private async createAgentKit(): Promise<HederaAgentKit> {
     const corePlugins = getAllHederaCorePlugins();
     const extensionPlugins = this.config.extensions?.plugins || [];
@@ -259,7 +276,7 @@ export class LangChainAgent extends BaseAgent {
       { plugins },
       operationalMode,
       this.config.execution?.userAccountId,
-      this.config.execution?.scheduleUserTransactionsInBytesMode ?? true,
+      this.config.execution?.scheduleUserTransactionsInBytesMode ?? false,
       undefined,
       modelName,
       this.config.extensions?.mirrorConfig,
@@ -303,7 +320,7 @@ export class LangChainAgent extends BaseAgent {
     });
 
     // Create executor without memory - we handle memory manually with SmartMemoryManager
-    this.executor = new AgentExecutor({
+    this.executor = new ContentAwareAgentExecutor({
       agent,
       tools: langchainTools,
       verbose: this.config.debug?.verbose ?? false,

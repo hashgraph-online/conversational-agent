@@ -131,7 +131,7 @@ const HomePage: React.FC<HomePageProps> = () => {
             className='font-bold text-4xl md:text-5xl animate-gradient bg-gradient-to-r from-[#a679f0] via-[#5599fe] to-[#48df7b] bg-clip-text text-transparent font-mono'
             style={{ backgroundSize: '200% 200%' }}
           >
-            OpenARC
+            HashgraphOnline
           </Typography>
         </motion.div>
         <motion.div
