@@ -1,27 +1,29 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import { 
-  FiAlertCircle, 
-  FiX, 
-  FiGrid, 
-  FiList, 
-  FiPlus,
-  FiPackage,
-  FiSearch,
-  FiDownload,
-  FiToggleLeft,
-  FiToggleRight,
-  FiTrash2,
-  FiRefreshCw,
-  FiCheckCircle,
-  FiLoader,
-  FiInfo
-} from 'react-icons/fi'
+  Package,
+  Search,
+  Download,
+  Power,
+  PowerOff,
+  Trash2,
+  RefreshCw,
+  CheckCircle,
+  Loader2,
+  Info,
+  Grid3x3,
+  List,
+  Sparkles,
+  Puzzle,
+  AlertCircle,
+  X
+} from 'lucide-react'
 import Typography from '../components/ui/Typography'
 import { Button } from '../components/ui/Button'
 import { Card, CardContent } from '../components/ui/Card'
 import { Input } from '../components/ui/input'
 import { usePluginStore } from '../stores/pluginStore'
 import type { PluginConfig, PluginSearchResult } from '../../shared/types/plugin'
+import { cn } from '../lib/utils'
 
 type ViewMode = 'installed' | 'catalog'
 
@@ -143,56 +145,62 @@ const PluginsPage: React.FC<PluginsPageProps> = () => {
     const progress = installProgress[plugin.id]
     
     return (
-      <Card key={plugin.id} className="hover:shadow-lg transition-shadow">
-        <CardContent className="p-6">
-          <div className="flex items-start justify-between mb-3">
+      <Card 
+        key={plugin.id} 
+        className={cn(
+          "group hover:shadow-md transition-all duration-200 border overflow-hidden",
+          plugin.enabled && "border-[#5599fe]/30 bg-gradient-to-br from-[#5599fe]/5 to-transparent"
+        )}
+      >
+        <CardContent className="p-3">
+          <div className="flex items-start justify-between mb-1.5">
             <div className="flex-1">
-              <div className="mb-1">
-                <Typography variant="h6">
-                  {plugin.name}
-                </Typography>
-              </div>
-              <div className="mb-2">
-                <Typography variant="body2" color="muted">
+              <Typography variant="h6" className="font-medium text-sm mb-1">
+                {plugin.name}
+              </Typography>
+              <div className="flex items-center gap-2">
+                <Typography variant="body2" className="text-xs text-muted-foreground">
                   v{plugin.version}
-                  {updateAvailable && (
-                    <span className="ml-2 text-blue-600 dark:text-blue-400">
-                      → v{updateAvailable.availableVersion}
-                    </span>
-                  )}
                 </Typography>
+                {updateAvailable && (
+                  <span className="text-xs px-1.5 py-0.5 bg-[#5599fe] text-white rounded">
+                    Update available
+                  </span>
+                )}
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              {plugin.enabled ? (
-                <FiToggleRight 
-                  className="w-6 h-6 text-green-600 cursor-pointer"
-                  onClick={() => handleTogglePlugin(plugin.id, false)}
-                />
-              ) : (
-                <FiToggleLeft 
-                  className="w-6 h-6 text-gray-400 cursor-pointer"
-                  onClick={() => handleTogglePlugin(plugin.id, true)}
-                />
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handleTogglePlugin(plugin.id, !plugin.enabled)}
+              className={cn(
+                "h-6 w-6 p-0 transition-colors",
+                plugin.enabled 
+                  ? "text-[#5599fe] hover:text-[#4488ed]" 
+                  : "text-muted-foreground hover:text-foreground"
               )}
-            </div>
+            >
+              {plugin.enabled ? (
+                <Power className="h-3.5 w-3.5" />
+              ) : (
+                <PowerOff className="h-3.5 w-3.5" />
+              )}
+            </Button>
           </div>
           
-          <div className="mb-4 line-clamp-2">
-            <Typography variant="body2" color="muted">
-              {plugin.metadata.description}
-            </Typography>
-          </div>
+          <Typography variant="body2" className="text-xs text-muted-foreground mb-2 line-clamp-2">
+            {plugin.metadata.description}
+          </Typography>
           
           {progress && (
-            <div className="mb-4">
-              <div className="flex items-center justify-between text-sm mb-1">
-                <span className="text-gray-600 dark:text-gray-400">{progress.phase}</span>
-                {progress.progress && <span>{progress.progress}%</span>}
+            <div className="mb-2">
+              <div className="flex items-center justify-between text-xs mb-1">
+                <span className="text-muted-foreground">{progress.phase}</span>
+                {progress.progress && <span className="text-[#5599fe]">{progress.progress}%</span>}
               </div>
-              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+              <div className="w-full bg-muted rounded-full h-1 overflow-hidden">
                 <div 
-                  className="bg-blue-600 h-2 rounded-full transition-all"
+                  className="h-full bg-[#5599fe] transition-all duration-300"
                   style={{ width: `${progress.progress || 0}%` }}
                 />
               </div>
@@ -206,21 +214,19 @@ const PluginsPage: React.FC<PluginsPageProps> = () => {
                 variant="outline"
                 onClick={() => handleUpdatePlugin(plugin.id)}
                 disabled={isInstalling}
-                className="flex items-center gap-2"
+                className="h-6 px-2 text-xs"
               >
-                <FiRefreshCw className="w-3 h-3" />
-                Update
+                <RefreshCw className="h-3 w-3" />
               </Button>
             )}
             <Button
               size="sm"
-              variant="destructive"
+              variant="ghost"
               onClick={() => handleUninstallPlugin(plugin.id)}
               disabled={isInstalling}
-              className="flex items-center gap-2"
+              className="h-6 px-2 text-xs text-muted-foreground hover:text-destructive"
             >
-              <FiTrash2 className="w-3 h-3" />
-              Uninstall
+              <Trash2 className="h-3 w-3" />
             </Button>
           </div>
         </CardContent>
@@ -233,314 +239,352 @@ const PluginsPage: React.FC<PluginsPageProps> = () => {
     const installing = installingPlugins.has(result.name)
     
     return (
-      <Card key={result.name} className="hover:shadow-lg transition-shadow">
-        <CardContent className="p-6">
-          <div className="flex items-start justify-between mb-3">
+      <Card key={result.name} className="group hover:shadow-md transition-all duration-200">
+        <CardContent className="p-3">
+          <div className="flex items-start justify-between mb-1.5">
             <div className="flex-1">
-              <div className="mb-1">
-                <Typography variant="h6">
-                  {result.name}
-                </Typography>
-              </div>
-              <Typography variant="body2" color="muted">
+              <Typography variant="h6" className="font-medium text-sm mb-1">
+                {result.name}
+              </Typography>
+              <Typography variant="body2" className="text-xs text-muted-foreground">
                 v{result.version}
               </Typography>
             </div>
             {installed && (
-              <div className="flex items-center gap-1 text-green-600">
-                <FiCheckCircle className="w-4 h-4" />
-                <span className="text-sm">Installed</span>
+              <div className="flex items-center gap-1 text-[#5599fe]">
+                <CheckCircle className="h-3.5 w-3.5" />
+                <span className="text-xs">Installed</span>
               </div>
             )}
           </div>
           
-          <div className="mb-4 line-clamp-2">
-            <Typography variant="body2" color="muted">
-              {result.description}
-            </Typography>
-          </div>
+          <Typography variant="body2" className="text-xs text-muted-foreground mb-2 line-clamp-2">
+            {result.description}
+          </Typography>
           
           {result.score && (
-            <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400 mb-4">
-              <span>Quality: {Math.round(result.score.detail.quality * 100)}%</span>
-              <span>Popularity: {Math.round(result.score.detail.popularity * 100)}%</span>
+            <div className="flex items-center gap-3 mb-2">
+              <div className="flex items-center gap-1">
+                <div className="h-1 w-16 bg-muted rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-[#5599fe]"
+                    style={{ width: `${result.score.detail.quality * 100}%` }}
+                  />
+                </div>
+                <span className="text-xs text-muted-foreground">Quality</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="h-1 w-16 bg-muted rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-[#5599fe]/70"
+                    style={{ width: `${result.score.detail.popularity * 100}%` }}
+                  />
+                </div>
+                <span className="text-xs text-muted-foreground">Popular</span>
+              </div>
             </div>
           )}
           
-          <div className="flex items-center gap-2">
-            {!installed && (
-              <Button
-                size="sm"
-                variant="default"
-                onClick={() => handleInstallPlugin(result.name)}
-                disabled={installing || isInstalling}
-                className="flex items-center gap-2"
-              >
-                {installing ? (
-                  <FiLoader className="w-3 h-3 animate-spin" />
-                ) : (
-                  <FiDownload className="w-3 h-3" />
-                )}
-                Install
-              </Button>
-            )}
-          </div>
+          {!installed && (
+            <Button
+              size="sm"
+              onClick={() => handleInstallPlugin(result.name)}
+              disabled={installing || isInstalling}
+              className="h-6 px-3 text-xs bg-[#5599fe] text-white hover:bg-[#4488ed] border-0"
+            >
+              {installing ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : (
+                <>
+                  <Download className="h-3 w-3 mr-1" />
+                  Install
+                </>
+              )}
+            </Button>
+          )}
         </CardContent>
       </Card>
     )
   }
 
   return (
-    <div className="max-w-6xl mx-auto">
-      <div className="mb-8">
-        <div className="flex items-center justify-between mb-4">
-          <Typography variant="h3">
-            Plugin Management
+    <div className="min-h-screen bg-background">
+      <div className="container mx-auto px-6 py-8 max-w-6xl">
+        {/* Header */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <Typography variant="h1" className="text-3xl font-bold bg-gradient-to-r from-[#a679f0] via-[#5599fe] to-[#48df7b] bg-clip-text text-transparent">
+              Plugins
+            </Typography>
+            
+            <div className="flex items-center p-1 bg-muted rounded-lg">
+              <Button
+                variant={viewMode === 'installed' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setViewMode('installed')}
+                className={cn(
+                  "transition-all",
+                  viewMode === 'installed' && "bg-[#5599fe] text-white hover:bg-[#4488ed]"
+                )}
+              >
+                <List className="h-4 w-4 mr-2" />
+                Installed
+              </Button>
+              <Button
+                variant={viewMode === 'catalog' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setViewMode('catalog')}
+                className={cn(
+                  "transition-all",
+                  viewMode === 'catalog' && "bg-[#5599fe] text-white hover:bg-[#4488ed]"
+                )}
+              >
+                <Grid3x3 className="h-4 w-4 mr-2" />
+                Discover
+              </Button>
+            </div>
+          </div>
+          
+          <Typography variant="body1" className="text-muted-foreground mb-3 text-sm">
+            {viewMode === 'installed' 
+              ? 'Manage your installed plugins and their configurations'
+              : 'Discover and install plugins from the NPM registry'
+            }
           </Typography>
           
-          <div className="flex items-center gap-2 bg-white dark:bg-gray-800 rounded-lg p-1 shadow-sm">
-            <Button
-              variant={viewMode === 'installed' ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => setViewMode('installed')}
-              className="flex items-center gap-2"
-            >
-              <FiList className="w-4 h-4" />
-              Installed
-            </Button>
-            <Button
-              variant={viewMode === 'catalog' ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => setViewMode('catalog')}
-              className="flex items-center gap-2"
-            >
-              <FiGrid className="w-4 h-4" />
-              Discover
-            </Button>
-          </div>
-        </div>
-        
-        <Typography variant="body1" color="muted" className="max-w-3xl">
-          {viewMode === 'installed' 
-            ? 'Manage your installed plugins and their configurations'
-            : 'Discover and install plugins from the NPM registry'
-          }
-        </Typography>
-        
-        <div className="mt-4 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg max-w-3xl">
-          <div className="flex items-start gap-3">
-            <FiInfo className="w-5 h-5 text-yellow-600 dark:text-yellow-400 mt-0.5 flex-shrink-0" />
-            <div>
-              <Typography variant="body1" className="font-medium text-yellow-800 dark:text-yellow-200">
-                Plugin System Coming Soon
+          {/* Coming Soon Notice */}
+          <div className="p-3 bg-gradient-to-br from-[#5599fe]/10 to-[#5599fe]/5 rounded-lg border border-[#5599fe]/20">
+            <div className="flex items-center gap-2">
+              <Sparkles className="h-4 w-4 text-[#5599fe]" />
+              <Typography variant="body2" className="text-sm">
+                <span className="font-medium">Coming Soon:</span> The plugin system is in development. Soon you'll be able to extend your agent's capabilities.
               </Typography>
-              <div className="mt-1">
-                <Typography variant="body2" className="text-yellow-700 dark:text-yellow-300">
-                  The plugin system is currently in development. Soon you'll be able to browse, install, and manage plugins from NPM to extend your agent's capabilities. Check back for updates!
-                </Typography>
-              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {(error || searchError || installError) && (
-        <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg flex items-start gap-3">
-          <FiAlertCircle className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" />
-          <div className="flex-1">
-            <Typography variant="body1" color="muted" className="font-medium">
-              Error
-            </Typography>
-            <Typography variant="body1" color="muted">
-              {error || searchError || installError}
-            </Typography>
+        {/* Error Message */}
+        {(error || searchError || installError) && (
+          <div className="mb-6 p-4 bg-destructive/10 border border-destructive/20 rounded-lg flex items-start gap-3">
+            <AlertCircle className="h-5 w-5 text-destructive mt-0.5 flex-shrink-0" />
+            <div className="flex-1">
+              <Typography variant="body1" className="font-medium mb-1">
+                Error
+              </Typography>
+              <Typography variant="body2" className="text-muted-foreground">
+                {error || searchError || installError}
+              </Typography>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={clearError}
+              className="p-1 hover:bg-destructive/10"
+            >
+              <X className="h-4 w-4" />
+            </Button>
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={clearError}
-            className="text-red-500 hover:text-red-700 p-1"
-          >
-            <FiX className="w-4 h-4" />
-          </Button>
-        </div>
-      )}
+        )}
 
-      <div className="mb-6">
-        <div className="relative">
-          <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-          <Input
-            type="text"
-            placeholder={viewMode === 'installed' ? 'Search installed plugins...' : 'Search NPM registry...'}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
-          />
+        {/* Search Bar */}
+        <div className="mb-6">
+          <div className="relative max-w-sm">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="text"
+              placeholder={viewMode === 'installed' ? 'Search installed plugins...' : 'Search NPM registry...'}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10 h-9"
+            />
+          </div>
         </div>
-      </div>
 
-      <div className="grid gap-8 lg:grid-cols-3">
-        <div className="lg:col-span-2">
-          {viewMode === 'installed' ? (
-            <>
-              {isLoading ? (
-                <div className="flex items-center justify-center py-12">
-                  <FiLoader className="w-8 h-8 animate-spin text-gray-400" />
-                </div>
-              ) : installedPluginsList.length === 0 ? (
-                <Card className="border-dashed">
-                  <CardContent className="p-12 text-center">
-                    <div className="flex justify-center mb-4">
-                      <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center">
-                        <FiPackage className="w-8 h-8 text-gray-400" />
+        {/* Main Content */}
+        <div className="grid gap-6 lg:grid-cols-3">
+          <div className="lg:col-span-2">
+            {viewMode === 'installed' ? (
+              <>
+                {isLoading ? (
+                  <div className="flex flex-col items-center justify-center py-16">
+                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground mb-4" />
+                    <Typography variant="body1" className="text-muted-foreground">
+                      Loading plugins...
+                    </Typography>
+                  </div>
+                ) : installedPluginsList.length === 0 ? (
+                  <Card className="border-dashed border-2">
+                    <CardContent className="p-12 text-center">
+                      <div className="w-16 h-16 bg-gradient-to-br from-[#5599fe]/20 to-[#5599fe]/10 rounded-xl flex items-center justify-center mx-auto mb-3">
+                        <Package className="h-8 w-8 text-[#5599fe]" />
                       </div>
-                    </div>
-                    <div className="mb-2">
-                      <Typography variant="h5">
+                      <Typography variant="h5" className="text-lg mb-2">
                         No Plugins Installed
                       </Typography>
-                    </div>
-                    <div className="max-w-md mx-auto mb-4">
-                      <Typography variant="body1" color="muted">
-                        Browse the catalog to discover and install plugins that extend your agent's capabilities.
+                      <Typography variant="body1" className="text-sm text-muted-foreground mb-4 max-w-sm mx-auto">
+                        Browse the catalog to discover and install plugins.
                       </Typography>
-                    </div>
-                    <Button
-                      variant="default"
-                      onClick={() => setViewMode('catalog')}
-                      className="flex items-center gap-2"
-                    >
-                      <FiGrid className="w-4 h-4" />
-                      Browse Catalog
-                    </Button>
-                  </CardContent>
-                </Card>
-              ) : (
-                <div className="grid gap-4">
-                  {installedPluginsList.map(plugin => renderPluginCard(plugin))}
-                </div>
-              )}
-            </>
-          ) : (
-            <>
-              {isSearching ? (
-                <div className="flex items-center justify-center py-12">
-                  <FiLoader className="w-8 h-8 animate-spin text-gray-400" />
-                </div>
-              ) : searchResults.length === 0 && searchQuery ? (
-                <Card className="border-dashed">
-                  <CardContent className="p-12 text-center">
-                    <div className="mb-2">
-                      <Typography variant="h5">
+                      <Button
+                        onClick={() => setViewMode('catalog')}
+                        size="sm"
+                        className="bg-[#5599fe] text-white hover:bg-[#4488ed] border-0"
+                      >
+                        <Grid3x3 className="h-3.5 w-3.5 mr-1.5" />
+                        Browse Catalog
+                      </Button>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <div className="grid gap-3">
+                    {installedPluginsList.map(plugin => renderPluginCard(plugin))}
+                  </div>
+                )}
+              </>
+            ) : (
+              <>
+                {isSearching ? (
+                  <div className="flex flex-col items-center justify-center py-16">
+                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground mb-4" />
+                    <Typography variant="body1" className="text-muted-foreground">
+                      Searching plugins...
+                    </Typography>
+                  </div>
+                ) : searchResults.length === 0 && searchQuery ? (
+                  <Card className="border-dashed border-2">
+                    <CardContent className="p-16 text-center">
+                      <Typography variant="h5" className="mb-2">
                         No Results Found
                       </Typography>
-                    </div>
-                    <Typography variant="body1" color="muted">
-                      Try searching with different keywords
+                      <Typography variant="body1" className="text-muted-foreground">
+                        Try searching with different keywords
+                      </Typography>
+                    </CardContent>
+                  </Card>
+                ) : searchResults.length > 0 ? (
+                  <div className="grid gap-3">
+                    {searchResults.map(result => renderSearchResultCard(result))}
+                  </div>
+                ) : (
+                  <Card className="border-dashed border-2">
+                    <CardContent className="p-12 text-center">
+                      <div className="w-16 h-16 bg-gradient-to-br from-[#5599fe]/20 to-[#5599fe]/10 rounded-xl flex items-center justify-center mx-auto mb-3">
+                        <Puzzle className="h-8 w-8 text-[#5599fe]" />
+                      </div>
+                      <Typography variant="body1" className="text-sm text-muted-foreground">
+                        Enter a search term to discover plugins
+                      </Typography>
+                    </CardContent>
+                  </Card>
+                )}
+              </>
+            )}
+          </div>
+
+          {/* Sidebar */}
+          <div className="space-y-4">
+            {/* Statistics Card */}
+            <Card className="overflow-hidden">
+              <div className="h-0.5 bg-[#5599fe]" />
+              <CardContent className="p-4">
+                <Typography variant="h6" className="font-medium text-sm mb-3">
+                  Statistics
+                </Typography>
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <Typography variant="body2" className="text-xs text-muted-foreground">
+                      Installed
                     </Typography>
-                  </CardContent>
-                </Card>
-              ) : searchResults.length > 0 ? (
-                <div className="grid gap-4">
-                  {searchResults.map(result => renderSearchResultCard(result))}
+                    <Typography variant="body2" className="text-xs font-medium">
+                      {Object.keys(plugins).length}
+                    </Typography>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <Typography variant="body2" className="text-xs text-muted-foreground">
+                      Enabled
+                    </Typography>
+                    <Typography variant="body2" className="text-xs font-medium text-[#5599fe]">
+                      {getEnabledPlugins().length}
+                    </Typography>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <Typography variant="body2" className="text-xs text-muted-foreground">
+                      Updates
+                    </Typography>
+                    <Typography variant="body2" className="text-xs font-medium text-[#5599fe]">
+                      {Object.keys(updateInfo).length}
+                    </Typography>
+                  </div>
                 </div>
-              ) : (
-                <Card className="border-dashed">
-                  <CardContent className="p-12 text-center">
-                    <Typography variant="body1" color="muted">
-                      Enter a search term to discover plugins
+              </CardContent>
+            </Card>
+
+            {/* Quick Actions */}
+            <Card>
+              <CardContent className="p-4">
+                <Typography variant="h6" className="font-medium text-sm mb-3">
+                  Quick Actions
+                </Typography>
+                <div className="space-y-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full justify-start h-8 text-xs border-[#48df7b]/30 hover:bg-[#48df7b]/5"
+                    onClick={() => checkForUpdates()}
+                    disabled={isLoading}
+                  >
+                    <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
+                    Check Updates
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full justify-start h-8 text-xs border-[#5599fe]/30 hover:bg-[#5599fe]/5"
+                    onClick={() => setViewMode('catalog')}
+                  >
+                    <Search className="h-3.5 w-3.5 mr-1.5" />
+                    Discover
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Coming Soon Features */}
+            <Card className="bg-gradient-to-br from-[#5599fe]/10 to-[#5599fe]/5 border-[#5599fe]/20">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <Info className="h-3.5 w-3.5 text-[#5599fe]" />
+                  <Typography variant="h6" className="font-medium text-sm">
+                    Coming Soon
+                  </Typography>
+                </div>
+                <div className="space-y-1.5">
+                  <div className="flex items-center gap-2">
+                    <div className="w-1 h-1 rounded-full bg-[#5599fe]" />
+                    <Typography variant="body2" className="text-xs text-muted-foreground">
+                      Local development
                     </Typography>
-                  </CardContent>
-                </Card>
-              )}
-            </>
-          )}
-        </div>
-
-        <div className="space-y-6">
-          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-            <div className="mb-4">
-              <Typography variant="h6">
-                Plugin Statistics
-              </Typography>
-            </div>
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <Typography variant="body1" color="muted">
-                  Total Installed
-                </Typography>
-                <Typography variant="body1" className="font-semibold">
-                  {Object.keys(plugins).length}
-                </Typography>
-              </div>
-              <div className="flex justify-between items-center">
-                <Typography variant="body1" color="muted">
-                  Enabled
-                </Typography>
-                <Typography variant="body1" className="font-semibold text-green-600">
-                  {getEnabledPlugins().length}
-                </Typography>
-              </div>
-              <div className="flex justify-between items-center">
-                <Typography variant="body1" color="muted">
-                  Updates Available
-                </Typography>
-                <Typography variant="body1" className="font-semibold text-blue-600">
-                  {Object.keys(updateInfo).length}
-                </Typography>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-            <div className="mb-4">
-              <Typography variant="h6">
-                Quick Actions
-              </Typography>
-            </div>
-            <div className="space-y-3">
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full justify-start"
-                onClick={() => checkForUpdates()}
-                disabled={isLoading}
-              >
-                <FiRefreshCw className="w-4 h-4 mr-2" />
-                Check for Updates
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full justify-start"
-                onClick={() => setViewMode('catalog')}
-              >
-                <FiSearch className="w-4 h-4 mr-2" />
-                Discover Plugins
-              </Button>
-            </div>
-          </div>
-
-          <div className="bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-            <div className="mb-4">
-              <Typography variant="h6">
-                Coming Soon
-              </Typography>
-            </div>
-            <div className="space-y-2 text-sm">
-              <Typography variant="body2" color="muted">
-                • Local plugin development
-              </Typography>
-              <Typography variant="body2" color="muted">
-                • Custom registry support
-              </Typography>
-              <Typography variant="body2" color="muted">
-                • Plugin permissions manager
-              </Typography>
-              <Typography variant="body2" color="muted">
-                • Advanced configuration UI
-              </Typography>
-            </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-1 h-1 rounded-full bg-[#5599fe]/70" />
+                    <Typography variant="body2" className="text-xs text-muted-foreground">
+                      Custom registries
+                    </Typography>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-1 h-1 rounded-full bg-[#5599fe]/50" />
+                    <Typography variant="body2" className="text-xs text-muted-foreground">
+                      Permissions
+                    </Typography>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-1 h-1 rounded-full bg-[#5599fe]/30" />
+                    <Typography variant="body2" className="text-xs text-muted-foreground">
+                      Advanced config
+                    </Typography>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </div>

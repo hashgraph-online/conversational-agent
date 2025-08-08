@@ -35,24 +35,22 @@ export const MCPServerList: React.FC<MCPServerListProps> = ({
 
   if (servers.length === 0) {
     return (
-      <div className="text-center py-12">
-        <div className="w-16 h-16 bg-hedera-smoke-100 dark:bg-hedera-smoke-700 rounded-full flex items-center justify-center mx-auto mb-4">
-          <FiServer className="w-8 h-8 text-hedera-smoke-400" />
+      <div className="border-2 border-dashed border-muted rounded-lg p-12 text-center">
+        <div className="w-16 h-16 bg-gradient-to-br from-[#5599fe]/20 to-[#5599fe]/10 rounded-xl flex items-center justify-center mx-auto mb-3">
+          <FiServer className="w-8 h-8 text-[#5599fe]" />
         </div>
-        <div className="mb-2">
-          <Typography variant="h6">
-            No MCP servers configured
-          </Typography>
-        </div>
-        <div className="mb-6 max-w-md mx-auto">
-          <Typography variant="body1" color="secondary">
-            Model Context Protocol (MCP) servers extend your agent's capabilities with external tools and data sources.
-          </Typography>
-        </div>
-        <Button onClick={onAdd} className="inline-flex items-center gap-2">
-          <FiPlus className="w-4 h-4" />
-          Add Your First Server
-        </Button>
+        <Typography variant="h5" className="text-lg mb-2">
+          No servers configured
+        </Typography>
+        <Typography variant="body1" className="text-sm text-muted-foreground mb-4 max-w-sm mx-auto">
+          Add MCP servers to extend your agent with new capabilities
+        </Typography>
+        {onAdd && (
+          <Button onClick={onAdd} className="bg-[#5599fe] text-white hover:bg-[#4488ed]" size="sm">
+            <FiPlus className="w-3.5 h-3.5 mr-1.5" />
+            Add Server
+          </Button>
+        )}
       </div>
     )
   }

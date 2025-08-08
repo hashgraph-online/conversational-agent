@@ -108,15 +108,13 @@ export const MCPServerCard: React.FC<MCPServerCardProps> = ({
     }
   };
 
-  const borderGradient = server.enabled 
-    ? (server.status === 'connected' || server.status === 'ready' 
-      ? 'linear-gradient(180deg, #a679f0 0%, #5599fe 50%, #48df7b 100%)' // purple-blue-green gradient (connected)
-      : 'linear-gradient(180deg, #a679f0 0%, #5599fe 100%)') // purple-blue gradient (connecting)
-    : 'linear-gradient(180deg, #9ca3af 0%, #d1d5db 100%)'; // gray gradient (disabled)
+  const isConnected = server.status === 'connected' || server.status === 'ready';
 
   return (
-    <Card className='p-4 relative overflow-hidden'>
-      <div className='absolute left-0 top-0 bottom-0 w-0.5' style={{ background: borderGradient }} />
+    <Card className={cn(
+      'p-4 border transition-all',
+      server.enabled && isConnected && 'border-[#5599fe]/30 bg-gradient-to-br from-[#5599fe]/5 to-transparent'
+    )}>
       <div className='flex items-start justify-between mb-3'>
         <div>
           <Typography disableMargin variant='body2' className='font-medium mb-0.5'>
@@ -219,7 +217,7 @@ export const MCPServerCard: React.FC<MCPServerCardProps> = ({
           </div>
         )}
         
-        <div className='bg-gray-50 dark:bg-gray-800/50 rounded-md p-2'>
+        <div className='bg-muted/50 rounded p-2'>
           <Typography
             disableMargin
             variant='caption'
@@ -238,7 +236,7 @@ export const MCPServerCard: React.FC<MCPServerCardProps> = ({
         </div>
 
         {server.tools && server.tools.length > 0 ? (
-          <div className='bg-blue-50 dark:bg-blue-900/10 rounded-md p-2'>
+          <div className='bg-[#5599fe]/10 rounded p-2 border border-[#5599fe]/20'>
             <div className='flex items-center justify-between mb-1.5'>
               <Typography
                 disableMargin

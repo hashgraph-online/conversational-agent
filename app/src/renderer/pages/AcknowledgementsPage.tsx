@@ -1,75 +1,82 @@
-import React from 'react'
-import { motion } from 'framer-motion'
-import Typography from '../components/ui/Typography'
-import { Card } from '../components/ui/Card'
-import { Badge } from '../components/ui/badge'
-import { Button } from '../components/ui/Button'
-import { cn } from '../lib/utils'
-import { 
-  HiHeart, 
+import React from 'react';
+import { motion } from 'framer-motion';
+import Typography from '../components/ui/Typography';
+import { Card } from '../components/ui/Card';
+import { Badge } from '../components/ui/badge';
+import { Button } from '../components/ui/Button';
+import { cn } from '../lib/utils';
+import {
+  HiHeart,
   HiArrowTopRightOnSquare,
   HiCodeBracket,
   HiCube,
   HiCommandLine,
   HiDocumentText,
   HiUserGroup,
-  HiAcademicCap
-} from 'react-icons/hi2'
+  HiAcademicCap,
+} from 'react-icons/hi2';
 
 const AcknowledgementsPage: React.FC = () => {
   const coreAcknowledgements = [
     {
       name: 'Hiero JavaScript SDK',
-      description: 'The official JavaScript/TypeScript SDK for interacting with Hedera networks',
+      description:
+        'The official JavaScript/TypeScript SDK for interacting with Hedera networks',
       link: 'https://github.com/hiero-ledger/hiero-sdk-js',
       icon: HiCommandLine,
-      gradient: 'from-[#7c3aed] to-[#a855f7]'
+      gradient: 'from-[#7c3aed] to-[#a855f7]',
     },
     {
       name: 'Hedera Agent Kit',
-      description: 'The foundational toolkit that powers HashgraphOnline\'s interaction with the Hedera network',
+      description:
+        "The foundational toolkit that powers HashgraphOnline's interaction with the Hedera network",
       link: 'https://github.com/hedera-dev/hedera-agent-kit',
       icon: HiCube,
-      gradient: 'from-[#a679f0] to-[#5599fe]'
+      gradient: 'from-[#a679f0] to-[#5599fe]',
     },
     {
       name: 'Hashgraph Online Standards SDK',
-      description: 'Implementation of HCS standards including HCS-1, HCS-2, HCS-10, and HCS-20',
+      description:
+        'Implementation of HCS standards including HCS-1, HCS-2, HCS-10, and HCS-20',
       link: 'https://github.com/hashgraph-online/standards-sdk',
       icon: HiCodeBracket,
-      gradient: 'from-[#5599fe] to-[#48df7b]'
+      gradient: 'from-[#5599fe] to-[#48df7b]',
     },
     {
       name: 'HCS Improvement Proposals',
-      description: 'The standards that enable decentralized agent communication and inscription on Hedera',
+      description:
+        'The standards that enable decentralized agent communication and inscription on Hedera',
       link: 'https://hashgraphonline.com/docs/standards/',
       icon: HiDocumentText,
-      gradient: 'from-[#48df7b] to-[#5599fe]'
-    }
-  ]
+      gradient: 'from-[#48df7b] to-[#5599fe]',
+    },
+  ];
 
   const standards = [
     {
       name: 'HCS-1',
-      description: 'Inscription Standard - Enables data inscription on Hedera Consensus Service',
-      color: 'text-purple-500'
+      description:
+        'Inscription Standard - Enables data inscription on Hedera Consensus Service',
+      color: 'text-purple-500',
     },
     {
       name: 'HCS-2',
-      description: 'Registry Management - Decentralized data storage and retrieval',
-      color: 'text-blue-500'
+      description:
+        'Registry Management - Decentralized data storage and retrieval',
+      color: 'text-blue-500',
     },
     {
       name: 'HCS-10',
-      description: 'AI Agent Communication - Trustless peer-to-peer messaging protocol',
-      color: 'text-green-500'
+      description:
+        'AI Agent Communication - Trustless peer-to-peer messaging protocol',
+      color: 'text-green-500',
     },
     {
       name: 'HCS-20',
       description: 'Fungible Tick Standard - Token ticker inscriptions on HCS',
-      color: 'text-orange-500'
-    }
-  ]
+      color: 'text-orange-500',
+    },
+  ];
 
   const technologies = [
     {
@@ -78,8 +85,8 @@ const AcknowledgementsPage: React.FC = () => {
         { name: 'LangChain' },
         { name: 'OpenAI' },
         { name: 'Model Context Protocol' },
-        { name: 'Electron Log' }
-      ]
+        { name: 'Electron Log' },
+      ],
     },
     {
       category: 'Frontend',
@@ -87,8 +94,8 @@ const AcknowledgementsPage: React.FC = () => {
         { name: 'React' },
         { name: 'Electron' },
         { name: 'Tailwind CSS' },
-        { name: 'Framer Motion' }
-      ]
+        { name: 'Framer Motion' },
+      ],
     },
     {
       category: 'UI Components',
@@ -96,117 +103,129 @@ const AcknowledgementsPage: React.FC = () => {
         { name: 'Radix UI' },
         { name: 'React Icons' },
         { name: 'Lucide React' },
-        { name: 'React Hook Form' }
-      ]
-    }
-  ]
+        { name: 'React Hook Form' },
+      ],
+    },
+  ];
 
   const daoMembers = [
     {
       name: 'Bonzo Finance',
       specialty: 'DeFi Lending Protocol',
-      description: 'The Liquidity Layer of Hedera — an open source, non-custodial lending protocol based on Aave',
+      description:
+        'The Liquidity Layer of Hedera — an open source, non-custodial lending protocol based on Aave',
       website: 'https://bonzo.finance',
       gradient: 'from-indigo-500 to-purple-600',
-      logo: 'Bonzo_Dark.png'
+      logo: 'Bonzo_Dark.png',
     },
     {
       name: 'Builder Labs',
       specialty: 'Venture Studio',
-      description: 'Venture studio focused on Web3 solutions, with an emphasis on Hedera',
+      description:
+        'Venture studio focused on Web3 solutions, with an emphasis on Hedera',
       website: 'https://buidlerlabs.com',
       gradient: 'from-blue-500 to-indigo-600',
-      logo: 'Buidler Labs.png'
+      logo: 'Buidler Labs.png',
     },
     {
       name: 'HashPack',
       specialty: 'Leading Hedera Wallet',
-      description: 'The leading wallet on Hedera and gateway to services and assets across the entire ecosystem',
+      description:
+        'The leading wallet on Hedera and gateway to services and assets across the entire ecosystem',
       website: 'https://hashpack.app',
       gradient: 'from-purple-500 to-pink-600',
-      logo: 'Hashpack.png'
+      logo: 'Hashpack.png',
     },
     {
       name: 'Hashgate',
       specialty: 'Payment Gateway',
-      description: 'Reliable non-custodial payment gateway, combining speed, security, and simplicity',
+      description:
+        'Reliable non-custodial payment gateway, combining speed, security, and simplicity',
       website: 'https://hashgate.app',
       gradient: 'from-emerald-500 to-green-600',
-      logo: 'Hashgate.png'
+      logo: 'Hashgate.png',
     },
     {
       name: 'Hgraph',
       specialty: 'Mirror Node Infrastructure',
-      description: 'Trusted software engineering firm and Hedera mirror node provider',
+      description:
+        'Trusted software engineering firm and Hedera mirror node provider',
       website: 'https://hgraph.com',
       gradient: 'from-sky-500 to-blue-600',
-      logo: 'HGRAPH.png'
+      logo: 'HGRAPH.png',
     },
     {
       name: 'LaunchBadge',
       specialty: 'Software Engineering',
-      description: 'Software engineering company dedicated to fostering excellence at the cutting edge of technology',
+      description:
+        'Software engineering company dedicated to fostering excellence at the cutting edge of technology',
       website: 'https://launchbadge.com',
       gradient: 'from-orange-500 to-amber-600',
-      logo: 'Launchbadge.png'
+      logo: 'Launchbadge.png',
     },
     {
       name: 'Neuron',
       specialty: 'Machine-to-Machine Commerce',
-      description: 'Creating a world where machines buy from machines, facilitating a new era of agentic abundance',
+      description:
+        'Creating a world where machines buy from machines, facilitating a new era of agentic abundance',
       website: 'https://neuron.world',
       gradient: 'from-sky-500 to-blue-600',
-      logo: 'Neuron.png'
+      logo: 'Neuron.png',
     },
     {
       name: 'SentX',
       specialty: 'Leading NFT Marketplace',
-      description: 'The leading NFT Marketplace on Hedera to buy, sell, and discover digital collectibles',
+      description:
+        'The leading NFT Marketplace on Hedera to buy, sell, and discover digital collectibles',
       website: 'https://sentx.io',
       gradient: 'from-slate-600 to-slate-700',
-      logo: 'SentX.png'
+      logo: 'SentX.png',
     },
     {
       name: 'KiloScribe',
       specialty: 'On-Graph File Storage',
-      description: 'Effortless storage and retrieval of on-graph files - empowering developers, creators, and influencers',
+      description:
+        'Effortless storage and retrieval of on-graph files - empowering developers, creators, and influencers',
       website: 'https://kiloscribe.com',
       gradient: 'from-violet-500 to-purple-600',
-      logo: 'Kiloscribe_Dark.png'
+      logo: 'Kiloscribe_Dark.png',
     },
     {
       name: 'Turtlemoon',
       specialty: 'Web3 Platforms',
-      description: 'Creating web 3 platforms, services, and applications using Hedera',
+      description:
+        'Creating web 3 platforms, services, and applications using Hedera',
       website: 'https://turtlemoon.io',
       gradient: 'from-cyan-500 to-teal-600',
-      logo: 'Turtlemoon.png'
-    }
-  ]
+      logo: 'Turtlemoon.png',
+    },
+  ];
 
   const community = [
     {
       name: 'Hashgraph Online',
       role: 'Project Maintainer',
-      description: 'A consortium of leading Hashgraph organizations within the Hedera ecosystem',
+      description:
+        'A consortium of leading Hashgraph organizations within the Hedera ecosystem',
       link: 'https://hashgraphonline.com',
-      icon: HiUserGroup
+      icon: HiUserGroup,
     },
     {
       name: 'Hedera Community',
       role: 'Ecosystem Support',
-      description: 'The broader Hedera developer community providing feedback and contributions',
+      description:
+        'The broader Hedera developer community providing feedback and contributions',
       link: 'https://hedera.com',
-      icon: HiAcademicCap
-    }
-  ]
+      icon: HiAcademicCap,
+    },
+  ];
 
   return (
-    <div className="flex flex-col h-full bg-gray-50 dark:bg-gray-950 relative overflow-hidden">
+    <div className='flex flex-col h-full bg-gray-50 dark:bg-gray-950 relative overflow-hidden'>
       {/* Animated background */}
-      <div className="absolute inset-0 opacity-[0.01] dark:opacity-[0.02] pointer-events-none">
+      <div className='absolute inset-0 opacity-[0.01] dark:opacity-[0.02] pointer-events-none'>
         <motion.div
-          className="absolute inset-0"
+          className='absolute inset-0'
           animate={{
             backgroundPosition: ['0% 0%', '100% 100%'],
           }}
@@ -222,42 +241,38 @@ const AcknowledgementsPage: React.FC = () => {
         />
       </div>
 
-      <div className="flex-1 overflow-y-auto">
-        <div className="max-w-4xl mx-auto p-8">
+      <div className='min-h-screen bg-background'>
+        <div className='container mx-auto px-6 py-8 max-w-6xl'>
           {/* Header */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="text-center mb-12"
-          >
-            <div className="flex justify-center mb-6">
-              <motion.div 
-                className="w-20 h-20 bg-gradient-to-br from-pink-500 to-rose-600 rounded-2xl flex items-center justify-center shadow-lg"
-                whileHover={{ scale: 1.1, rotate: 5 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <HiHeart className="w-10 h-10 text-white" />
-              </motion.div>
-            </div>
-            <Typography variant="h2" className="font-bold mb-4 bg-gradient-to-r from-pink-500 to-rose-600 bg-clip-text text-transparent">
+          <div className='mb-8'>
+            <Typography
+              variant='h1'
+              className='text-3xl font-bold mb-4 bg-gradient-to-r from-[#a679f0] via-[#5599fe] to-[#48df7b] bg-clip-text text-transparent'
+            >
               Acknowledgements
             </Typography>
-            <Typography variant="body1" color="muted" className="max-w-2xl mx-auto">
-              HashgraphOnline is built on the shoulders of giants. We're grateful to the open-source community 
-              and the Hedera ecosystem for making this project possible.
+            <Typography
+              variant='body1'
+              color='muted'
+              className='max-w-2xl mx-auto'
+            >
+              HashgraphOnline is built on the shoulders of giants. We're
+              grateful to the open-source community and the Hedera ecosystem for
+              making this project possible.
             </Typography>
-          </motion.div>
+          </div>
 
           {/* Core Acknowledgements */}
           <motion.section
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
-            className="mb-12"
+            className='mb-12'
           >
-            <Typography variant="h4" className="font-bold mb-6">Core Dependencies</Typography>
-            <div className="space-y-4">
+            <Typography variant='h4' className='font-bold mb-6'>
+              Core Dependencies
+            </Typography>
+            <div className='space-y-4'>
               {coreAcknowledgements.map((item, index) => (
                 <motion.div
                   key={item.name}
@@ -265,30 +280,37 @@ const AcknowledgementsPage: React.FC = () => {
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ duration: 0.3, delay: index * 0.1 }}
                 >
-                  <Card className="p-6 hover:shadow-lg transition-all duration-300 group">
-                    <div className="flex items-start gap-4">
-                      <div className={cn(
-                        "w-12 h-12 rounded-xl flex items-center justify-center shadow-md group-hover:shadow-lg transition-all duration-300",
-                        `bg-gradient-to-br ${item.gradient}`
-                      )}>
-                        <item.icon className="w-6 h-6 text-white" />
+                  <Card className='p-6 hover:shadow-lg transition-all duration-300 group'>
+                    <div className='flex items-start gap-4'>
+                      <div
+                        className={cn(
+                          'w-12 h-12 rounded-xl flex items-center justify-center shadow-md group-hover:shadow-lg transition-all duration-300',
+                          `bg-gradient-to-br ${item.gradient}`
+                        )}
+                      >
+                        <item.icon className='w-6 h-6 text-white' />
                       </div>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <Typography variant="h6" className="font-bold">
+                      <div className='flex-1'>
+                        <div className='flex items-center gap-3 mb-2'>
+                          <Typography variant='h6' className='font-bold'>
                             {item.name}
                           </Typography>
                         </div>
-                        <Typography variant="body2" color="muted" className="mb-3">
+                        <Typography
+                          variant='body2'
+                          color='muted'
+                          className='mb-3'
+                        >
                           {item.description}
                         </Typography>
                         <a
                           href={item.link}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-2 text-sm text-blue-500 hover:text-blue-600 transition-colors"
+                          target='_blank'
+                          rel='noopener noreferrer'
+                          className='inline-flex items-center gap-2 text-sm text-blue-500 hover:text-blue-600 transition-colors'
                         >
-                          View Project <HiArrowTopRightOnSquare className="w-4 h-4" />
+                          View Project{' '}
+                          <HiArrowTopRightOnSquare className='w-4 h-4' />
                         </a>
                       </div>
                     </div>
@@ -303,10 +325,12 @@ const AcknowledgementsPage: React.FC = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
-            className="mb-12"
+            className='mb-12'
           >
-            <Typography variant="h4" className="font-bold mb-6">Hashgraph Consensus Standards</Typography>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Typography variant='h4' className='font-bold mb-6'>
+              Hashgraph Consensus Standards
+            </Typography>
+            <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
               {standards.map((standard, index) => (
                 <motion.div
                   key={standard.name}
@@ -314,16 +338,19 @@ const AcknowledgementsPage: React.FC = () => {
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ duration: 0.3, delay: index * 0.1 }}
                 >
-                  <Card className="p-5 hover:shadow-lg transition-all duration-300">
-                    <div className="flex items-center gap-3 mb-2">
-                      <Typography variant="h6" className={cn("font-bold", standard.color)}>
+                  <Card className='p-5 hover:shadow-lg transition-all duration-300'>
+                    <div className='flex items-center gap-3 mb-2'>
+                      <Typography
+                        variant='h6'
+                        className={cn('font-bold', standard.color)}
+                      >
                         {standard.name}
                       </Typography>
-                      <Badge variant="outline" className="text-xs">
+                      <Badge variant='outline' className='text-xs'>
                         Standard
                       </Badge>
                     </div>
-                    <Typography variant="body2" color="muted">
+                    <Typography variant='body2' color='muted'>
                       {standard.description}
                     </Typography>
                   </Card>
@@ -337,10 +364,12 @@ const AcknowledgementsPage: React.FC = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.3 }}
-            className="mb-12"
+            className='mb-12'
           >
-            <Typography variant="h4" className="font-bold mb-6">Technologies Used</Typography>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <Typography variant='h4' className='font-bold mb-6'>
+              Technologies Used
+            </Typography>
+            <div className='grid grid-cols-1 md:grid-cols-3 gap-6'>
               {technologies.map((category, categoryIndex) => (
                 <motion.div
                   key={category.category}
@@ -348,14 +377,14 @@ const AcknowledgementsPage: React.FC = () => {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.3, delay: categoryIndex * 0.1 }}
                 >
-                  <Card className="p-5 h-full">
-                    <Typography variant="h6" className="font-bold mb-4">
+                  <Card className='p-5 h-full'>
+                    <Typography variant='h6' className='font-bold mb-4'>
                       {category.category}
                     </Typography>
-                    <div className="space-y-2">
+                    <div className='space-y-2'>
                       {category.items.map((item) => (
-                        <div key={item.name} className="flex items-center">
-                          <Typography variant="body2">{item.name}</Typography>
+                        <div key={item.name} className='flex items-center'>
+                          <Typography variant='body2'>{item.name}</Typography>
                         </div>
                       ))}
                     </div>
@@ -370,14 +399,17 @@ const AcknowledgementsPage: React.FC = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.4 }}
-            className="mb-12"
+            className='mb-12'
           >
-            <Typography variant="h4" className="font-bold mb-6">Hashgraph Online DAO Members</Typography>
-            <Typography variant="body1" color="muted" className="mb-6">
-              The following organizations are pioneering members of the Hashgraph Online DAO, 
-              building the core infrastructure and applications that power the ecosystem.
+            <Typography variant='h4' className='font-bold mb-6'>
+              Hashgraph Online DAO Members
             </Typography>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Typography variant='body1' color='muted' className='mb-6'>
+              The following organizations are pioneering members of the
+              Hashgraph Online DAO, building the core infrastructure and
+              applications that power the ecosystem.
+            </Typography>
+            <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
               {daoMembers.map((member, index) => (
                 <motion.div
                   key={member.name}
@@ -385,37 +417,44 @@ const AcknowledgementsPage: React.FC = () => {
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ duration: 0.3, delay: index * 0.1 }}
                 >
-                  <Card className="p-6 hover:shadow-lg transition-all duration-300 group h-full">
-                    <div className="flex flex-col h-full">
-                      <div className="flex items-start gap-4 mb-4">
-                        <div className={cn(
-                          "w-12 h-12 rounded-xl flex items-center justify-center shadow-md group-hover:shadow-lg transition-all duration-300 bg-white dark:bg-gray-800 p-2"
-                        )}>
-                          <img 
+                  <Card className='p-6 hover:shadow-lg transition-all duration-300 group h-full'>
+                    <div className='flex flex-col h-full'>
+                      <div className='flex items-start gap-4 mb-4'>
+                        <div
+                          className={cn(
+                            'w-12 h-12 rounded-xl flex items-center justify-center shadow-md group-hover:shadow-lg transition-all duration-300 bg-white dark:bg-gray-800 p-2'
+                          )}
+                        >
+                          <img
                             src={`/logos/${member.logo}`}
                             alt={`${member.name} logo`}
-                            className="w-full h-full object-contain"
+                            className='w-full h-full object-contain'
                           />
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <Typography variant="h6" className="font-bold mb-1">
+                        <div className='flex-1 min-w-0'>
+                          <Typography variant='h6' className='font-bold mb-1'>
                             {member.name}
                           </Typography>
-                          <Badge variant="outline" className="text-xs">
+                          <Badge variant='outline' className='text-xs'>
                             {member.specialty}
                           </Badge>
                         </div>
                       </div>
-                      <Typography variant="body2" color="muted" className="mb-4 flex-1">
+                      <Typography
+                        variant='body2'
+                        color='muted'
+                        className='mb-4 flex-1'
+                      >
                         {member.description}
                       </Typography>
                       <a
                         href={member.website}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 text-sm text-blue-500 hover:text-blue-600 transition-colors"
+                        target='_blank'
+                        rel='noopener noreferrer'
+                        className='inline-flex items-center gap-2 text-sm text-blue-500 hover:text-blue-600 transition-colors'
                       >
-                        Visit Website <HiArrowTopRightOnSquare className="w-4 h-4" />
+                        Visit Website{' '}
+                        <HiArrowTopRightOnSquare className='w-4 h-4' />
                       </a>
                     </div>
                   </Card>
@@ -429,10 +468,12 @@ const AcknowledgementsPage: React.FC = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.5 }}
-            className="mb-12"
+            className='mb-12'
           >
-            <Typography variant="h4" className="font-bold mb-6">Community & Contributors</Typography>
-            <div className="space-y-4">
+            <Typography variant='h4' className='font-bold mb-6'>
+              Community & Contributors
+            </Typography>
+            <div className='space-y-4'>
               {community.map((item, index) => (
                 <motion.div
                   key={item.name}
@@ -440,30 +481,35 @@ const AcknowledgementsPage: React.FC = () => {
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ duration: 0.3, delay: index * 0.1 }}
                 >
-                  <Card className="p-6 hover:shadow-lg transition-all duration-300">
-                    <div className="flex items-start gap-4">
-                      <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center shadow-md">
-                        <item.icon className="w-6 h-6 text-white" />
+                  <Card className='p-6 hover:shadow-lg transition-all duration-300'>
+                    <div className='flex items-start gap-4'>
+                      <div className='w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center shadow-md'>
+                        <item.icon className='w-6 h-6 text-white' />
                       </div>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <Typography variant="h6" className="font-bold">
+                      <div className='flex-1'>
+                        <div className='flex items-center gap-3 mb-2'>
+                          <Typography variant='h6' className='font-bold'>
                             {item.name}
                           </Typography>
-                          <Badge variant="secondary" className="text-xs">
+                          <Badge variant='secondary' className='text-xs'>
                             {item.role}
                           </Badge>
                         </div>
-                        <Typography variant="body2" color="muted" className="mb-3">
+                        <Typography
+                          variant='body2'
+                          color='muted'
+                          className='mb-3'
+                        >
                           {item.description}
                         </Typography>
                         <a
                           href={item.link}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-2 text-sm text-blue-500 hover:text-blue-600 transition-colors"
+                          target='_blank'
+                          rel='noopener noreferrer'
+                          className='inline-flex items-center gap-2 text-sm text-blue-500 hover:text-blue-600 transition-colors'
                         >
-                          Visit Website <HiArrowTopRightOnSquare className="w-4 h-4" />
+                          Visit Website{' '}
+                          <HiArrowTopRightOnSquare className='w-4 h-4' />
                         </a>
                       </div>
                     </div>
@@ -478,30 +524,43 @@ const AcknowledgementsPage: React.FC = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.5 }}
-            className="mb-12"
+            className='mb-12'
           >
-            <Card className="p-8 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
-              <div className="text-center">
-                <Typography variant="h5" className="font-bold mb-4">Open Source License</Typography>
-                <Typography variant="body1" color="muted" className="mb-6">
-                  HashgraphOnline is released under the Apache License 2.0, promoting open collaboration 
-                  and innovation in the Hedera ecosystem.
+            <Card className='p-8 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800'>
+              <div className='text-center'>
+                <Typography variant='h5' className='font-bold mb-4'>
+                  Open Source License
                 </Typography>
-                <div className="flex justify-center gap-4">
+                <Typography variant='body1' color='muted' className='mb-6'>
+                  HashgraphOnline is released under the Apache License 2.0,
+                  promoting open collaboration and innovation in the Hedera
+                  ecosystem.
+                </Typography>
+                <div className='flex justify-center gap-4'>
                   <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => window.open('https://www.apache.org/licenses/LICENSE-2.0', '_blank')}
+                    variant='secondary'
+                    size='sm'
+                    onClick={() =>
+                      window.open(
+                        'https://www.apache.org/licenses/LICENSE-2.0',
+                        '_blank'
+                      )
+                    }
                   >
-                    <HiDocumentText className="w-4 h-4" />
+                    <HiDocumentText className='w-4 h-4' />
                     View License
                   </Button>
                   <Button
-                    variant="gradient"
-                    size="sm"
-                    onClick={() => window.open('https://github.com/hashgraph-online/conversational-agent', '_blank')}
+                    variant='gradient'
+                    size='sm'
+                    onClick={() =>
+                      window.open(
+                        'https://github.com/hashgraph-online/conversational-agent',
+                        '_blank'
+                      )
+                    }
                   >
-                    <HiCodeBracket className="w-4 h-4" />
+                    <HiCodeBracket className='w-4 h-4' />
                     View Source
                   </Button>
                 </div>
@@ -514,16 +573,17 @@ const AcknowledgementsPage: React.FC = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.5, delay: 0.6 }}
-            className="text-center pb-8"
+            className='text-center pb-8'
           >
-            <Typography variant="body2" color="muted">
-              Made with <HiHeart className="inline w-4 h-4 text-pink-500" /> by Hashgraph Online
+            <Typography variant='body2' color='muted'>
+              Made with <HiHeart className='inline w-4 h-4 text-pink-500' /> by
+              Hashgraph Online
             </Typography>
           </motion.div>
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default AcknowledgementsPage
+export default AcknowledgementsPage;

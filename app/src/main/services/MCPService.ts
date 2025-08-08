@@ -118,6 +118,11 @@ export class MCPService {
   async saveServers(servers: MCPServerConfig[]): Promise<void> {
     try {
       this.serverConfigs = servers
+      
+      // Ensure the directory exists
+      const configDir = path.dirname(this.configPath)
+      await fs.promises.mkdir(configDir, { recursive: true })
+      
       // Write to a temp file first, then rename for atomic operation
       const tempPath = `${this.configPath}.tmp`
       await fs.promises.writeFile(tempPath, JSON.stringify(servers, null, 2))

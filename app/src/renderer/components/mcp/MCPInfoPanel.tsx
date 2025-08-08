@@ -26,59 +26,56 @@ export const MCPInfoPanel: React.FC<MCPInfoPanelProps> = ({
     <>
       <div className="space-y-4">
         {/* Stats Card */}
-        <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
-          <Typography variant="body2" className="font-medium text-gray-700 dark:text-gray-300 mb-3">
-            Server Statistics
-          </Typography>
-          <div className="grid grid-cols-3 gap-2">
-            <div className="text-center p-2 bg-white dark:bg-gray-900 rounded">
-              <div className="text-xl font-semibold text-gray-900 dark:text-gray-100">
-                {serverCount}
+        <div className="border border-border rounded-lg overflow-hidden">
+          <div className="h-0.5 bg-[#5599fe]" />
+          <div className="p-4">
+            <Typography variant="h6" className="font-medium text-sm mb-3">
+              Statistics
+            </Typography>
+            <div className="space-y-2">
+              <div className="flex justify-between items-center">
+                <Typography variant="body2" className="text-xs text-muted-foreground">
+                  Total Servers
+                </Typography>
+                <Typography variant="body2" className="text-xs font-medium">
+                  {serverCount}
+                </Typography>
               </div>
-              <div className="text-xs text-gray-500 dark:text-gray-400">
-                Total
+              <div className="flex justify-between items-center">
+                <Typography variant="body2" className="text-xs text-muted-foreground">
+                  Active
+                </Typography>
+                <Typography variant="body2" className="text-xs font-medium text-[#5599fe]">
+                  {activeCount}
+                </Typography>
               </div>
-            </div>
-            <div className="text-center p-2 bg-white dark:bg-gray-900 rounded">
-              <div className="text-xl font-semibold text-green-600 dark:text-green-400">
-                {activeCount}
-              </div>
-              <div className="text-xs text-gray-500 dark:text-gray-400">
-                Active
-              </div>
-            </div>
-            <div className="text-center p-2 bg-white dark:bg-gray-900 rounded">
-              <div className="text-xl font-semibold text-blue-600 dark:text-blue-400">
-                {totalTools}
-              </div>
-              <div className="text-xs text-gray-500 dark:text-gray-400">
-                Tools
+              <div className="flex justify-between items-center">
+                <Typography variant="body2" className="text-xs text-muted-foreground">
+                  Total Tools
+                </Typography>
+                <Typography variant="body2" className="text-xs font-medium">
+                  {totalTools}
+                </Typography>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Info Card */}
-        <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
-          <div className="flex items-start gap-3">
-            <FiInfo className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
-            <div className="flex-1">
-              <Typography variant="body2" className="font-medium text-blue-900 dark:text-blue-100 mb-1">
-                About MCP Servers
-              </Typography>
-              <Typography variant="caption" className="text-blue-700 dark:text-blue-300 block mb-2">
-                Extensions that give your AI tools to interact with files, web, databases, and more.
-              </Typography>
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => setShowDetailedInfo(true)}
-                className="text-xs"
-              >
-                <FiBook className="w-3 h-3 mr-1" />
-                Learn More
-              </Button>
-            </div>
+        {/* Quick Actions */}
+        <div className="border border-border rounded-lg p-4">
+          <Typography variant="h6" className="font-medium text-sm mb-3">
+            Quick Actions
+          </Typography>
+          <div className="space-y-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowDetailedInfo(true)}
+              className="w-full justify-start h-8 text-xs"
+            >
+              <FiHelpCircle className="h-3.5 w-3.5 mr-1.5" />
+              Learn About MCP
+            </Button>
           </div>
         </div>
       </div>

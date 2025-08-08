@@ -12,7 +12,9 @@ import {
   FiExternalLink,
   FiTerminal,
   FiFilter,
-  FiX
+  FiX,
+  FiCheck,
+  FiDownload
 } from 'react-icons/fi'
 import { Button } from '../ui'
 import { Input } from '../ui'
@@ -83,9 +85,26 @@ const ServerCard: React.FC<{
   const [showRequirements, setShowRequirements] = useState(false)
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6 hover:shadow-md transition-shadow">
-      <div className="flex items-start justify-between mb-4">
-        <div className="flex-1">
+    <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 hover:shadow-md transition-shadow relative">
+      <div className="absolute top-3 right-3">
+        {isInstalled ? (
+          <div className="h-8 w-8 rounded-lg bg-[#5599fe]/10 flex items-center justify-center">
+            <FiCheck className="w-4 h-4 text-[#5599fe]" />
+          </div>
+        ) : (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onQuickInstall}
+            className="h-8 w-8 p-0 rounded-lg hover:bg-[#5599fe]/10 hover:text-[#5599fe] transition-colors"
+            title="Install server"
+          >
+            <FiDownload className="w-4 h-4" />
+          </Button>
+        )}
+      </div>
+      <div className="flex items-start justify-between mb-3">
+        <div className="flex-1 pr-12">
           <div className="mb-1">
             <Typography variant="h3" className="text-lg font-semibold">
               {server.name}
@@ -95,7 +114,7 @@ const ServerCard: React.FC<{
             {server.description}
           </Typography>
         </div>
-        <div className="flex items-center gap-1 text-yellow-500">
+        <div className="flex items-center gap-1 text-yellow-500 mr-10">
           <FiStar className="w-4 h-4 fill-current" />
           <Typography variant="caption" className="font-medium">
             {server.popularity}%
@@ -103,7 +122,7 @@ const ServerCard: React.FC<{
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2 mb-4">
+      <div className="flex flex-wrap items-center gap-2 mb-3">
         <span className={cn(
           'px-2 py-1 rounded-full text-xs font-medium',
           difficultyColors[server.difficulty]
@@ -157,53 +176,40 @@ const ServerCard: React.FC<{
         </div>
       )}
 
-      <div className="flex items-center gap-2">
-        {isInstalled ? (
-          <Button variant="outline" size="sm" disabled className="flex-1">
-            <FiPlus className="w-4 h-4 mr-1" />
-            Installed
-          </Button>
-        ) : (
-          <Button
-            variant="default"
-            size="sm"
-            onClick={onQuickInstall}
-            className="flex-1"
-          >
-            <FiPlus className="w-4 h-4 mr-1" />
-            Quick Install
-          </Button>
-        )}
-        
-        {server.documentation && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => window.open(server.documentation, '_blank')}
-            className="px-3"
-          >
-            <FiExternalLink className="w-4 h-4" />
-          </Button>
-        )}
-        
-        {server.installCommand && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => navigator.clipboard.writeText(server.installCommand!)}
-                className="px-3"
-              >
-                <FiTerminal className="w-4 h-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Copy install command</p>
-            </TooltipContent>
-          </Tooltip>
-        )}
-      </div>
+      {(server.documentation || server.installCommand) && (
+        <div className="flex items-center gap-2">
+          {server.documentation && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => window.open(server.documentation, '_blank')}
+              className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground"
+            >
+              <FiExternalLink className="w-3.5 h-3.5 mr-1" />
+              Docs
+            </Button>
+          )}
+          
+          {server.installCommand && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => navigator.clipboard.writeText(server.installCommand!)}
+                  className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground"
+                >
+                  <FiTerminal className="w-3.5 h-3.5 mr-1" />
+                  CLI
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Copy install command</p>
+              </TooltipContent>
+            </Tooltip>
+          )}
+        </div>
+      )}
     </div>
   )
 }
