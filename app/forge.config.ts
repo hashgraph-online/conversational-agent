@@ -10,9 +10,7 @@ const config: ForgeConfig = {
   packagerConfig: {
     icon: './assets/hol-app-icon-bubble',
     appBundleId: 'com.hashgraphonline.conversational-agent',
-    appCategoryType: 'public.app-category.productivity',
-    osxSign: false,
-    osxNotarize: false
+    appCategoryType: 'public.app-category.productivity'
   },
   rebuildConfig: {},
   makers: [

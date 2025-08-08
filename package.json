@@ -86,8 +86,8 @@
   },
   "dependencies": {
     "@hashgraph/sdk": "^2.69.0",
-    "@hashgraphonline/standards-agent-kit": "0.2.121",
-    "@hashgraphonline/standards-sdk": "0.0.169",
+    "@hashgraphonline/standards-agent-kit": "0.2.122",
+    "@hashgraphonline/standards-sdk": "0.0.170",
     "@langchain/core": "^0.3.66",
     "@langchain/openai": "^0.6.3",
     "@modelcontextprotocol/sdk": "^1.17.0",

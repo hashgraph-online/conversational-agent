@@ -138,14 +138,12 @@ export class AgentService {
           }
           
           return {
-            id: server.id,
             name: server.name,
             command,
             args,
-            enabled: server.enabled,
             autoConnect: true
-          };
-        });
+          } as any;
+        }) as any;
       }
       
       this.logger.info('AgentService.initialize called with config:', {
@@ -158,11 +156,9 @@ export class AgentService {
         operationalMode: config.operationalMode,
         llmProvider: config.llmProvider,
         mcpServerCount: mcpServers?.length || 0,
-        enabledMcpServers: mcpServers?.filter(s => s.enabled).length || 0,
-        mcpServers: mcpServers?.map(s => ({ 
-          id: s.id, 
+        enabledMcpServers: mcpServers?.filter((s: any) => s.enabled).length || 0,
+        mcpServers: mcpServers?.map((s: any) => ({ 
           name: s.name, 
-          enabled: s.enabled,
           command: s.command,
           args: s.args
         }))
@@ -177,7 +173,7 @@ export class AgentService {
         operationalMode: config.operationalMode || 'autonomous',
         verbose: false,
         disableLogging: true,
-        mcpServers: mcpServers,
+        mcpServers: mcpServers as any,
         llmProvider: config.llmProvider
       };
 

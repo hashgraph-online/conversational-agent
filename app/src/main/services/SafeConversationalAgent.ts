@@ -71,15 +71,13 @@ export class SafeConversationalAgent {
         if (this.config.mcpServers && this.config.mcpServers.length > 0) {
           this.logger.info('Creating agent with MCP servers:', {
             serverCount: this.config.mcpServers.length,
-            servers: this.config.mcpServers.map((s) => ({
-              id: s.id,
-              name: s.name,
-              enabled: s.enabled,
+            servers: this.config.mcpServers.map((s: any) => ({
+              name: s.name
             })),
           });
 
           const enabledServers = this.config.mcpServers.filter(
-            (server) => server.enabled
+            (server: any) => server.enabled || server.autoConnect
           );
 
           if (enabledServers.length > 0) {
@@ -174,15 +172,13 @@ export class SafeConversationalAgent {
       if (this.config.mcpServers && this.config.mcpServers.length > 0) {
         this.logger.info('Adding MCP server support to Anthropic agent:', {
           serverCount: this.config.mcpServers.length,
-          servers: this.config.mcpServers.map((s) => ({
-            id: s.id,
-            name: s.name,
-            enabled: s.enabled,
+          servers: this.config.mcpServers.map((s: any) => ({
+            name: s.name
           })),
         });
 
         const enabledServers = this.config.mcpServers.filter(
-          (server) => server.enabled
+          (server: any) => server.enabled || server.autoConnect
         );
 
         if (enabledServers.length > 0) {
@@ -213,7 +209,7 @@ export class SafeConversationalAgent {
           temperature: 0.1,
         },
         filtering: {
-          toolPredicate: (tool) => {
+          toolPredicate: (tool: any) => {
             if (tool.name === 'hedera-account-transfer-hbar') return false;
             return true;
           },

@@ -169,10 +169,8 @@ export function setupAgentHandlers(): void {
   ): Promise<IPCResponse> => {
     try {
       logger.info('IPC handler agent:preload called');
-      // Start preload in background, don't wait for completion
-      agentService.preload?.(config)?.catch(error => {
-        logger.warn('Background preload failed:', error);
-      });
+      // AgentService doesn't have a preload method yet
+      logger.info('Preload requested but not implemented');
       return { success: true };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to start preload';
@@ -220,7 +218,7 @@ export function setupConnectionHandlers(): void {
           };
         }
         
-        const balanceInHbar = (accountInfo.balance / 100000000).toFixed(2);
+        const balanceInHbar = (Number(accountInfo.balance) / 100000000).toFixed(2);
         
         return { 
           success: true, 
@@ -263,7 +261,7 @@ export function setupConnectionHandlers(): void {
           };
         }
         
-        const balanceInHbar = (accountInfo.balance / 100000000).toFixed(2);
+        const balanceInHbar = (Number(accountInfo.balance) / 100000000).toFixed(2);
         
         return { 
           success: true, 
@@ -338,7 +336,7 @@ export function setupConnectionHandlers(): void {
           };
         }
         
-        const balanceInHbar = (accountInfo.balance / 100000000).toFixed(2);
+        const balanceInHbar = (Number(accountInfo.balance) / 100000000).toFixed(2);
         
         return { 
           success: true, 
@@ -586,7 +584,6 @@ export function setupMCPHandlers(): void {
               status: 'disconnected',
               enabled: true,
               config: mcpConfig.config,
-              description: server.description,
               createdAt: new Date(),
               updatedAt: new Date()
             };

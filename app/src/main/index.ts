@@ -125,8 +125,10 @@ app.on('ready', async () => {
     logger.info('Dock icon loaded:', !icon.isEmpty());
     
     if (!icon.isEmpty()) {
-      app.dock.setIcon(icon);
-      logger.info('Dock icon set successfully');
+      if (app.dock) {
+        app.dock.setIcon(icon);
+        logger.info('Dock icon set successfully');
+      }
     } else {
       logger.error('Failed to load dock icon');
     }

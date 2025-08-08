@@ -35,7 +35,7 @@ describe('Config Persistence E2E Tests', () => {
     },
     openai: {
       apiKey: 'sk-proj-VeryLongRealAPIKeyWith48CharactersOrMore123456',
-      model: 'gpt-4o-mini'
+      model: 'gpt-4o-mini' as any
     },
     anthropic: {
       apiKey: 'sk-ant-api03-VeryLongAnthropicKeyWith48CharsOrMore1234',
