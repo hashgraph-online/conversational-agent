@@ -38,25 +38,21 @@ export class UpdateService {
   }
 
   private setupAutoUpdater(): void {
-    // Configure GitHub Releases as update server
     if (process.env.NODE_ENV === 'development') {
-      // For development, you can use a local update server or skip updates
       autoUpdater.updateConfigPath = 'dev-app-update.yml';
     } else {
-      // Production: Use GitHub Releases
       autoUpdater.setFeedURL({
         provider: 'github',
         owner: 'hashgraph-online',
         repo: 'conversational-agent',
         private: false,
-        releaseType: 'release' // Use 'prerelease' for beta channel
+        releaseType: 'release'
       });
     }
 
     autoUpdater.autoDownload = false;
     autoUpdater.autoInstallOnAppQuit = true;
     
-    // Configure additional settings
     autoUpdater.fullChangelog = true;
     autoUpdater.allowDowngrade = false;
 
@@ -178,7 +174,6 @@ export class UpdateService {
   setUpdateChannel(channel: 'stable' | 'beta'): void {
     if (channel === 'beta') {
       autoUpdater.allowPrerelease = true;
-      // Update feed URL for prerelease
       if (process.env.NODE_ENV !== 'development') {
         autoUpdater.setFeedURL({
           provider: 'github',
@@ -190,7 +185,6 @@ export class UpdateService {
       }
     } else {
       autoUpdater.allowPrerelease = false;
-      // Update feed URL for stable release
       if (process.env.NODE_ENV !== 'development') {
         autoUpdater.setFeedURL({
           provider: 'github',

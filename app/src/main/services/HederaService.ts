@@ -14,6 +14,8 @@ export interface TransactionExecutionResult {
   transactionId?: string;
   error?: string;
   status?: string;
+  entityId?: string;
+  entityType?: string;
 }
 
 export interface ExecutedTransaction {
@@ -105,9 +107,10 @@ export class HederaService {
 
       let transactionResponse: TransactionResponse;
       try {
-        this.logger.info('Signing and executing transaction');
+        this.logger.info('Freezing, signing and executing transaction');
         
-        const signedTransaction = await transaction.sign(operatorPrivateKey);
+        const frozenTransaction = await transaction.freezeWith(client);
+        const signedTransaction = await frozenTransaction.sign(operatorPrivateKey);
         
         transactionResponse = await signedTransaction.execute(client);
         
@@ -179,15 +182,44 @@ export class HederaService {
           transactionBytes,
         });
 
+        let entityId: string | undefined;
+        let entityType: string | undefined;
+
+        if (receipt.tokenId) {
+          entityId = receipt.tokenId.toString();
+          entityType = 'token';
+          this.logger.info('Token created with ID:', entityId);
+        } else if (receipt.topicId) {
+          entityId = receipt.topicId.toString();
+          entityType = 'topic';
+          this.logger.info('Topic created with ID:', entityId);
+        } else if (receipt.accountId) {
+          entityId = receipt.accountId.toString();
+          entityType = 'account';
+          this.logger.info('Account created with ID:', entityId);
+        } else if (receipt.scheduleId) {
+          entityId = receipt.scheduleId.toString();
+          entityType = 'schedule';
+          this.logger.info('Schedule created with ID:', entityId);
+        } else if (receipt.contractId) {
+          entityId = receipt.contractId.toString();
+          entityType = 'contract';
+          this.logger.info('Contract created with ID:', entityId);
+        }
+
         this.logger.info('Transaction executed successfully', {
           transactionId,
           status,
+          entityId,
+          entityType,
         });
 
         return {
           success: true,
           transactionId,
           status,
+          entityId,
+          entityType,
         };
       } else {
         this.logger.warn('Transaction completed but not successful', {

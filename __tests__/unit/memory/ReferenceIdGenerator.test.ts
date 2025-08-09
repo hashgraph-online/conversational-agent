@@ -8,7 +8,7 @@ describe('ReferenceIdGenerator', () => {
       const id = ReferenceIdGenerator.generateId(content);
       
       expect(typeof id).toBe('string');
-      expect(id.length).toBe(43); // SHA-256 in base64url = 43 chars
+      expect(id.length).toBe(43);
       expect(ReferenceIdGenerator.isValidReferenceId(id)).toBe(true);
     });
 
@@ -17,7 +17,7 @@ describe('ReferenceIdGenerator', () => {
       const id1 = ReferenceIdGenerator.generateId(content);
       const id2 = ReferenceIdGenerator.generateId(content);
       
-      expect(id1).toBe(id2); // Same content should produce same ID
+      expect(id1).toBe(id2);
     });
 
     test('should generate different IDs for different content', () => {
@@ -26,7 +26,7 @@ describe('ReferenceIdGenerator', () => {
       const id1 = ReferenceIdGenerator.generateId(content1);
       const id2 = ReferenceIdGenerator.generateId(content2);
       
-      expect(id1).not.toBe(id2); // Different content should produce different IDs
+      expect(id1).not.toBe(id2);
     });
   });
 
@@ -40,7 +40,7 @@ describe('ReferenceIdGenerator', () => {
     test('should return false for invalid formats', () => {
       expect(ReferenceIdGenerator.isValidReferenceId('')).toBe(false);
       expect(ReferenceIdGenerator.isValidReferenceId('too-short')).toBe(false);
-      expect(ReferenceIdGenerator.isValidReferenceId('a'.repeat(44))).toBe(false); // too long
+      expect(ReferenceIdGenerator.isValidReferenceId('a'.repeat(44))).toBe(false);
       expect(ReferenceIdGenerator.isValidReferenceId('invalid+chars/here=')).toBe(false);
       expect(ReferenceIdGenerator.isValidReferenceId(null as any)).toBe(false);
       expect(ReferenceIdGenerator.isValidReferenceId(undefined as any)).toBe(false);

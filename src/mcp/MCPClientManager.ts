@@ -3,7 +3,7 @@ import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js'
 import type { MCPServerConfig, MCPToolInfo, MCPConnectionStatus } from './types';
 import { Logger } from '@hashgraphonline/standards-sdk';
 import type { ContentStorage } from '../memory/ContentStorage';
-import { MCPContentProcessor, ProcessedResponse } from './ContentProcessor';
+import { MCPContentProcessor } from './ContentProcessor';
 
 /**
  * Manages connections to MCP servers and tool discovery

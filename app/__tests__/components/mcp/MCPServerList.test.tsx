@@ -50,7 +50,7 @@ describe('MCPServerList', () => {
       )
 
       expect(screen.getByText('Loading MCP servers...')).toBeInTheDocument()
-      expect(screen.getByRole('status')).toBeInTheDocument() // Spinner has status role
+      expect(screen.getByRole('status')).toBeInTheDocument()
     })
 
     it('should not display server cards when loading', () => {
@@ -110,7 +110,6 @@ describe('MCPServerList', () => {
         />
       )
 
-      // Check that the server icon container is present
       const iconContainer = screen.getByText('Add Your First Server').parentElement?.previousElementSibling
       expect(iconContainer).toHaveClass('w-16', 'h-16', 'bg-hedera-smoke-100')
     })
@@ -157,7 +156,6 @@ describe('MCPServerList', () => {
       const serverCard = screen.getByTestId('server-card-server-1')
       expect(serverCard).toBeInTheDocument()
 
-      // Verify all action buttons are rendered (indicating props were passed)
       expect(screen.getByTestId('toggle-server-1')).toBeInTheDocument()
       expect(screen.getByTestId('edit-server-1')).toBeInTheDocument()
       expect(screen.getByTestId('delete-server-1')).toBeInTheDocument()
@@ -232,7 +230,6 @@ describe('MCPServerList', () => {
         />
       )
 
-      // Should not show loading state when loading is undefined
       expect(screen.queryByText('Loading MCP servers...')).not.toBeInTheDocument()
       expect(screen.getByText('No MCP servers configured')).toBeInTheDocument()
     })
@@ -242,7 +239,6 @@ describe('MCPServerList', () => {
         factories.mcpServer({ id: 'server-1', name: 'Test Server' }),
       ]
 
-      // This should not throw even if some handlers are missing
       expect(() => {
         render(
           <MCPServerList
@@ -250,7 +246,6 @@ describe('MCPServerList', () => {
             loading={false}
             onToggle={mockHandlers.onToggle}
             onAdd={mockHandlers.onAdd}
-            // onEdit, onDelete, onTest are optional
           />
         )
       }).not.toThrow()
@@ -336,7 +331,6 @@ describe('MCPServerList', () => {
         />
       )
 
-      // Component should render servers regardless of their tool count
       expect(screen.getByTestId('server-card-server-1')).toBeInTheDocument()
       expect(screen.getByTestId('server-card-server-2')).toBeInTheDocument()
     })
@@ -348,7 +342,6 @@ describe('MCPServerList', () => {
         {
           id: 'server-1',
           name: 'Minimal Server',
-          // Missing other properties that might be optional
         },
       ] as any
 
@@ -381,7 +374,6 @@ describe('MCPServerList', () => {
         />
       )
 
-      // Should render all servers
       expect(container.querySelectorAll('[data-testid^="server-card-"]')).toHaveLength(50)
     })
   })

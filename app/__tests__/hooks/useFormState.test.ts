@@ -334,8 +334,6 @@ describe('useFormState', () => {
         ...validators,
         confirmPassword: (value: string, formValues?: TestFormData) => {
           if (!value) return 'Confirm password is required'
-          // Note: This test shows the pattern, though the current implementation 
-          // doesn't pass formValues to validators
           return null
         },
       }

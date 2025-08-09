@@ -332,8 +332,8 @@ describe('usePrefersColorScheme', () => {
 
   it('should detect dark color scheme preference', () => {
     window.matchMedia = jest.fn()
-      .mockReturnValueOnce(createMockMediaQueryList(true))  // dark
-      .mockReturnValueOnce(createMockMediaQueryList(false)) // light
+      .mockReturnValueOnce(createMockMediaQueryList(true))
+      .mockReturnValueOnce(createMockMediaQueryList(false))
 
     const { result } = renderHook(() => usePrefersColorScheme())
 
@@ -342,8 +342,8 @@ describe('usePrefersColorScheme', () => {
 
   it('should detect light color scheme preference', () => {
     window.matchMedia = jest.fn()
-      .mockReturnValueOnce(createMockMediaQueryList(false)) // dark
-      .mockReturnValueOnce(createMockMediaQueryList(true))  // light
+      .mockReturnValueOnce(createMockMediaQueryList(false))
+      .mockReturnValueOnce(createMockMediaQueryList(true))
 
     const { result } = renderHook(() => usePrefersColorScheme())
 
@@ -352,8 +352,8 @@ describe('usePrefersColorScheme', () => {
 
   it('should return no-preference when neither is preferred', () => {
     window.matchMedia = jest.fn()
-      .mockReturnValueOnce(createMockMediaQueryList(false)) // dark
-      .mockReturnValueOnce(createMockMediaQueryList(false)) // light
+      .mockReturnValueOnce(createMockMediaQueryList(false))
+      .mockReturnValueOnce(createMockMediaQueryList(false))
 
     const { result } = renderHook(() => usePrefersColorScheme())
 

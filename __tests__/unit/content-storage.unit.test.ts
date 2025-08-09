@@ -46,16 +46,14 @@ describe('ContentStorage', () => {
     });
 
     it('should drop old messages when storage limit exceeded', () => {
-      const storage = new ContentStorage(5); // Small storage limit
+      const storage = new ContentStorage(5);
       
-      // Fill storage to capacity
       for (let i = 0; i < 5; i++) {
         storage.storeMessages([new HumanMessage(`Message ${i}`)]);
       }
       
       expect(storage.getTotalStoredMessages()).toBe(5);
       
-      // Add more messages to trigger dropping
       const result = storage.storeMessages([
         new HumanMessage('New message 1'),
         new HumanMessage('New message 2')
@@ -63,7 +61,7 @@ describe('ContentStorage', () => {
       
       expect(result.stored).toBe(2);
       expect(result.dropped).toBe(2);
-      expect(storage.getTotalStoredMessages()).toBe(5); // Should maintain limit
+      expect(storage.getTotalStoredMessages()).toBe(5);
     });
 
     it('should handle empty message array', () => {
@@ -91,7 +89,6 @@ describe('ContentStorage', () => {
 
   describe('getRecentMessages', () => {
     beforeEach(() => {
-      // Setup test data
       const messages = [];
       for (let i = 0; i < 10; i++) {
         messages.push(new HumanMessage(`Message ${i}`));
@@ -102,7 +99,6 @@ describe('ContentStorage', () => {
     it('should return requested number of recent messages', () => {
       const recent = contentStorage.getRecentMessages(5);
       expect(recent).toHaveLength(5);
-      // Should return last 5 messages
       expect(recent[0].content).toBe('Message 5');
       expect(recent[4].content).toBe('Message 9');
     });
@@ -145,7 +141,7 @@ describe('ContentStorage', () => {
 
     it('should find messages containing search term', () => {
       const results = contentStorage.searchMessages('blockchain');
-      expect(results).toHaveLength(3); // 3 messages contain 'blockchain' (case-insensitive)
+      expect(results).toHaveLength(3);
       expect(results.some(r => (r.content as string).includes('blockchain'))).toBe(true);
       expect(results.some(r => (r.content as string).includes('Blockchain'))).toBe(true);
     });
@@ -191,7 +187,6 @@ describe('ContentStorage', () => {
       startTime = new Date();
       messages = [];
       
-      // Create messages with different timestamps
       for (let i = 0; i < 5; i++) {
         const message = new HumanMessage(`Message ${i}`);
         messages.push(message);
@@ -209,8 +204,8 @@ describe('ContentStorage', () => {
     });
 
     it('should return empty array for future time range', () => {
-      const futureStart = new Date(Date.now() + 60000); // 1 minute from now
-      const futureEnd = new Date(Date.now() + 120000); // 2 minutes from now
+      const futureStart = new Date(Date.now() + 60000);
+      const futureEnd = new Date(Date.now() + 120000);
       
       const results = contentStorage.getMessagesFromTimeRange(futureStart, futureEnd);
       expect(results).toHaveLength(0);
@@ -218,7 +213,7 @@ describe('ContentStorage', () => {
 
     it('should handle invalid time range (start > end)', () => {
       const start = new Date();
-      const end = new Date(start.getTime() - 60000); // 1 minute before start
+      const end = new Date(start.getTime() - 60000);
       
       const results = contentStorage.getMessagesFromTimeRange(start, end);
       expect(results).toHaveLength(0);
@@ -335,7 +330,6 @@ describe('ContentStorage', () => {
       const storage = new ContentStorage(1000);
       const startTime = Date.now();
       
-      // Add many messages
       for (let i = 0; i < 1000; i++) {
         storage.storeMessages([new HumanMessage(`Performance test message ${i}`)]);
       }
@@ -344,7 +338,6 @@ describe('ContentStorage', () => {
       const duration = endTime - startTime;
       
       expect(storage.getTotalStoredMessages()).toBe(1000);
-      // Should complete within reasonable time (less than 5 seconds)
       expect(duration).toBeLessThan(5000);
     });
   });

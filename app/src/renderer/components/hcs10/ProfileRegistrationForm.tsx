@@ -89,7 +89,6 @@ export function ProfileRegistrationForm({
     },
   });
 
-  // Watch form values
   const capabilities = watch('capabilities');
   const socials = watch('socials');
   const logo = watch('logo');
@@ -98,7 +97,6 @@ export function ProfileRegistrationForm({
   const description = watch('description');
   const creator = watch('creator');
 
-  // Form persistence with localStorage
   const { saveToStorage, clearPersistedData } = useFormPersistence(
     'hcs10_profile_form',
     watch,
@@ -106,7 +104,6 @@ export function ProfileRegistrationForm({
     ['name', 'description', 'creator', 'alias', 'profileType', 'agentType', 'capabilities', 'socials', 'logo', 'profileImage']
   );
 
-  // Auto-save form data when it changes (debounced)
   useEffect(() => {
     const timer = setTimeout(() => {
       saveToStorage();
@@ -174,7 +171,7 @@ export function ProfileRegistrationForm({
         if (profileType === 'person') return true;
         return capabilities?.length > 0 && capabilities.length <= 5;
       case 3:
-        return true; // Optional step
+        return true;
       default:
         return false;
     }

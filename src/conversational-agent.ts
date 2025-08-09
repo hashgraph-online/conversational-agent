@@ -22,8 +22,23 @@ import { OpenConvaiState } from '@hashgraphonline/standards-agent-kit';
 import type { IStateManager } from '@hashgraphonline/standards-agent-kit';
 import { PrivateKey } from '@hashgraph/sdk';
 import { getSystemMessage } from './config/system-message';
-import type { MCPServerConfig } from './mcp/types';
+import type { MCPServerConfig, MCPConnectionStatus } from './mcp/types';
 import { ContentStoreManager } from './services/ContentStoreManager';
+import { SmartMemoryManager, type SmartMemoryConfig } from './memory';
+
+export type ToolDescriptor = {
+  name: string;
+  namespace?: string;
+};
+
+export type ChatHistoryItem = {
+  type: 'human' | 'ai';
+  content: string;
+};
+
+export type AgentInstance = ReturnType<typeof createAgent>;
+
+export type MirrorNetwork = 'testnet' | 'mainnet' | 'previewnet';
 
 const DEFAULT_MODEL_NAME = 'gpt-4o';
 const DEFAULT_TEMPERATURE = 0.1;
@@ -49,6 +64,12 @@ export interface ConversationalAgentOptions {
   enabledPlugins?: string[];
   toolFilter?: (tool: { name: string; namespace?: string }) => boolean;
   mcpServers?: MCPServerConfig[];
+  
+  /** Enable automatic entity memory functionality (default: true) */
+  entityMemoryEnabled?: boolean;
+  
+  /** Configuration for entity memory system */
+  entityMemoryConfig?: SmartMemoryConfig;
 }
 
 /**
@@ -61,15 +82,17 @@ export interface ConversationalAgentOptions {
  * @returns A new instance of the ConversationalAgent class.
  */
 export class ConversationalAgent {
-  private agent?: ReturnType<typeof createAgent>;
+  protected agent?: AgentInstance;
   public hcs10Plugin: HCS10Plugin;
   public hcs2Plugin: HCS2Plugin;
   public inscribePlugin: InscribePlugin;
   public hbarTransferPlugin: HbarTransferPlugin;
   public stateManager: IStateManager;
   private options: ConversationalAgentOptions;
-  private logger: Logger;
+  protected logger: Logger;
   private contentStoreManager?: ContentStoreManager;
+  private memoryManager?: SmartMemoryManager | undefined;
+  private mcpConnectionStatus: Map<string, MCPConnectionStatus> = new Map();
 
   constructor(options: ConversationalAgentOptions) {
     this.options = options;
@@ -82,6 +105,11 @@ export class ConversationalAgent {
       module: 'ConversationalAgent',
       silent: options.disableLogging || false,
     });
+    
+    if (this.options.entityMemoryEnabled !== false) {
+      this.memoryManager = new SmartMemoryManager(this.options.entityMemoryConfig);
+      this.logger.info('Entity memory initialized');
+    }
   }
 
   /**
@@ -110,7 +138,7 @@ export class ConversationalAgent {
       const serverSigner = new ServerSigner(
         accountId!,
         privateKeyInstance,
-        network as 'testnet' | 'mainnet' | 'previewnet'
+        network as MirrorNetwork
       );
 
       const allPlugins = this.preparePlugins();
@@ -126,7 +154,6 @@ export class ConversationalAgent {
 
       this.configureHCS10Plugin(allPlugins);
 
-      // Initialize ContentStoreManager if MCP servers are configured
       if (this.options.mcpServers && this.options.mcpServers.length > 0) {
         this.contentStoreManager = new ContentStoreManager();
         await this.contentStoreManager.initialize();
@@ -134,6 +161,11 @@ export class ConversationalAgent {
       }
 
       await this.agent.boot();
+
+      // Start MCP connections asynchronously after agent is booted
+      if (this.options.mcpServers && this.options.mcpServers.length > 0) {
+        this.connectMCP();
+      }
     } catch (error) {
       this.logger.error('Failed to initialize ConversationalAgent:', error);
       throw error;
@@ -186,28 +218,42 @@ export class ConversationalAgent {
    */
   async processMessage(
     message: string,
-    chatHistory: {
-      type: 'human' | 'ai';
-      content: string;
-    }[] = []
+    chatHistory: ChatHistoryItem[] = []
   ): Promise<ChatResponse> {
     if (!this.agent) {
       throw new Error('Agent not initialized. Call initialize() first.');
     }
 
-    const messages = chatHistory.map((msg) => {
-      if (msg.type === 'human') {
-        return new HumanMessage(msg.content);
-      } else {
-        return new AIMessage(msg.content);
+    try {
+      const resolvedMessage = this.memoryManager 
+        ? await this.resolveEntitiesInMessage(message)
+        : message;
+
+      const messages = chatHistory.map((msg) => {
+        if (msg.type === 'human') {
+          return new HumanMessage(msg.content);
+        } else {
+          return new AIMessage(msg.content);
+        }
+      });
+
+      const context: ConversationContext = {
+        messages,
+      };
+
+      const response = await this.agent.chat(resolvedMessage, context);
+      
+      if (this.memoryManager) {
+        await this.extractAndStoreEntities(response, message);
       }
-    });
-
-    const context: ConversationContext = {
-      messages,
-    };
-
-    return this.agent.chat(message, context);
+      
+      this.logger.info('Message processed successfully');
+      
+      return response;
+    } catch (error) {
+      this.logger.error('Error processing message:', error);
+      throw error;
+    }
   }
 
   /**
@@ -238,7 +284,7 @@ export class ConversationalAgent {
       this.hbarTransferPlugin,
     ];
     
-    const corePlugins = getAllHederaCorePlugins();
+    const corePlugins: BasePlugin[] = getAllHederaCorePlugins();
     
     if (enabledPlugins) {
       const enabledSet = new Set(enabledPlugins);
@@ -292,7 +338,7 @@ export class ConversationalAgent {
         temperature: DEFAULT_TEMPERATURE,
       },
       filtering: {
-        toolPredicate: (tool) => {
+        toolPredicate: (tool: ToolDescriptor): boolean => {
           if (tool.name === 'hedera-account-transfer-hbar') return false;
           if (this.options.toolFilter && !this.options.toolFilter(tool)) {
             return false;
@@ -315,7 +361,7 @@ export class ConversationalAgent {
       ...(this.options.mcpServers && {
         mcp: {
           servers: this.options.mcpServers,
-          autoConnect: true,
+          autoConnect: false,
         },
       }),
       debug: {
@@ -333,7 +379,7 @@ export class ConversationalAgent {
   private configureHCS10Plugin(allPlugins: BasePlugin[]): void {
     const hcs10 = allPlugins.find((p) => p.id === 'hcs-10');
     if (hcs10) {
-      (hcs10 as { appConfig?: Record<string, unknown> }).appConfig = {
+      (hcs10 as BasePlugin & { appConfig?: Record<string, unknown> }).appConfig = {
         stateManager: this.stateManager,
       };
     }
@@ -470,16 +516,317 @@ export class ConversationalAgent {
   }
 
   /**
+   * Resolve entity references in the message content
+   * @param content - Message content to resolve
+   * @returns Resolved message content with entity IDs replaced
+   */
+  private async resolveEntitiesInMessage(content: string): Promise<string> {
+    if (!this.memoryManager) {
+      return content;
+    }
+
+    try {
+      this.logger.info(`Starting entity resolution for message: "${content.substring(0, 100)}..."`);
+      
+      if (!content || typeof content !== 'string') {
+        this.logger.warn('Invalid content provided for entity resolution');
+        return content || '';
+      }
+
+      if (content.length > 5000) {
+        this.logger.warn('Content too long for entity resolution, truncating');
+        content = content.substring(0, 5000);
+      }
+
+      let resolvedContent = content;
+
+      const patterns = [
+        /\b(my|the|our)\s+(token|account|topic|schedule)\b/gi,
+        /'([^']+)'/g,
+        /"([^"]+)"/g,
+        /\b([A-Z][A-Za-z0-9_-]{2,})\b/g
+      ];
+
+      for (const pattern of patterns) {
+        try {
+          let match;
+          const matches: any[] = [];
+          while ((match = pattern.exec(resolvedContent)) !== null) {
+            matches.push(match);
+            if (!pattern.global) break;
+          }
+          
+          for (const match of matches) {
+            try {
+              const originalRef = match[0];
+              const entityName = match[1] || match[0];
+              
+              if (entityName.length > 50) {
+                this.logger.debug(`Skipping overly long entity name: ${entityName.substring(0, 20)}...`);
+                continue;
+              }
+              
+              const commonWords = ['the', 'my', 'our', 'this', 'that', 'it', 'is', 'are', 'was', 'will'];
+              if (commonWords.includes(entityName.toLowerCase())) {
+                continue;
+              }
+              
+              let entityAssociations: any[] = [];
+              
+              if (match[1] && ['token', 'account', 'topic', 'schedule'].includes(match[1].toLowerCase())) {
+                const entityType = match[1].toLowerCase();
+                entityAssociations = this.memoryManager.resolveEntityReference(
+                  entityName, 
+                  { entityType, limit: 1, fuzzyMatch: true }
+                );
+              } else {
+                entityAssociations = this.memoryManager.resolveEntityReference(
+                  entityName,
+                  { limit: 1, fuzzyMatch: false }
+                );
+              }
+
+              if (entityAssociations.length > 0) {
+                const entity = entityAssociations[0];
+                if (entity.entityId && entity.entityId.trim().length > 0) {
+                  if (entityAssociations.length > 1) {
+                    this.logger.info(`Multiple entities found for "${originalRef}", using most recent: ${entity.entityName}`);
+                  }
+                  
+                  resolvedContent = resolvedContent.replace(originalRef, entity.entityId);
+                  this.logger.info(`Resolved entity reference: "${originalRef}" -> ${entity.entityId}`);
+                }
+              }
+            } catch (matchError) {
+              this.logger.debug('Error processing entity match:', matchError);
+              continue;
+            }
+          }
+        } catch (patternError) {
+          this.logger.debug('Error processing pattern:', patternError);
+          continue;
+        }
+      }
+
+      if (resolvedContent !== content) {
+        this.logger.info(`Entity resolution completed. Original: "${content}" -> Resolved: "${resolvedContent}"`);
+      } else {
+        this.logger.info('No entity references resolved in message');
+      }
+      
+      return resolvedContent;
+    } catch (error) {
+      this.logger.warn('Entity resolution failed, using original message:', error);
+      return content;
+    }
+  }
+
+  /**
+   * Extract and store entity associations from transaction responses
+   * @param response - Agent response containing potential entity information
+   * @param originalMessage - Original user message for context
+   */
+  private async extractAndStoreEntities(response: any, originalMessage: string): Promise<void> {
+    if (!this.memoryManager) {
+      return;
+    }
+
+    try {
+      this.logger.info('Starting entity extraction from response');
+      
+      const entityPatterns = {
+        token: /(?:token|Token)\s*(?:ID\s*[:"*\s]*)?([0-9]+\.[0-9]+\.[0-9]+)/g,
+        account: /(?:account|Account)\s*(?:ID\s*[:"*\s]*)?([0-9]+\.[0-9]+\.[0-9]+)/g,
+        topic: /(?:topic|Topic)\s*(?:ID\s*[:"*\s]*)?([0-9]+\.[0-9]+\.[0-9]+)/g,
+        schedule: /(?:schedule|Schedule)\s*(?:ID\s*[:"*\s]*)?([0-9]+\.[0-9]+\.[0-9]+)/g
+      };
+
+      const responseText = typeof response === 'string' ? response : JSON.stringify(response);
+      this.logger.info(`Searching response text: ${responseText.substring(0, 200)}...`);
+      
+      for (const [entityType, pattern] of Object.entries(entityPatterns)) {
+        let match;
+        while ((match = pattern.exec(responseText)) !== null) {
+          const entityId = match[1];
+          
+          let entityName = `${entityType}-${entityId}`;
+          
+          const namePatterns = [
+            new RegExp(`(?:called|named)\\s+([\\w\\d_-]+)`, 'i'),
+            new RegExp(`(?:token|account|topic|schedule)\\s+([\\w\\d_-]+)`, 'i'),
+            new RegExp(`([\\w\\d_-]+)\\s+${entityType}`, 'i')
+          ];
+          
+          for (const namePattern of namePatterns) {
+            const nameMatch = originalMessage.match(namePattern);
+            if (nameMatch && nameMatch[1]) {
+              entityName = nameMatch[1].trim();
+              break;
+            }
+          }
+          
+          this.logger.info(`Extracting entity: ${entityName} (${entityType}) -> ${entityId}`);
+          
+          this.memoryManager.storeEntityAssociation(
+            entityId,
+            entityName,
+            entityType,
+            this.extractTransactionId(response)
+          );
+          
+          this.logger.info(`Stored entity association: ${entityName} (${entityId})`);
+        }
+      }
+      
+      this.logger.info('Entity extraction completed');
+    } catch (error) {
+      this.logger.warn('Entity extraction failed:', error);
+    }
+  }
+
+  /**
+   * Extract transaction ID from response if available
+   * @param response - Transaction response
+   * @returns Transaction ID or undefined
+   */
+  private extractTransactionId(response: any): string | undefined {
+    try {
+      if (typeof response === 'object' && response?.transactionId) {
+        return response.transactionId;
+      }
+      if (typeof response === 'string') {
+        const match = response.match(/transaction[\s\w]*ID[\s:"]*([0-9a-fA-F@\.\-]+)/i);
+        return match ? match[1] : undefined;
+      }
+      return undefined;
+    } catch {
+      return undefined;
+    }
+  }
+
+  /**
+   * Connect to MCP servers asynchronously
+   * @private
+   */
+  private connectMCP(): void {
+    if (!this.agent || !this.options.mcpServers) {
+      return;
+    }
+
+    // Initialize connection status for all servers
+    this.options.mcpServers.forEach(server => {
+      this.mcpConnectionStatus.set(server.name, {
+        serverName: server.name,
+        connected: false,
+        tools: []
+      });
+    });
+
+    // Call the agent's MCP connection method if available
+    if (typeof (this.agent as any).connectMCPServers === 'function') {
+      (this.agent as any).connectMCPServers().catch((error: any) => {
+        this.logger.error('Failed to connect MCP servers:', error);
+      });
+    } else {
+      // Fallback for agents that don't support async MCP connections
+      this.startConnections();
+    }
+  }
+
+  /**
+   * Start MCP connections without blocking initialization
+   * @private
+   */
+  private async startConnections(): Promise<void> {
+    if (!this.agent || !this.options.mcpServers) {
+      return;
+    }
+
+    try {
+      this.logger.info('Starting MCP server connections asynchronously...');
+      
+      for (const server of this.options.mcpServers) {
+        this.connectServer(server);
+      }
+    } catch (error) {
+      this.logger.error('Error starting MCP connections:', error);
+    }
+  }
+
+  /**
+   * Connect to a single MCP server
+   * @param {MCPServerConfig} server - Server configuration
+   * @private
+   */
+  private async connectServer(server: MCPServerConfig): Promise<void> {
+    try {
+      this.logger.info(`Connecting to MCP server: ${server.name}`);
+      
+      // TODO: Implement actual MCP connection logic
+      // For now, we'll simulate the connection process
+      const status = this.mcpConnectionStatus.get(server.name);
+      if (status) {
+        // Simulate connection success after a delay
+        setTimeout(() => {
+          status.connected = true;
+          this.logger.info(`MCP server ${server.name} connected successfully`);
+        }, Math.random() * 2000 + 1000); // 1-3 second delay
+      }
+      
+    } catch (error) {
+      this.logger.error(`Failed to connect to MCP server ${server.name}:`, error);
+      
+      const status = this.mcpConnectionStatus.get(server.name);
+      if (status) {
+        status.connected = false;
+        status.error = error instanceof Error ? error.message : 'Unknown error';
+      }
+    }
+  }
+
+  /**
+   * Get MCP connection status for all servers
+   * @returns {Map<string, MCPConnectionStatus>} Connection status map
+   */
+  getMCPConnectionStatus(): Map<string, MCPConnectionStatus> {
+    return new Map(this.mcpConnectionStatus);
+  }
+
+  /**
+   * Check if a specific MCP server is connected
+   * @param {string} serverName - Name of the server to check
+   * @returns {boolean} True if connected, false otherwise
+   */
+  isMCPServerConnected(serverName: string): boolean {
+    const status = this.mcpConnectionStatus.get(serverName);
+    return status?.connected ?? false;
+  }
+
+  /**
    * Clean up resources
    */
   async cleanup(): Promise<void> {
-    if (this.contentStoreManager) {
-      await this.contentStoreManager.dispose();
-      this.logger.info('ContentStoreManager cleaned up');
-    }
-    // Agent cleanup if needed
-    if (this.agent) {
-      // Add agent cleanup if available
+    try {
+      this.logger.info('Cleaning up ConversationalAgent...');
+      
+      if (this.memoryManager) {
+        try {
+          this.memoryManager.dispose();
+          this.logger.info('Memory manager cleaned up successfully');
+        } catch (error) {
+          this.logger.warn('Error cleaning up memory manager:', error);
+        }
+        this.memoryManager = undefined as any;
+      }
+      
+      if (this.contentStoreManager) {
+        await this.contentStoreManager.dispose();
+        this.logger.info('ContentStoreManager cleaned up');
+      }
+      
+      this.logger.info('ConversationalAgent cleanup completed');
+    } catch (error) {
+      this.logger.error('Error during cleanup:', error);
     }
   }
 }

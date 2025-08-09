@@ -4,6 +4,34 @@ import { ContentStorage } from './ContentStorage';
 import { TokenCounter } from './TokenCounter';
 
 /**
+ * Entity association for storing blockchain entity contexts
+ */
+export interface EntityAssociation {
+  /** The blockchain entity ID (e.g., tokenId, accountId, topicId) */
+  entityId: string;
+  /** User-provided or derived friendly name */
+  entityName: string;
+  /** Type of entity (token, account, topic, schedule, etc.) */
+  entityType: string;
+  /** When the entity was created/associated */
+  createdAt: Date;
+  /** Transaction ID that created this entity */
+  transactionId?: string;
+}
+
+/**
+ * Options for resolving entity references
+ */
+export interface EntityResolutionOptions {
+  /** Filter by specific entity type */
+  entityType?: string;
+  /** Maximum number of results to return */
+  limit?: number;
+  /** Whether to use fuzzy matching for natural language queries */
+  fuzzyMatch?: boolean;
+}
+
+/**
  * Configuration for SmartMemoryManager
  */
 export interface SmartMemoryConfig {
@@ -47,6 +75,8 @@ export interface MemoryStats {
   usagePercentage: number;
 }
 
+const IS_ENTITY_ASSOCIATION_FLAG = '"isEntityAssociation":true';
+
 /**
  * Smart memory manager that combines active memory window with long-term storage
  * Provides context-aware memory management with automatic pruning and searchable history
@@ -57,18 +87,16 @@ export class SmartMemoryManager {
   private tokenCounter: TokenCounter;
   private config: Required<SmartMemoryConfig>;
 
-  // Default configuration values
   private static readonly DEFAULT_CONFIG: Required<SmartMemoryConfig> = {
     maxTokens: 8000,
     reserveTokens: 1000,
     modelName: 'gpt-4o',
-    storageLimit: 1000
+    storageLimit: 1000,
   };
 
   constructor(config: SmartMemoryConfig = {}) {
     this.config = { ...SmartMemoryManager.DEFAULT_CONFIG, ...config };
-    
-    // Initialize components
+
     this.tokenCounter = new TokenCounter(this.config.modelName as any);
     this.contentStorage = new ContentStorage(this.config.storageLimit);
     this.memoryWindow = new MemoryWindow(
@@ -85,8 +113,7 @@ export class SmartMemoryManager {
    */
   addMessage(message: BaseMessage): void {
     const result = this.memoryWindow.addMessage(message);
-    
-    // Store any pruned messages in content storage
+
     if (result.prunedMessages.length > 0) {
       this.contentStorage.storeMessages(result.prunedMessages);
     }
@@ -106,7 +133,7 @@ export class SmartMemoryManager {
    */
   clear(clearStorage: boolean = false): void {
     this.memoryWindow.clear();
-    
+
     if (clearStorage) {
       this.contentStorage.clear();
     }
@@ -162,14 +189,14 @@ export class SmartMemoryManager {
    */
   getMemoryStats(): MemoryStats {
     const windowStats = this.memoryWindow.getStats();
-    
+
     return {
       totalActiveMessages: windowStats.totalMessages,
       currentTokenCount: windowStats.currentTokens,
       maxTokens: windowStats.maxTokens,
       remainingCapacity: windowStats.remainingCapacity,
       systemPromptTokens: windowStats.systemPromptTokens,
-      usagePercentage: windowStats.usagePercentage
+      usagePercentage: windowStats.usagePercentage,
     };
   }
 
@@ -177,7 +204,7 @@ export class SmartMemoryManager {
    * Get statistics about the content storage
    * @returns Storage usage statistics
    */
-  getStorageStats() {
+  getStorageStats(): ReturnType<ContentStorage['getStorageStats']> {
     return this.contentStorage.getStorageStats();
   }
 
@@ -185,16 +212,23 @@ export class SmartMemoryManager {
    * Get combined statistics for both active memory and storage
    * @returns Combined memory and storage statistics
    */
-  getOverallStats() {
+  getOverallStats(): {
+    activeMemory: MemoryStats;
+    storage: ReturnType<ContentStorage['getStorageStats']>;
+    totalMessagesManaged: number;
+    activeMemoryUtilization: number;
+    storageUtilization: number;
+  } {
     const memoryStats = this.getMemoryStats();
     const storageStats = this.getStorageStats();
-    
+
     return {
       activeMemory: memoryStats,
       storage: storageStats,
-      totalMessagesManaged: memoryStats.totalActiveMessages + storageStats.totalMessages,
+      totalMessagesManaged:
+        memoryStats.totalActiveMessages + storageStats.totalMessages,
       activeMemoryUtilization: memoryStats.usagePercentage,
-      storageUtilization: storageStats.usagePercentage
+      storageUtilization: storageStats.usagePercentage,
     };
   }
 
@@ -204,21 +238,21 @@ export class SmartMemoryManager {
    */
   updateConfig(newConfig: Partial<SmartMemoryConfig>): void {
     this.config = { ...this.config, ...newConfig };
-    
-    // Update components with new configuration
-    if (newConfig.maxTokens !== undefined || newConfig.reserveTokens !== undefined) {
+
+    if (
+      newConfig.maxTokens !== undefined ||
+      newConfig.reserveTokens !== undefined
+    ) {
       this.memoryWindow.updateLimits(
         this.config.maxTokens,
         this.config.reserveTokens
       );
     }
-    
+
     if (newConfig.storageLimit !== undefined) {
       this.contentStorage.updateStorageLimit(this.config.storageLimit);
     }
-    
-    // Note: Model name changes would require recreating the token counter
-    // This is not implemented to avoid disrupting ongoing operations
+
   }
 
   /**
@@ -262,17 +296,24 @@ export class SmartMemoryManager {
    * Export the current state for persistence or analysis
    * @returns Serializable representation of memory state
    */
-  exportState() {
+  exportState(): {
+    config: Required<SmartMemoryConfig>;
+    activeMessages: Array<{ content: unknown; type: string }>;
+    systemPrompt: string;
+    memoryStats: MemoryStats;
+    storageStats: ReturnType<ContentStorage['getStorageStats']>;
+    storedMessages: ReturnType<ContentStorage['exportMessages']>;
+  } {
     return {
       config: this.config,
-      activeMessages: this.memoryWindow.getMessages().map(msg => ({
+      activeMessages: this.memoryWindow.getMessages().map((msg) => ({
         content: msg.content,
-        type: msg._getType()
+        type: msg._getType(),
       })),
       systemPrompt: this.memoryWindow.getSystemPrompt(),
       memoryStats: this.getMemoryStats(),
       storageStats: this.getStorageStats(),
-      storedMessages: this.contentStorage.exportMessages()
+      storedMessages: this.contentStorage.exportMessages(),
     };
   }
 
@@ -282,21 +323,29 @@ export class SmartMemoryManager {
    * @param includeStoredContext - Whether to include recent stored messages
    * @returns Context summary object
    */
-  getContextSummary(includeStoredContext: boolean = false) {
+  getContextSummary(includeStoredContext: boolean = false): {
+    activeMessageCount: number;
+    systemPrompt: string;
+    recentMessages: BaseMessage[];
+    memoryUtilization: number;
+    hasStoredHistory: boolean;
+    recentStoredMessages?: BaseMessage[];
+    storageStats?: ReturnType<ContentStorage['getStorageStats']>;
+  } {
     const activeMessages = this.getMessages();
     const summary = {
       activeMessageCount: activeMessages.length,
       systemPrompt: this.getSystemPrompt(),
-      recentMessages: activeMessages.slice(-5), // Last 5 active messages
+      recentMessages: activeMessages.slice(-5),
       memoryUtilization: this.getMemoryStats().usagePercentage,
-      hasStoredHistory: this.getStorageStats().totalMessages > 0
+      hasStoredHistory: this.getStorageStats().totalMessages > 0,
     };
 
     if (includeStoredContext) {
       return {
         ...summary,
-        recentStoredMessages: this.getRecentHistory(10), // Last 10 stored messages
-        storageStats: this.getStorageStats()
+        recentStoredMessages: this.getRecentHistory(10),
+        storageStats: this.getStorageStats(),
       };
     }
 
@@ -308,8 +357,326 @@ export class SmartMemoryManager {
    * Optimizes storage and cleans up resources
    */
   performMaintenance(): void {
-    // No specific maintenance needed currently
-    // This method is reserved for future optimizations
+  }
+
+
+  /**
+   * Store an entity association for later resolution
+   * @param entityId - The blockchain entity ID
+   * @param entityName - User-provided or derived friendly name
+   * @param entityType - Type of entity (token, account, topic, etc.)
+   * @param transactionId - Optional transaction ID that created this entity
+   */
+  storeEntityAssociation(
+    entityId: string,
+    entityName: string,
+    entityType: string,
+    transactionId?: string
+  ): void {
+    try {
+      if (
+        !entityId ||
+        typeof entityId !== 'string' ||
+        entityId.trim().length === 0
+      ) {
+        console.warn(
+          '[SmartMemoryManager] Invalid entityId provided:',
+          entityId
+        );
+        return;
+      }
+
+      if (
+        !entityName ||
+        typeof entityName !== 'string' ||
+        entityName.trim().length === 0
+      ) {
+        console.warn(
+          '[SmartMemoryManager] Invalid entityName provided:',
+          entityName
+        );
+        return;
+      }
+
+      if (
+        !entityType ||
+        typeof entityType !== 'string' ||
+        entityType.trim().length === 0
+      ) {
+        console.warn(
+          '[SmartMemoryManager] Invalid entityType provided:',
+          entityType
+        );
+        return;
+      }
+
+      const sanitizedEntityId = entityId.trim();
+      const sanitizedEntityName = entityName.trim().substring(0, 100);
+      const sanitizedEntityType = entityType.trim().toLowerCase();
+
+      const association: EntityAssociation = {
+        entityId: sanitizedEntityId,
+        entityName: sanitizedEntityName,
+        entityType: sanitizedEntityType,
+        createdAt: new Date(),
+        ...(transactionId !== undefined && transactionId !== null && transactionId.trim() !== ''
+          ? { transactionId: transactionId.trim() }
+          : {})
+      };
+
+      const content = JSON.stringify(association);
+      type LangChainLikeMessage = {
+        _getType: () => string;
+        content: unknown;
+        id: string;
+        name?: string;
+        additional_kwargs?: Record<string, unknown>;
+      };
+
+      const entityMessage: LangChainLikeMessage = {
+        _getType: () => 'system',
+        content: content,
+        id: `entity_${sanitizedEntityId}_${Date.now()}`,
+        name: 'entity_association',
+        additional_kwargs: {
+          entityId: sanitizedEntityId,
+          entityName: sanitizedEntityName,
+          entityType: sanitizedEntityType,
+          isEntityAssociation: true,
+        }
+      };
+      
+      this.contentStorage.storeMessages([entityMessage as any]);
+
+      console.debug(
+        `[SmartMemoryManager] Stored entity association: ${sanitizedEntityName} (${sanitizedEntityType}) -> ${sanitizedEntityId}`
+      );
+    } catch (_error) {
+      console.error(
+        '[SmartMemoryManager] Failed to store entity association:',
+        _error
+      );
+    }
+  }
+
+  /**
+   * Resolve entity references from natural language queries
+   * @param query - Search query (entity name or natural language reference)
+   * @param options - Resolution options for filtering and fuzzy matching
+   * @returns Array of matching entity associations
+   */
+  resolveEntityReference(
+    query: string,
+    options: EntityResolutionOptions = {}
+  ): EntityAssociation[] {
+    try {
+      if (!query || typeof query !== 'string') {
+        console.warn(
+          '[SmartMemoryManager] Invalid query provided for entity resolution:',
+          query
+        );
+        return [];
+      }
+
+      const sanitizedQuery = query.trim();
+      if (sanitizedQuery.length === 0) {
+        return [];
+      }
+
+      if (sanitizedQuery.length > 200) {
+        console.warn(
+          '[SmartMemoryManager] Query too long, truncating:',
+          sanitizedQuery.length
+        );
+      }
+
+      const { entityType, limit = 10, fuzzyMatch = true } = options;
+
+      const safeLimit = Math.max(1, Math.min(limit || 10, 100));
+
+      const searchResults = this.contentStorage.searchMessages(
+        sanitizedQuery.substring(0, 200),
+        {
+          caseSensitive: false,
+          limit: safeLimit * 2,
+        }
+      );
+
+      const associations: EntityAssociation[] = [];
+
+      for (const message of searchResults) {
+        try {
+          const content = message.content as string;
+          if (
+            content.includes(IS_ENTITY_ASSOCIATION_FLAG) ||
+            content.includes('entityId')
+          ) {
+            const parsed = JSON.parse(content);
+            if (parsed.entityId && parsed.entityName && parsed.entityType) {
+              if (entityType && parsed.entityType !== entityType) {
+                continue;
+              }
+
+              associations.push(parsed as EntityAssociation);
+            }
+          }
+        } catch {
+          continue;
+        }
+      }
+
+      if (fuzzyMatch && associations.length === 0) {
+        const fuzzyQueries = [
+          query.toLowerCase(),
+          `token`,
+          `account`,
+          entityType || '',
+        ].filter(Boolean);
+
+        for (const fuzzyQuery of fuzzyQueries) {
+          if (fuzzyQuery === query.toLowerCase()) continue;
+
+          const fuzzyResults = this.contentStorage.searchMessages(fuzzyQuery, {
+            caseSensitive: false,
+            limit: limit,
+          });
+
+          for (const message of fuzzyResults) {
+            try {
+              const content = message.content as string;
+              if (content.includes(IS_ENTITY_ASSOCIATION_FLAG)) {
+                const parsed = JSON.parse(content);
+                if (parsed.entityId && parsed.entityName && parsed.entityType) {
+                  if (entityType && parsed.entityType !== entityType) {
+                    continue;
+                  }
+                  associations.push(parsed as EntityAssociation);
+                }
+              }
+            } catch {
+              continue;
+            }
+          }
+        }
+      }
+
+      const uniqueAssociations = associations
+        .filter(
+          (assoc, index, arr) =>
+            arr.findIndex((a) => a.entityId === assoc.entityId) === index
+        )
+        .sort(
+          (a, b) =>
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
+
+      const results = uniqueAssociations.slice(0, safeLimit);
+
+      if (results.length > 1) {
+        console.debug(
+          `[SmartMemoryManager] Multiple entities found for "${sanitizedQuery}":`,
+          results.map((r) => `${r.entityName} (${r.entityType})`).join(', ')
+        );
+      }
+
+      return results;
+    } catch (_error) {
+      console.error(
+        '[SmartMemoryManager] Failed to resolve entity reference:',
+        _error
+      );
+      return [];
+    }
+  }
+
+  /**
+   * Get all entity associations, optionally filtered by type
+   * @param entityType - Optional filter by entity type
+   * @returns Array of entity associations
+   */
+  getEntityAssociations(entityType?: string): EntityAssociation[] {
+    try {
+      const sanitizedEntityType = entityType
+        ? entityType.trim().toLowerCase()
+        : undefined;
+
+      if (
+        entityType &&
+        (!sanitizedEntityType || sanitizedEntityType.length === 0)
+      ) {
+        console.warn(
+          '[SmartMemoryManager] Invalid entityType filter provided:',
+          entityType
+        );
+        return [];
+      }
+
+      const SEARCH_ANY_ENTITY = 'entityId';
+      const searchQuery = sanitizedEntityType || SEARCH_ANY_ENTITY;
+      const searchResults = this.contentStorage.searchMessages(searchQuery, {
+        caseSensitive: false,
+        limit: 100,
+      });
+
+      const associations: EntityAssociation[] = [];
+
+      for (const message of searchResults) {
+        try {
+          const content = message.content as string;
+          if (content.includes(IS_ENTITY_ASSOCIATION_FLAG)) {
+            const parsed = JSON.parse(content);
+
+            if (parsed.entityId && parsed.entityName && parsed.entityType) {
+              if (
+                sanitizedEntityType &&
+                parsed.entityType !== sanitizedEntityType
+              ) {
+                continue;
+              }
+
+              if (parsed.createdAt && typeof parsed.createdAt === 'string') {
+                parsed.createdAt = new Date(parsed.createdAt);
+              }
+
+              associations.push(parsed as EntityAssociation);
+            }
+          }
+        } catch (_parseError) {
+          console.debug(
+            '[SmartMemoryManager] Skipped malformed association data:',
+            _parseError
+          );
+          continue;
+        }
+      }
+
+      const results = associations
+        .filter(
+          (assoc, index, arr) =>
+            arr.findIndex((a) => a.entityId === assoc.entityId) === index
+        )
+        .sort((a, b): number => {
+          const getTime = (d: Date | string): number =>
+            d instanceof Date ? d.getTime() : new Date(d).getTime();
+          const aTime = getTime(a.createdAt);
+          const bTime = getTime(b.createdAt);
+          return bTime - aTime;
+        });
+
+      console.debug(
+        `[SmartMemoryManager] Retrieved ${results.length} entity associations${
+          sanitizedEntityType ? ` of type '${sanitizedEntityType}'` : ''
+        }`
+      );
+
+      return results;
+    } catch (_error) {
+      console.error(
+        '[SmartMemoryManager] Failed to get entity associations:',
+        _error
+      );
+      return [];
+    }
   }
 
   /**

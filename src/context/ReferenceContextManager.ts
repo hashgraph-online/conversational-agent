@@ -1,4 +1,4 @@
-import type { ContentReference, ReferenceId, ContentReferenceError } from '../types/content-reference';
+import type { ContentReference, ReferenceId } from '../types/content-reference';
 import type { ContentStorage } from '../memory/ContentStorage';
 import { Logger } from '@hashgraphonline/standards-sdk';
 
@@ -169,7 +169,7 @@ export class ReferenceContextManager {
     let valid = 0;
     let invalid = 0;
 
-    for (const [referenceId, context] of this.activeReferences.entries()) {
+    for (const [referenceId, _context] of this.activeReferences.entries()) {
       try {
         const isValid = await this.contentStorage.hasReference(referenceId);
         if (isValid) {
@@ -218,7 +218,12 @@ export class ReferenceContextManager {
   /**
    * Get current context statistics
    */
-  getContextStats() {
+  getContextStats(): {
+    activeReferences: number;
+    conversationTurn: number;
+    oldestReference: number | null;
+    mostRecentReference: number | null;
+  } {
     return {
       activeReferences: this.activeReferences.size,
       conversationTurn: this.conversationTurn,

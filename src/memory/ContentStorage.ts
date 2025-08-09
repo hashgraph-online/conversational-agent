@@ -90,7 +90,6 @@ export class ContentStorage implements ContentReferenceStore {
   private maxStorage: number;
   private idCounter: number = 0;
 
-  // Reference-based content storage
   private contentStore: Map<ReferenceId, StoredContent> = new Map();
   private referenceConfig: ContentReferenceConfig;
   private cleanupTimer?: NodeJS.Timeout;
@@ -102,7 +101,6 @@ export class ContentStorage implements ContentReferenceStore {
     };
   };
 
-  // Default storage limit for messages
   public static readonly DEFAULT_MAX_STORAGE = 1000;
 
   constructor(
@@ -111,7 +109,6 @@ export class ContentStorage implements ContentReferenceStore {
   ) {
     this.maxStorage = maxStorage;
     
-    // Initialize reference-based storage
     this.referenceConfig = { ...DEFAULT_CONTENT_REFERENCE_CONFIG, ...referenceConfig };
     this.referenceStats = {
       activeReferences: 0,
@@ -131,7 +128,6 @@ export class ContentStorage implements ContentReferenceStore {
       }
     };
     
-    // Start cleanup timer if enabled
     if (this.referenceConfig.enableAutoCleanup) {
       this.startReferenceCleanupTimer();
     }
@@ -151,17 +147,14 @@ export class ContentStorage implements ContentReferenceStore {
     const now = new Date();
     let dropped = 0;
 
-    // Convert messages to stored format
     const storedMessages: StoredMessage[] = messages.map(message => ({
       message,
       storedAt: now,
       id: this.generateId()
     }));
 
-    // Add new messages
     this.messages.push(...storedMessages);
 
-    // Remove oldest messages if we exceed the limit
     while (this.messages.length > this.maxStorage) {
       this.messages.shift();
       dropped++;
@@ -304,7 +297,6 @@ export class ContentStorage implements ContentReferenceStore {
 
     this.maxStorage = newLimit;
 
-    // Prune messages if the new limit is smaller
     while (this.messages.length > this.maxStorage) {
       this.messages.shift();
     }
@@ -374,7 +366,6 @@ export class ContentStorage implements ContentReferenceStore {
     }));
   }
 
-  // ========== Reference-Based Content Storage Methods ==========
 
   /**
    * Determine if content should be stored as a reference based on size
@@ -465,13 +456,10 @@ export class ContentStorage implements ContentReferenceStore {
       
       this.contentStore.set(referenceId, storedContent);
       
-      // Update statistics
       this.updateStatsAfterStore(content.length);
       
-      // Enforce storage limits after storing
       await this.enforceReferenceStorageLimits();
       
-      // Create preview
       const preview = this.createContentPreview(content, fullMetadata.contentType);
       
       const referenceMetadata: Pick<ContentMetadata, 'contentType' | 'sizeBytes' | 'source' | 'fileName' | 'mimeType'> = {
@@ -496,7 +484,6 @@ export class ContentStorage implements ContentReferenceStore {
         format: 'ref://{id}' as const
       };
       
-      // Record performance
       const duration = Date.now() - startTime;
       this.recordPerformanceMetric('creation', duration);
       
@@ -522,7 +509,6 @@ export class ContentStorage implements ContentReferenceStore {
     const startTime = Date.now();
     
     try {
-      // Validate reference ID format
       if (!ReferenceIdGenerator.isValidReferenceId(referenceId)) {
         this.referenceStats.failedResolutions++;
         return {
@@ -545,7 +531,6 @@ export class ContentStorage implements ContentReferenceStore {
         };
       }
       
-      // Check if expired
       if (storedContent.expiresAt && storedContent.expiresAt < new Date()) {
         storedContent.state = 'expired';
         this.referenceStats.failedResolutions++;
@@ -557,7 +542,6 @@ export class ContentStorage implements ContentReferenceStore {
         };
       }
       
-      // Check state
       if (storedContent.state !== 'active') {
         this.referenceStats.failedResolutions++;
         return {
@@ -568,14 +552,11 @@ export class ContentStorage implements ContentReferenceStore {
         };
       }
       
-      // Update access tracking
       storedContent.metadata.lastAccessedAt = new Date();
       storedContent.metadata.accessCount++;
       
-      // Update statistics
       this.referenceStats.totalResolutions++;
       
-      // Record performance
       const duration = Date.now() - startTime;
       this.recordPerformanceMetric('resolution', duration);
       
@@ -613,7 +594,6 @@ export class ContentStorage implements ContentReferenceStore {
       return false;
     }
     
-    // Check if expired
     if (storedContent.expiresAt && storedContent.expiresAt < new Date()) {
       storedContent.state = 'expired';
       return false;
@@ -631,7 +611,6 @@ export class ContentStorage implements ContentReferenceStore {
       return false;
     }
     
-    // Update statistics
     this.referenceStats.totalStorageBytes -= storedContent.content.length;
     this.referenceStats.activeReferences--;
     this.referenceStats.recentlyCleanedUp++;
@@ -663,7 +642,6 @@ export class ContentStorage implements ContentReferenceStore {
   async updateConfig(config: Partial<ContentReferenceConfig>): Promise<void> {
     this.referenceConfig = { ...this.referenceConfig, ...config };
     
-    // Restart cleanup timer if needed
     if (this.cleanupTimer) {
       clearInterval(this.cleanupTimer);
       delete this.cleanupTimer;
@@ -686,17 +664,14 @@ export class ContentStorage implements ContentReferenceStore {
       const now = new Date();
       const toCleanup: ReferenceId[] = [];
       
-      // Identify references for cleanup
       for (const [referenceId, storedContent] of this.contentStore.entries()) {
         let shouldCleanup = false;
         
-        // Check expiration
         if (storedContent.expiresAt && storedContent.expiresAt < now) {
           shouldCleanup = true;
           storedContent.state = 'expired';
         }
         
-        // Check age-based policies
         const ageMs = now.getTime() - storedContent.metadata.createdAt.getTime();
         const policy = this.getCleanupPolicy(storedContent.metadata.source);
         
@@ -704,7 +679,6 @@ export class ContentStorage implements ContentReferenceStore {
           shouldCleanup = true;
         }
         
-        // Check if marked for cleanup
         if (storedContent.state === 'cleanup_pending') {
           shouldCleanup = true;
         }
@@ -714,16 +688,14 @@ export class ContentStorage implements ContentReferenceStore {
         }
       }
       
-      // Sort by priority (higher priority = cleanup first)
       toCleanup.sort((a, b) => {
         const aContent = this.contentStore.get(a)!;
         const bContent = this.contentStore.get(b)!;
         const aPriority = this.getCleanupPolicy(aContent.metadata.source).priority;
         const bPriority = this.getCleanupPolicy(bContent.metadata.source).priority;
-        return bPriority - aPriority; // Higher priority first
+        return bPriority - aPriority;
       });
       
-      // Perform cleanup
       for (const referenceId of toCleanup) {
         try {
           const success = await this.cleanupReference(referenceId);
@@ -735,7 +707,6 @@ export class ContentStorage implements ContentReferenceStore {
         }
       }
       
-      // Check storage limits and cleanup oldest if needed
       if (this.contentStore.size > this.referenceConfig.maxReferences) {
         const sortedByAge = Array.from(this.contentStore.entries())
           .sort(([, a], [, b]) => a.metadata.lastAccessedAt.getTime() - b.metadata.lastAccessedAt.getTime());
@@ -777,15 +748,12 @@ export class ContentStorage implements ContentReferenceStore {
     return { ...this.referenceConfig };
   }
 
-  // ========== Private Reference Storage Helper Methods ==========
 
   private async enforceReferenceStorageLimits(): Promise<void> {
-    // Check reference count limit
     if (this.contentStore.size >= this.referenceConfig.maxReferences) {
       await this.performCleanup();
     }
     
-    // Check total storage size limit
     if (this.referenceStats.totalStorageBytes >= this.referenceConfig.maxTotalStorageBytes) {
       await this.performCleanup();
     }
@@ -818,7 +786,6 @@ export class ContentStorage implements ContentReferenceStore {
       return 'binary';
     }
     
-    // Simple content detection
     const contentStr = content.toString('utf8', 0, Math.min(content.length, 1000));
     if (contentStr.startsWith('{') || contentStr.startsWith('[')) return 'json';
     if (contentStr.includes('<html>') || contentStr.includes('<!DOCTYPE')) return 'html';
@@ -831,9 +798,7 @@ export class ContentStorage implements ContentReferenceStore {
     const maxLength = 200;
     let preview = content.toString('utf8', 0, Math.min(content.length, maxLength * 2));
     
-    // Clean up based on content type
     if (contentType === 'html') {
-      // Remove all HTML tags and normalize whitespace
       preview = preview
         .replace(/<[^>]*>/g, '')
         .replace(/\s+/g, ' ')
@@ -843,7 +808,6 @@ export class ContentStorage implements ContentReferenceStore {
         const parsed = JSON.parse(preview);
         preview = JSON.stringify(parsed, null, 0);
       } catch {
-        // Keep original if not valid JSON
       }
     }
     
@@ -868,7 +832,6 @@ export class ContentStorage implements ContentReferenceStore {
     
     this.referenceStats.storageUtilization = (this.referenceStats.totalStorageBytes / this.referenceConfig.maxTotalStorageBytes) * 100;
     
-    // Find most accessed reference
     let mostAccessedId: ReferenceId | undefined;
     let maxAccess = 0;
     
@@ -888,7 +851,7 @@ export class ContentStorage implements ContentReferenceStore {
 
   private recordPerformanceMetric(type: 'creation' | 'resolution' | 'cleanup', timeMs: number): void {
     const metrics = this.referenceStats.performanceMetrics;
-    const maxRecords = 100; // Keep last 100 measurements
+    const maxRecords = 100;
     
     switch (type) {
       case 'creation':

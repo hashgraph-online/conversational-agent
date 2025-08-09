@@ -22,7 +22,6 @@ export function MyAgentsList({ className }: MyAgentsListProps) {
   const profiles = useHCS10Profiles();
 
   useEffect(() => {
-    // Load profiles on mount
     loadProfiles();
   }, [loadProfiles]);
 
@@ -100,7 +99,6 @@ export function MyAgentsList({ className }: MyAgentsListProps) {
                 <div
                   className="p-4 sm:p-6 rounded-2xl border border-gray-200/50 dark:border-white/[0.06] bg-white/80 dark:bg-black/40 backdrop-blur-sm hover:border-[#5599fe]/50 dark:hover:border-[#5599fe]/50 transition-all duration-200 cursor-pointer group hover:shadow-lg hover:shadow-[#5599fe]/10 dark:hover:shadow-[#5599fe]/20"
                   onClick={() => {
-                    // Future: Navigate to agent details page
                     console.log('View agent:', profile.id);
                   }}
                 >

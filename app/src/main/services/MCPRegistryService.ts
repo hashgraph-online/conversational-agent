@@ -102,7 +102,6 @@ export class MCPRegistryService {
           const cacheResult = await this.cacheManager.searchServers(cacheOptions)
           
           if (cacheResult.fromCache || cacheResult.servers.length > 0) {
-            // Convert and filter cached servers for installability
             const convertedServers = cacheResult.servers.map(this.convertFromCachedServer)
             const installableServers = convertedServers.filter(server => {
               const installable = this.isServerInstallable(server)
@@ -143,7 +142,6 @@ export class MCPRegistryService {
     try {
       this.logger.info(`Getting server details for: ${serverId}, packageName: ${packageName}`)
       
-      // If no packageName provided, try using serverId as a fallback
       const effectivePackageName = packageName || serverId
       
       const detailPromises = [
@@ -178,27 +176,20 @@ export class MCPRegistryService {
    * Check if a server can be installed
    */
   isServerInstallable(registryServer: MCPRegistryServer): boolean {
-    // Must have one of these installation methods
     const hasCommand = !!registryServer.config?.command
     const hasGitHub = !!(registryServer.repository?.url && registryServer.repository.url.includes('github.com'))
     const hasPackageName = !!registryServer.packageName
     
-    // If it has a direct command or GitHub repo, it's installable
     if (hasCommand || hasGitHub) {
       return true
     }
     
-    // If it only has a packageName, we need to be more careful
-    // Some servers have invalid packageNames that don't actually exist
     if (hasPackageName && registryServer.packageName) {
-      // Known invalid packageNames that don't actually exist on npm
       const invalidPackageNames = ['bitcoin-mcp', 'mcp-notes']
       if (invalidPackageNames.includes(registryServer.packageName)) {
         this.logger.debug(`Filtering out server with invalid packageName: ${registryServer.packageName}`)
         return false
       }
-      // For now, assume other packageNames are valid
-      // In the future, we could check npm registry
       return true
     }
     
@@ -216,19 +207,15 @@ export class MCPRegistryService {
       config: {}
     }
 
-    // Try different approaches to determine the install command
     if (registryServer.config?.command) {
-      // Use explicit command if provided
       config.config!.command = registryServer.config.command
       config.config!.args = registryServer.config.args || []
       config.config!.env = registryServer.config.env || {}
     } else if (registryServer.packageName) {
-      // Use npm package if packageName is available
       config.config!.command = 'npx'
       config.config!.args = ['-y', registryServer.packageName]
       config.config!.env = registryServer.config?.env || {}
     } else if (registryServer.repository?.url) {
-      // Try to create command from GitHub repository
       if (registryServer.repository.url.includes('github.com')) {
         const repoMatch = registryServer.repository.url.match(/github\.com\/([^/]+\/[^/]+)/)
         if (repoMatch) {
@@ -237,12 +224,10 @@ export class MCPRegistryService {
         }
       }
     } else {
-      // Last resort: try using the server ID as a package name
       config.config!.command = 'npx'
       config.config!.args = ['-y', registryServer.id]
     }
 
-    // Add description if available
     if (registryServer.description) {
       config.description = registryServer.description
     }
@@ -294,7 +279,6 @@ export class MCPRegistryService {
           return null
         }
       }).filter(Boolean).filter(server => {
-        // Filter out non-installable servers
         const installable = this.isServerInstallable(server)
         if (!installable) {
           this.logger.debug(`Filtering out non-installable server: ${server.name}`)
@@ -436,18 +420,14 @@ export class MCPRegistryService {
 
 
   private normalizePulseMCPServer = (server: any): MCPRegistryServer => {
-    // PulseMCP uses short_description instead of description
     const description = server.short_description || server.description || ''
     
-    // Log servers without package_name for debugging
     if (!server.package_name && server.name) {
       this.logger.debug(`Server "${server.name}" has no package_name field`)
     }
     
-    // List of known invalid packageNames that don't actually exist on npm
     const invalidPackageNames = ['bitcoin-mcp', 'mcp-notes']
     
-    // Clean up packageName if it's known to be invalid
     let packageName = server.package_name
     if (packageName && invalidPackageNames.includes(packageName)) {
       this.logger.debug(`Removing invalid packageName "${packageName}" from server "${server.name}"`)
@@ -636,12 +616,11 @@ export class MCPRegistryService {
       return
     }
 
-    // Delay background sync to avoid blocking startup
     setTimeout(() => {
       this.performBackgroundSync().catch(error => {
         this.logger.error('Background sync failed:', error)
       })
-    }, 5000) // 5 second delay
+    }, 5000)
   }
 
   /**
@@ -727,7 +706,6 @@ export class MCPRegistryService {
           await this.cacheManager.bulkCacheServers(cacheServers)
         } catch (cacheError) {
           this.logger.error(`Failed to cache servers for ${registry}:`, cacheError)
-          // Continue with sync even if caching fails
         }
 
         offset += this.BACKGROUND_BATCH_SIZE

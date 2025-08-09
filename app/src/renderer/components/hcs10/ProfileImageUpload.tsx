@@ -11,7 +11,7 @@ interface ProfileImageUploadProps {
   disabled?: boolean;
 }
 
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const MAX_FILE_SIZE = 5 * 1024 * 1024;
 const ACCEPTED_FORMATS = {
   'image/png': ['.png'],
   'image/jpeg': ['.jpg', '.jpeg'],
@@ -38,7 +38,6 @@ export function ProfileImageUpload({ value, onChange, disabled = false }: Profil
 
     const file = acceptedFiles[0];
 
-    // Validate file size
     if (file.size > MAX_FILE_SIZE) {
       setUploadError('Image size must be less than 5MB');
       return;
@@ -47,7 +46,6 @@ export function ProfileImageUpload({ value, onChange, disabled = false }: Profil
     try {
       setIsUploading(true);
       
-      // Convert to base64
       const reader = new FileReader();
       reader.onload = (e) => {
         const base64 = e.target?.result as string;

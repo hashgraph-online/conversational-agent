@@ -60,8 +60,8 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, userProfile }) =
   const config = useConfigStore((state) => state.config);
   const operationalMode = config?.advanced?.operationalMode || 'autonomous';
   
-  // Get agent store methods for transaction approval
   const { approveTransaction, rejectTransaction } = useAgentStore();
+
 
   const contentParts = useMemo(() => {
     let cleanedContent = cleanMessageContent(message.content);
@@ -376,17 +376,17 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, userProfile }) =
             )}
 
           {(() => {
-            
+            // Show transaction details for autonomous mode when we have transaction bytes
+            // This includes both successful transactions (pendingApproval) and failed ones (for debugging)
             return operationalMode === 'autonomous' &&
-              message.metadata?.pendingApproval &&
               message.metadata?.transactionBytes &&
               !isUser && (
                 <TransactionApprovalButton
                   messageId={message.id}
                   transactionBytes={message.metadata.transactionBytes}
-                  description={message.metadata.description || 'Transaction requires approval'}
-                  onApprove={approveTransaction}
-                  onReject={rejectTransaction}
+                  description={message.metadata.description || (message.metadata?.pendingApproval ? 'Transaction requires approval' : 'Transaction Details')}
+                  onApprove={message.metadata?.pendingApproval ? approveTransaction : undefined}
+                  onReject={message.metadata?.pendingApproval ? rejectTransaction : undefined}
                   className='mt-3'
                 />
               );

@@ -169,7 +169,6 @@ export function setupAgentHandlers(): void {
   ): Promise<IPCResponse> => {
     try {
       logger.info('IPC handler agent:preload called');
-      // AgentService doesn't have a preload method yet
       logger.info('Preload requested but not implemented');
       return { success: true };
     } catch (error) {
@@ -563,7 +562,6 @@ export function setupMCPHandlers(): void {
     data: { serverId: string; packageName?: string }
   ): Promise<IPCResponse> => {
     try {
-      // First check if the server is installable at all
       const searchResult = await registryService.searchServers({ query: data.serverId });
       const server = searchResult.servers.find(s => s.id === data.serverId || s.name === data.serverId);
       
@@ -573,7 +571,6 @@ export function setupMCPHandlers(): void {
       
       const registryServer = await registryService.getServerDetails(data.serverId, data.packageName);
       if (!registryServer) {
-        // If we can't get details but the server exists in search results, try to use it directly
         if (server) {
           const mcpConfig = registryService.convertToMCPConfig(server);
           if (mcpConfig.config?.command) {
@@ -881,7 +878,6 @@ export function setupPluginHandlers(): void {
         return { success: false, error: 'Plugin not found' };
       }
 
-      // Remove the specified permissions from granted permissions
       if (plugin.grantedPermissions) {
         const revokedPermissions = { ...plugin.grantedPermissions };
         Object.keys(data.permissions).forEach(key => {
@@ -980,8 +976,6 @@ export function setupPluginHandlers(): void {
     }
   });
 
-  // Note: Local plugin loading and custom registry features are not yet implemented
-  // These handlers will be added when the functionality is implemented
 }
 
 /**
@@ -1114,12 +1108,10 @@ export function setupUpdateHandlers(): void {
   const updateService = UpdateService.getInstance();
   const logger = new Logger({ module: 'UpdateHandlers' });
 
-  // Get app version
   ipcMain.handle('get-app-version', async (): Promise<string> => {
     return app.getVersion();
   });
 
-  // Check for updates
   ipcMain.handle('check-for-updates', async (): Promise<void> => {
     try {
       logger.info('Checking for updates via IPC');
@@ -1130,7 +1122,6 @@ export function setupUpdateHandlers(): void {
     }
   });
 
-  // Download update
   ipcMain.handle('download-update', async (): Promise<void> => {
     try {
       logger.info('Downloading update via IPC');
@@ -1141,7 +1132,6 @@ export function setupUpdateHandlers(): void {
     }
   });
 
-  // Install update
   ipcMain.handle('install-update', async (): Promise<void> => {
     try {
       logger.info('Installing update via IPC');
@@ -1152,7 +1142,6 @@ export function setupUpdateHandlers(): void {
     }
   });
 
-  // Open repository URL
   ipcMain.handle('open-repository-url', async (): Promise<void> => {
     try {
       const repositoryUrl = updateService.getRepositoryUrl();
@@ -1164,7 +1153,6 @@ export function setupUpdateHandlers(): void {
     }
   });
 
-  // Get current update info
   ipcMain.handle('get-update-info', async (): Promise<any> => {
     try {
       return {
@@ -1178,7 +1166,6 @@ export function setupUpdateHandlers(): void {
     }
   });
 
-  // Set update channel
   ipcMain.handle('set-update-channel', async (
     event: IpcMainInvokeEvent,
     channel: 'stable' | 'beta'
@@ -1192,7 +1179,6 @@ export function setupUpdateHandlers(): void {
     }
   });
 
-  // Set auto download
   ipcMain.handle('set-auto-download', async (
     event: IpcMainInvokeEvent,
     enabled: boolean

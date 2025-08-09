@@ -307,8 +307,8 @@ describe('MCPErrorTracker', () => {
     it('should calculate error statistics correctly', () => {
       const serverId = 'server-1'
       const now = new Date()
-      const oneHourAgo = new Date(now.getTime() - 30 * 60 * 1000) // 30 min ago (recent)
-      const twoHoursAgo = new Date(now.getTime() - 2 * 60 * 60 * 1000) // 2 hours ago (not recent)
+      const oneHourAgo = new Date(now.getTime() - 30 * 60 * 1000)
+      const twoHoursAgo = new Date(now.getTime() - 2 * 60 * 60 * 1000)
       
       const recentError = factories.error('Recent error', 'network')
       recentError.serverId = serverId
@@ -354,7 +354,6 @@ describe('MCPErrorTracker', () => {
     it('should return most common errors', () => {
       const serverId = 'server-1'
       
-      // Create duplicate errors
       for (let i = 0; i < 3; i++) {
         const error = factories.error('Common error', 'network')
         error.serverId = serverId

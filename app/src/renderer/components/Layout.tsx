@@ -162,7 +162,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 placeholder="Search anything... (Press Enter)"
                 onKeyPress={(e) => {
                   if (e.key === 'Enter') {
-                    // TODO: Implement search functionality
                     console.log('Search:', e.currentTarget.value)
                   }
                 }}

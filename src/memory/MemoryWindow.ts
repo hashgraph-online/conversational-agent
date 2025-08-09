@@ -27,10 +27,9 @@ export class MemoryWindow {
   private systemPrompt: string = '';
   private systemPromptTokens: number = 0;
 
-  // Default token limits for different model contexts
-  public static readonly DEFAULT_MAX_TOKENS = 8000; // Conservative limit for most models
-  public static readonly DEFAULT_RESERVE_TOKENS = 1000; // Reserve for response generation
-  public static readonly PRUNING_BATCH_SIZE = 2; // Remove messages in pairs to maintain conversation flow
+  public static readonly DEFAULT_MAX_TOKENS = 8000;
+  public static readonly DEFAULT_RESERVE_TOKENS = 1000;
+  public static readonly PRUNING_BATCH_SIZE = 2;
 
   constructor(
     maxTokens: number = MemoryWindow.DEFAULT_MAX_TOKENS,
@@ -52,26 +51,20 @@ export class MemoryWindow {
    * @returns Result of the add operation including any pruned messages
    */
   addMessage(message: BaseMessage): AddMessageResult {
-    // Calculate tokens for the new message
-    const messageTokens = this.tokenCounter.countMessageTokens(message);
+    this.tokenCounter.countMessageTokens(message);
     
-    // Add the message first
     this.messages.push(message);
     
-    // Check if we need to prune
     const currentTokens = this.getCurrentTokenCount();
     const availableTokens = this.maxTokens - this.reserveTokens;
     
     let prunedMessages: BaseMessage[] = [];
     
     if (currentTokens > availableTokens) {
-      // Need to prune - remove the new message temporarily
       this.messages.pop();
       
-      // Prune old messages to make room
       prunedMessages = this.pruneToFit();
       
-      // Add the new message back
       this.messages.push(message);
     }
 
@@ -93,7 +86,6 @@ export class MemoryWindow {
     const targetTokens = this.maxTokens - this.reserveTokens;
     
     while (this.getCurrentTokenCount() > targetTokens && this.messages.length > 0) {
-      // Remove messages in batches to maintain conversation flow
       const batchSize = Math.min(MemoryWindow.PRUNING_BATCH_SIZE, this.messages.length);
       
       for (let i = 0; i < batchSize; i++) {
@@ -103,7 +95,6 @@ export class MemoryWindow {
         }
       }
       
-      // Safety check to prevent infinite loop
       if (prunedMessages.length > 1000) {
         console.warn('MemoryWindow: Excessive pruning detected, stopping to prevent infinite loop');
         break;
@@ -140,8 +131,6 @@ export class MemoryWindow {
     const currentTokens = this.getCurrentTokenCount();
     const wouldExceedReserve = (currentTokens + messageTokens) > (this.maxTokens - this.reserveTokens);
     
-    // Always allow adding if we can prune to make room
-    // Only return false if the message itself is larger than our total capacity
     if (messageTokens > this.maxTokens) {
       return false;
     }
@@ -210,7 +199,6 @@ export class MemoryWindow {
       this.reserveTokens = reserveTokens;
     }
 
-    // Prune if necessary after updating limits
     if (this.getCurrentTokenCount() > (this.maxTokens - this.reserveTokens)) {
       this.pruneToFit();
     }

@@ -4,7 +4,6 @@ import path from 'path'
 import started from 'electron-squirrel-startup'
 import electronLog from 'electron-log'
 
-// Configure electron-log for the main process immediately
 electronLog.transports.file.level = 'info'
 electronLog.transports.console.level = 'info'
 
@@ -19,8 +18,6 @@ function createWindow() {
   logger.info('Creating main window...')
   logger.info('Preload path:', path.join(__dirname, 'preload.js'))
   
-  // Load icon properly for macOS
-  // In development, __dirname is .vite/build, so we need to go up 2 levels to app/ then into assets/
   const iconPath = app.isPackaged 
     ? path.join(__dirname, '../../assets/hol-app-icon-bubble.png')
     : path.join(__dirname, '../../assets/hol-app-icon-bubble.png');
@@ -112,9 +109,7 @@ app.on('ready', async () => {
   logger = new Logger({ module: 'MainProcess' })
   logger.info('App ready, initializing...')
   
-  // Set the dock icon for macOS
   if (process.platform === 'darwin') {
-    // In development, __dirname is .vite/build, so we need to go up 2 levels to app/ then into assets/
     const iconPath = app.isPackaged 
       ? path.join(__dirname, '../../assets/hol-app-icon-bubble.png')
       : path.join(__dirname, '../../assets/hol-app-icon-bubble.png');
@@ -140,7 +135,6 @@ app.on('ready', async () => {
   
   createWindow()
   
-  // Initialize UpdateService after window is created
   if (mainWindow) {
     const { UpdateService } = await import('./services/UpdateService')
     const updateService = UpdateService.getInstance()

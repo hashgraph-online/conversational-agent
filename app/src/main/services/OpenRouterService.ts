@@ -36,7 +36,7 @@ export class OpenRouterService {
   private logger: Logger;
   private modelsCache: OpenRouterModel[] | null = null;
   private cacheTimestamp: number = 0;
-  private readonly CACHE_DURATION = 60 * 60 * 1000; // 1 hour
+  private readonly CACHE_DURATION = 60 * 60 * 1000;
 
   private constructor() {
     this.logger = new Logger({ module: 'OpenRouterService' });

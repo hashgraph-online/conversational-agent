@@ -1,6 +1,5 @@
 import type { ILogger, LogLevel, LoggerOptions } from '@hashgraphonline/standards-sdk';
 
-// Use console fallback if electron-log is not available
 let electronLog: any;
 try {
   electronLog = require('electron-log/renderer');
@@ -22,12 +21,10 @@ export class ElectronRendererLoggerAdapter implements ILogger {
     
     this.logger = electronLog;
     
-    // Configure log level if electronLog has transports
     if (this.logger.transports && this.logger.transports.console) {
       this.logger.transports.console.level = this.level;
     }
     
-    // Disable in test environment
     if (process.env.NODE_ENV === 'test' || options.silent) {
       this.setSilent(true);
     }
@@ -73,7 +70,6 @@ export class ElectronRendererLoggerAdapter implements ILogger {
   }
 
   trace(...args: any[]): void {
-    // electron-log doesn't have trace, use debug instead
     this.logger.debug('[TRACE]', this.formatMessage(args));
   }
 

@@ -11,12 +11,12 @@ import {
 describe('Content Reference Types', () => {
   describe('DEFAULT_CONTENT_REFERENCE_CONFIG', () => {
     test('should have sensible default values', () => {
-      expect(DEFAULT_CONTENT_REFERENCE_CONFIG.sizeThresholdBytes).toBe(10 * 1024); // 10KB
-      expect(DEFAULT_CONTENT_REFERENCE_CONFIG.maxAgeMs).toBe(60 * 60 * 1000); // 1 hour
+      expect(DEFAULT_CONTENT_REFERENCE_CONFIG.sizeThresholdBytes).toBe(10 * 1024);
+      expect(DEFAULT_CONTENT_REFERENCE_CONFIG.maxAgeMs).toBe(60 * 60 * 1000);
       expect(DEFAULT_CONTENT_REFERENCE_CONFIG.maxReferences).toBe(100);
-      expect(DEFAULT_CONTENT_REFERENCE_CONFIG.maxTotalStorageBytes).toBe(100 * 1024 * 1024); // 100MB
+      expect(DEFAULT_CONTENT_REFERENCE_CONFIG.maxTotalStorageBytes).toBe(100 * 1024 * 1024);
       expect(DEFAULT_CONTENT_REFERENCE_CONFIG.enableAutoCleanup).toBe(true);
-      expect(DEFAULT_CONTENT_REFERENCE_CONFIG.cleanupIntervalMs).toBe(5 * 60 * 1000); // 5 minutes
+      expect(DEFAULT_CONTENT_REFERENCE_CONFIG.cleanupIntervalMs).toBe(5 * 60 * 1000);
       expect(DEFAULT_CONTENT_REFERENCE_CONFIG.enablePersistence).toBe(false);
       expect(DEFAULT_CONTENT_REFERENCE_CONFIG.storageBackend).toBe('memory');
     });
@@ -24,17 +24,17 @@ describe('Content Reference Types', () => {
     test('should have proper cleanup policies', () => {
       const policies = DEFAULT_CONTENT_REFERENCE_CONFIG.cleanupPolicies;
       
-      expect(policies.recent.maxAgeMs).toBe(30 * 60 * 1000); // 30 minutes
-      expect(policies.recent.priority).toBe(1); // Highest priority
+      expect(policies.recent.maxAgeMs).toBe(30 * 60 * 1000);
+      expect(policies.recent.priority).toBe(1);
       
-      expect(policies.userContent.maxAgeMs).toBe(2 * 60 * 60 * 1000); // 2 hours
+      expect(policies.userContent.maxAgeMs).toBe(2 * 60 * 60 * 1000);
       expect(policies.userContent.priority).toBe(2);
       
-      expect(policies.agentGenerated.maxAgeMs).toBe(60 * 60 * 1000); // 1 hour
+      expect(policies.agentGenerated.maxAgeMs).toBe(60 * 60 * 1000);
       expect(policies.agentGenerated.priority).toBe(3);
       
-      expect(policies.default.maxAgeMs).toBe(60 * 60 * 1000); // 1 hour
-      expect(policies.default.priority).toBe(4); // Lowest priority
+      expect(policies.default.maxAgeMs).toBe(60 * 60 * 1000);
+      expect(policies.default.priority).toBe(4);
     });
   });
 
@@ -110,7 +110,6 @@ describe('Content Reference Types', () => {
 
   describe('ContentReference format constraint', () => {
     test('should enforce ref://{id} format', () => {
-      // This tests the type constraint at compile time
       const mockReference = {
         referenceId: 'test-id',
         state: 'active' as ReferenceLifecycleState,
@@ -141,7 +140,6 @@ describe('Content Reference Types', () => {
 
       expect(mergedConfig.sizeThresholdBytes).toBe(5000);
       expect(mergedConfig.maxReferences).toBe(50);
-      // Should keep other defaults
       expect(mergedConfig.enableAutoCleanup).toBe(true);
       expect(mergedConfig.storageBackend).toBe('memory');
     });
@@ -179,11 +177,11 @@ describe('Content Reference Types', () => {
     test('should include all expected statistics fields', () => {
       const stats = {
         activeReferences: 25,
-        totalStorageBytes: 1024 * 500, // 500KB
+        totalStorageBytes: 1024 * 500,
         recentlyCleanedUp: 3,
         totalResolutions: 150,
         failedResolutions: 2,
-        averageContentSize: 20480, // ~20KB
+        averageContentSize: 20480,
         mostAccessedReferenceId: 'most-accessed-ref-id',
         storageUtilization: 50.5,
         performanceMetrics: {

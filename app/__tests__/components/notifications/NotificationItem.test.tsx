@@ -100,11 +100,9 @@ describe('NotificationItem', () => {
 
         const { container } = render(<NotificationItem notification={notification} />)
 
-        // Check for icon with correct color
         const icon = container.querySelector(`.${expectedColor}`)
         expect(icon).toBeInTheDocument()
 
-        // Check for correct border color
         const notificationContainer = container.querySelector(`.${expectedBorder}`)
         expect(notificationContainer).toBeInTheDocument()
       })
@@ -118,7 +116,6 @@ describe('NotificationItem', () => {
 
       const { container } = render(<NotificationItem notification={notification} />)
 
-      // Should default to info (blue) styling
       const icon = container.querySelector('.text-blue-500')
       expect(icon).toBeInTheDocument()
 
@@ -192,7 +189,6 @@ describe('NotificationItem', () => {
 
       const dismissButton = screen.getByRole('button', { name: /dismiss notification/i })
       
-      // Button should be focusable
       dismissButton.focus()
       expect(document.activeElement).toBe(dismissButton)
     })
@@ -229,15 +225,12 @@ describe('NotificationItem', () => {
 
       const { container } = render(<NotificationItem notification={notification} />)
 
-      // Check for flex container
       const flexContainer = container.querySelector('.flex.items-start')
       expect(flexContainer).toBeInTheDocument()
 
-      // Check for flex-shrink-0 on icon container
       const iconContainer = container.querySelector('.flex-shrink-0')
       expect(iconContainer).toBeInTheDocument()
 
-      // Check for flex-1 on content container
       const contentContainer = container.querySelector('.flex-1')
       expect(contentContainer).toBeInTheDocument()
     })
@@ -253,10 +246,9 @@ describe('NotificationItem', () => {
 
       const { container } = render(<NotificationItem notification={notification} />)
 
-      // Check for proper margin classes
-      expect(container.querySelector('.ml-3')).toBeInTheDocument() // Content margin
-      expect(container.querySelector('.mt-1')).toBeInTheDocument() // Message margin
-      expect(container.querySelector('.ml-4')).toBeInTheDocument() // Dismiss button margin
+      expect(container.querySelector('.ml-3')).toBeInTheDocument()
+      expect(container.querySelector('.mt-1')).toBeInTheDocument()
+      expect(container.querySelector('.ml-4')).toBeInTheDocument()
     })
 
     it('should handle long titles gracefully', () => {

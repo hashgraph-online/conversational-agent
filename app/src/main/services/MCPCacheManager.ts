@@ -38,8 +38,8 @@ export class MCPCacheManager {
   private logger: Logger
   private db = getDatabase()
 
-  private readonly SEARCH_CACHE_TTL = 30 * 60 * 1000; // 30 minutes
-  private readonly SERVER_CACHE_TTL = 4 * 60 * 60 * 1000; // 4 hours
+  private readonly SEARCH_CACHE_TTL = 30 * 60 * 1000;
+  private readonly SERVER_CACHE_TTL = 4 * 60 * 60 * 1000;
   private readonly MAX_CACHE_ENTRIES = 1000;
 
   private constructor() {

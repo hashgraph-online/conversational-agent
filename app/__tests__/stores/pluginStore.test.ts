@@ -63,7 +63,6 @@ describe('pluginStore', () => {
         try {
           await result.current.searchPlugins('test')
         } catch (error) {
-          // Expected to throw
         }
       })
 
@@ -126,7 +125,6 @@ describe('pluginStore', () => {
         try {
           await result.current.installPlugin('test-plugin')
         } catch (error) {
-          // Expected to throw
         }
       })
 
@@ -213,7 +211,6 @@ describe('pluginStore', () => {
         try {
           await result.current.uninstallPlugin('test-plugin')
         } catch (error) {
-          // Expected to throw
         }
       })
 
@@ -259,7 +256,6 @@ describe('pluginStore', () => {
         try {
           await result.current.enablePlugin('test-plugin')
         } catch (error) {
-          // Expected to throw
         }
       })
 

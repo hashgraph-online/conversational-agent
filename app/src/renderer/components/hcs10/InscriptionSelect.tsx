@@ -36,7 +36,7 @@ export function InscriptionSelect({
   const [uploadError, setUploadError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+  const MAX_FILE_SIZE = 5 * 1024 * 1024;
   const ACCEPTED_FORMATS = {
     'image/png': ['.png'],
     'image/jpeg': ['.jpg', '.jpeg'],
@@ -49,7 +49,6 @@ export function InscriptionSelect({
    */
   const handleManualTopicIdSubmit = useCallback(() => {
     if (manualTopicId.trim()) {
-      // Format as HCS URL if it's just a topic ID
       const formattedUrl = manualTopicId.startsWith('hcs://1/') 
         ? manualTopicId 
         : `hcs://1/${manualTopicId}`;
@@ -67,13 +66,11 @@ export function InscriptionSelect({
 
     setUploadError(null);
 
-    // Validate file size
     if (file.size > MAX_FILE_SIZE) {
       setUploadError('Image size must be less than 5MB');
       return;
     }
 
-    // Validate file type
     if (!Object.keys(ACCEPTED_FORMATS).includes(file.type)) {
       setUploadError('Please select a valid image file (PNG, JPG, GIF, or WebP)');
       return;
@@ -82,7 +79,6 @@ export function InscriptionSelect({
     setSelectedFile(file);
     setIsUploading(true);
     
-    // Read the file as base64 data URL
     const reader = new FileReader();
     reader.onload = (e) => {
       const dataUrl = e.target?.result as string;
@@ -91,8 +87,6 @@ export function InscriptionSelect({
         setIsUploading(false);
         return;
       }
-      // Pass the data URL to the parent component
-      // The standards-sdk will handle HCS-11 inscription when registering
       onChange(dataUrl);
       setIsUploading(false);
       setUploadError(null);
@@ -120,7 +114,6 @@ export function InscriptionSelect({
     setUploadError(null);
   }, [onChange]);
 
-  // Check if we have an existing profile picture
   const isExistingPfp = formData && formData.startsWith('hcs://1/');
   const isDataUrl = formData && formData.startsWith('data:');
   const pfpTopicId = isExistingPfp ? formData.replace('hcs://1/', '') : '';
@@ -197,7 +190,6 @@ export function InscriptionSelect({
           <div className="relative group max-w-64">
             <div className="relative w-32 h-32 rounded-lg overflow-hidden border-2 border-border bg-muted">
               {isDataUrl ? (
-                // Show the uploaded image directly with better handling
                 <>
                   <img
                     src={formData}
@@ -221,13 +213,11 @@ export function InscriptionSelect({
                   </div>
                 </>
               ) : pfpTopicId ? (
-                // Show HCS inscribed image
                 <img
                   src={`https://kiloscribe.com/api/inscription-cdn/${pfpTopicId}?network=${network}`}
                   alt="Profile"
                   className="w-full h-full object-cover"
                   onError={(e) => {
-                    // Fallback to placeholder if image fails to load
                     const target = e.target as HTMLImageElement;
                     target.style.display = 'none';
                     target.parentElement?.classList.add('bg-muted', 'flex', 'items-center', 'justify-center');

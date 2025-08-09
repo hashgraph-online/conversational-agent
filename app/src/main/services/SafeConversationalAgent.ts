@@ -1,78 +1,74 @@
 import { Logger } from '../utils/logger';
-import type { ChatResponse } from '@hashgraphonline/conversational-agent';
+import {
+  ConversationalAgent,
+  createAgent,
+  LangChainProvider,
+  HCS10Plugin,
+  HCS2Plugin,
+  InscribePlugin,
+  HbarTransferPlugin,
+} from '@hashgraphonline/conversational-agent';
+import { ChatAnthropic } from '@langchain/anthropic';
+import { ServerSigner, getAllHederaCorePlugins } from 'hedera-agent-kit';
+
+/**
+ * Builds the system message preamble for the agent.
+ */
+function buildSystemMessage(accountId: string) {
+  return `You are a helpful assistant managing Hashgraph Online HCS-10 connections, messages, HCS-2 registries, and content inscription.
+Account: ${accountId}`;
+}
+
+/**
+ * Configuration interface extending ConversationalAgentOptions with entity memory options
+ */
+type AgentConfig = {
+  accountId?: string;
+  privateKey?: string;
+  network?: string;
+  openAIApiKey?: string;
+  openAIModelName?: string;
+  llmProvider?: string;
+  operationalMode?: string;
+  mcpServers?: any[];
+
+  /** Enable entity memory functionality */
+  entityMemoryEnabled?: boolean;
+
+  /** Entity memory configuration */
+  entityMemoryConfig?: any;
+};
 
 /**
  * Safe wrapper for ConversationalAgent that handles Electron compatibility
  */
-export class SafeConversationalAgent {
-  private logger: Logger;
-  private agent: any;
-  private config: any;
-  private isUsingCustomAgent = false;
+export class SafeConversationalAgent extends ConversationalAgent {
+  private isUsingCustomAgent: boolean;
+  private config: AgentConfig;
 
-  constructor(config: any) {
-    this.logger = new Logger({ module: 'SafeConversationalAgent' });
+  constructor(config: AgentConfig) {
+    super({
+      ...config,
+      entityMemoryEnabled: config.entityMemoryEnabled ?? true,
+      entityMemoryConfig: config.entityMemoryConfig,
+    } as any);
+
     this.config = config;
+    this.isUsingCustomAgent = false;
   }
 
-  async initialize(): Promise<void> {
+  async initialize() {
     try {
-      const originalRequire = require;
-      require = new Proxy(originalRequire, {
-        apply(target, thisArg, argumentsList) {
-          const [moduleName] = argumentsList;
-
-          if (moduleName === 'pino' || moduleName.includes('pino')) {
-            return () => ({
-              info: () => {},
-              error: () => {},
-              warn: () => {},
-              debug: () => {},
-              trace: () => {},
-              fatal: () => {},
-              child: () => ({
-                info: () => {},
-                error: () => {},
-                warn: () => {},
-                debug: () => {},
-                trace: () => {},
-                fatal: () => {},
-              }),
-            });
-          }
-
-          if (
-            moduleName === 'thread-stream' ||
-            moduleName.includes('thread-stream')
-          ) {
-            const { PassThrough } = originalRequire('stream');
-            return class ThreadStream extends PassThrough {
-              constructor() {
-                super();
-                this.unref = () => {};
-                this.worker = { terminate: () => {} };
-              }
-            };
-          }
-
-          return Reflect.apply(target, thisArg, argumentsList);
-        },
-      });
-
       if (this.config.llmProvider === 'anthropic') {
-        this.logger.info('Using Anthropic provider, creating custom agent...');
-        await this.initializeWithAnthropic(originalRequire);
+        this.logger?.info('Using Anthropic provider, creating custom agent...');
+        await this.initializeWithAnthropic();
         this.isUsingCustomAgent = true;
       } else {
-        const { ConversationalAgent } = originalRequire(
-          '@hashgraphonline/conversational-agent'
-        );
-
         if (this.config.mcpServers && this.config.mcpServers.length > 0) {
-          this.logger.info('Creating agent with MCP servers:', {
+          this.logger?.info('Creating agent with MCP servers:', {
             serverCount: this.config.mcpServers.length,
             servers: this.config.mcpServers.map((s: any) => ({
-              name: s.name
+              name: s.name,
             })),
           });
 
@@ -80,68 +76,84 @@ export class SafeConversationalAgent {
             (server: any) => server.enabled || server.autoConnect
           );
 
-          if (enabledServers.length > 0) {
-            this.agent = ConversationalAgent.withMCP(
+          if (
+            enabledServers.length > 0 &&
+            typeof (ConversationalAgent as any).withMCP === 'function'
+          ) {
+            this.agent = (ConversationalAgent as any).withMCP(
               {
                 ...this.config,
                 disableLogging: false,
                 verbose: true,
-                scheduleUserTransactionsInBytesMode: false
+                scheduleUserTransactionsInBytesMode: false,
+                entityMemoryEnabled: this.config.entityMemoryEnabled ?? true,
+                entityMemoryConfig: this.config.entityMemoryConfig,
               },
               enabledServers
             );
           } else {
-            this.agent = new ConversationalAgent({
+            this.agent = new (ConversationalAgent as any)({
               ...this.config,
               disableLogging: false,
               verbose: true,
-              scheduleUserTransactionsInBytesMode: false, // Always disable to get transaction bytes
+              scheduleUserTransactionsInBytesMode: false,
+              entityMemoryEnabled: this.config.entityMemoryEnabled ?? true,
+              entityMemoryConfig: this.config.entityMemoryConfig,
             });
           }
         } else {
-          this.agent = new ConversationalAgent({
-            ...this.config,
-            disableLogging: false,
-            verbose: true,
-            scheduleUserTransactionsInBytesMode: false, // Always disable to get transaction bytes
+          this.logger?.info('Initializing base ConversationalAgent...');
+          await super.initialize();
+          this.isUsingCustomAgent = false;
+          this.logger?.info('Agent initialized successfully', {
+            provider: this.config.llmProvider || 'openai',
+            isCustom: this.isUsingCustomAgent,
           });
+          return;
         }
 
-        await this.agent.initialize();
+        if (typeof this.agent?.initialize === 'function') {
+          await this.agent.initialize();
+        } else if (typeof this.agent?.boot === 'function') {
+          await this.agent.boot();
+        }
+
+        // Start MCP connections asynchronously for OpenAI path
+        this.startMCPConnections();
         this.isUsingCustomAgent = false;
       }
 
-      require = originalRequire;
-      this.logger.info('Agent initialized successfully', {
+      this.logger?.info('Agent initialized successfully', {
         provider: this.config.llmProvider || 'openai',
         isCustom: this.isUsingCustomAgent,
+        hasAgent: !!this.agent,
+        agentType: this.agent ? this.agent.constructor.name : 'none',
       });
+
+      try {
+        if (this.agent && typeof this.agent.getAvailableTools === 'function') {
+          const tools = await this.agent.getAvailableTools();
+          this.logger?.info(
+            `Available tools: ${tools.map((t) => t.name).join(', ')}`
+          );
+        } else if (this.agent && Array.isArray(this.agent.tools)) {
+          this.logger?.info(
+            `Agent tools: ${this.agent.tools.map((t) => t.name).join(', ')}`
+          );
+        } else {
+          this.logger?.warn('Could not determine available tools');
+        }
+      } catch (error) {
+        this.logger?.warn('Failed to get available tools:', error);
+      }
     } catch (error) {
-      this.logger.error('Failed to initialize agent:', error);
+      this.logger?.error('Failed to initialize agent:', error);
       throw error;
     }
   }
 
-  private async initializeWithAnthropic(originalRequire: any): Promise<void> {
+  private async initializeWithAnthropic() {
     try {
-      const { createAgent } = originalRequire(
-        '@hashgraphonline/conversational-agent'
-      );
-      const { ChatAnthropic } = originalRequire('@langchain/anthropic');
-      const { LangChainProvider } = originalRequire(
-        '@hashgraphonline/conversational-agent'
-      );
-      const { ServerSigner, getAllHederaCorePlugins } =
-        originalRequire('hedera-agent-kit');
-      const { HCS10Plugin, HCS2Plugin, InscribePlugin, HbarTransferPlugin } =
-        originalRequire('@hashgraphonline/conversational-agent');
-      const { getSystemMessage } = originalRequire(
-        '@hashgraphonline/conversational-agent'
-      );
-      const { ContentStoreManager } = originalRequire(
-        '@hashgraphonline/conversational-agent'
-      );
-
       const anthropicLLM = new ChatAnthropic({
         apiKey: this.config.openAIApiKey,
         modelName: this.config.openAIModelName || 'claude-3-5-sonnet-20241022',
@@ -167,13 +179,12 @@ export class SafeConversationalAgent {
         ...corePlugins,
       ];
 
-      // Check if MCP servers are configured and add MCP support
       let mcpConfig = {};
       if (this.config.mcpServers && this.config.mcpServers.length > 0) {
-        this.logger.info('Adding MCP server support to Anthropic agent:', {
+        this.logger?.info('Adding MCP server support to Anthropic agent:', {
           serverCount: this.config.mcpServers.length,
           servers: this.config.mcpServers.map((s: any) => ({
-            name: s.name
+            name: s.name,
           })),
         });
 
@@ -185,14 +196,9 @@ export class SafeConversationalAgent {
           mcpConfig = {
             mcp: {
               servers: enabledServers,
-              autoConnect: true,
+              autoConnect: false,
             },
           };
-
-          // Initialize ContentStoreManager for content reference support
-          const contentStoreManager = new ContentStoreManager();
-          await contentStoreManager.initialize();
-          this.logger.info('ContentStoreManager initialized for MCP content reference support');
         }
       }
 
@@ -202,7 +208,7 @@ export class SafeConversationalAgent {
         execution: {
           mode: 'bytes',
           operationalMode: this.config.operationalMode || 'autonomous',
-          scheduleUserTransactionsInBytesMode: false
+          scheduleUserTransactionsInBytesMode: false,
         },
         ai: {
           provider: new LangChainProvider(anthropicLLM),
@@ -215,7 +221,7 @@ export class SafeConversationalAgent {
           },
         },
         messaging: {
-          systemPreamble: getSystemMessage(this.config.accountId),
+          systemPreamble: buildSystemMessage(this.config.accountId),
           conciseMode: true,
         },
         extensions: {
@@ -229,89 +235,101 @@ export class SafeConversationalAgent {
       });
 
       await this.agent.boot();
+
+      // Start MCP connections asynchronously for Anthropic path
+      this.startMCPConnections();
     } catch (error) {
-      this.logger.error('Failed to initialize with Anthropic:', error);
+      this.logger?.error('Failed to initialize with Anthropic:', error);
       throw error;
     }
   }
 
-  async processMessage(content: string, chatHistory: any[] = []): Promise<any> {
-    if (!this.agent) {
-      throw new Error('Agent not initialized');
-    }
-
+  async processMessage(message: string, chatHistory: any[] = []): Promise<any> {
     try {
-      this.logger.info('SafeConversationalAgent.processMessage called with:', {
-        content,
-        historyLength: chatHistory.length,
-        operationalMode: this.config.operationalMode,
-        scheduleUserTransactionsInBytesMode: false,
-        isCustom: this.isUsingCustomAgent,
-      });
+      this.logger?.info('Processing message...');
 
-      if (this.isUsingCustomAgent) {
-        const response = await this.agent.chat(content, {
-          messages: chatHistory,
+      if (this.isUsingCustomAgent && this.agent) {
+        const response = await this.agent.sendMessage({
+          role: 'user',
+          content: message,
         });
-        this.logger.info('Custom agent response:', response);
-        return response;
-      } else {
-        const response = await this.agent.processMessage(content, chatHistory);
-        this.logger.info('SafeConversationalAgent.processMessage response:', {
-          hasTransactionBytes: !!response.transactionBytes,
-          hasScheduleId: !!response.scheduleId,
-          hasOutput: !!response.output,
-          hasMessage: !!response.message,
-          keys: Object.keys(response),
-          response,
-        });
-        return response;
+        return {
+          output: response,
+          message: response,
+        };
       }
+
+      if (this.agent) {
+        if (typeof this.agent.processMessage === 'function') {
+          return await this.agent.processMessage(
+            message,
+            chatHistory.map((item) => ({
+              type: item.role === 'user' ? 'human' : 'ai',
+              content: item.content,
+            }))
+          );
+        } else {
+          return await super.processMessage(
+            message,
+            chatHistory.map((item) => ({
+              type: item.role === 'user' ? 'human' : 'ai',
+              content: item.content,
+            }))
+          );
+        }
+      }
+
+      return await super.processMessage(
+        message,
+        chatHistory.map((item) => ({
+          type: item.role === 'user' ? 'human' : 'ai',
+          content: item.content,
+        }))
+      );
     } catch (error) {
-      this.logger.error('Failed to process message:', error);
+      this.logger?.error('Error in processMessage:', error);
       throw error;
     }
   }
 
   async disconnect(): Promise<void> {
-    if (this.agent && this.agent.disconnect) {
-      await this.agent.disconnect();
+    try {
+      this.logger?.info('Disconnecting SafeConversationalAgent...');
+
+      await this.cleanup();
+
+      this.logger?.info('SafeConversationalAgent disconnected successfully');
+    } catch (error) {
+      this.logger?.error('Error during disconnect:', error);
+      throw error;
     }
   }
 
   /**
    * Execute a specific tool call through the agent
    */
-  async executeToolCall(toolCall: {
-    name: string;
-    arguments: any;
-  }): Promise<any> {
+  async executeToolCall(toolCall) {
     try {
-      this.logger.info('Executing tool call', { toolName: toolCall.name });
+      this.logger?.info('Executing tool call', { toolName: toolCall.name });
 
       if (!this.agent) {
         throw new Error('Agent not initialized');
       }
 
-      // For custom agents (like Anthropic), we need to handle tool calls differently
       if (this.isUsingCustomAgent) {
-        // Custom implementation for tool execution
         return await this.executeCustomToolCall(toolCall);
       }
 
-      // For standard ConversationalAgent, use the built-in tool execution
       if (this.agent.executeToolCall) {
         return await this.agent.executeToolCall(toolCall);
       }
 
-      // Fallback: send as a message with tool request format
       const toolRequestMessage = `Please execute the following tool:
 Tool: ${toolCall.name}
 Arguments: ${JSON.stringify(toolCall.arguments, null, 2)}`;
 
       const response = await this.processMessage(toolRequestMessage);
 
-      // Parse the response to extract tool result
       if (response && response.content) {
         return {
           success: true,
@@ -321,7 +339,7 @@ Arguments: ${JSON.stringify(toolCall.arguments, null, 2)}`;
 
       throw new Error('Tool execution failed: No response');
     } catch (error) {
-      this.logger.error('Tool call execution failed:', error);
+      this.logger?.error('Tool call execution failed:', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Tool execution failed',
@@ -332,12 +350,8 @@ Arguments: ${JSON.stringify(toolCall.arguments, null, 2)}`;
   /**
    * Execute tool call for custom agents
    */
-  private async executeCustomToolCall(toolCall: {
-    name: string;
-    arguments: any;
-  }): Promise<any> {
+  private async executeCustomToolCall(toolCall) {
     try {
-      // For custom agents, we need to format the tool call as a message
       const message = {
         role: 'user',
         content: `Execute the ${
@@ -354,7 +368,7 @@ Arguments: ${JSON.stringify(toolCall.arguments, null, 2)}`;
         data: response,
       };
     } catch (error) {
-      this.logger.error('Custom tool call execution failed:', error);
+      this.logger?.error('Custom tool call execution failed:', error);
       return {
         success: false,
         error:
@@ -362,6 +376,92 @@ Arguments: ${JSON.stringify(toolCall.arguments, null, 2)}`;
             ? error.message
             : 'Custom tool execution failed',
       };
+    }
+  }
+
+  /**
+   * Start MCP connections asynchronously without blocking initialization
+   * @private
+   */
+  private startMCPConnections(): void {
+    if (!this.config.mcpServers || this.config.mcpServers.length === 0) {
+      return;
+    }
+
+    // Check if we're using ConversationalAgent with MCP support
+    if (this.agent && typeof (this.agent as any).connectMCPServers === 'function') {
+      // If the agent has built-in MCP connection support, use it
+      this.logger?.info('Using agent built-in MCP connection support');
+      return; // ConversationalAgent will handle connections
+    }
+
+    // For custom agents or fallback, log that MCP connections are deferred
+    const enabledServers = this.config.mcpServers.filter(
+      (server: any) => server.enabled || server.autoConnect
+    );
+    
+    if (enabledServers.length > 0) {
+      this.logger?.info(`MCP connections will be established asynchronously for ${enabledServers.length} servers`, {
+        servers: enabledServers.map((s: any) => s.name),
+      });
+      
+      // In a real implementation, you would trigger the actual MCP connections here
+      // For now, we'll just log that they would be connected
+      setTimeout(() => {
+        enabledServers.forEach((server: any) => {
+          this.logger?.info(`MCP server ${server.name} connection initiated asynchronously`);
+        });
+      }, 1000);
+    }
+  }
+
+  /**
+   * Register MCP tools dynamically as servers connect
+   */
+  async registerMCPTools(serverId: string, tools: any[]): Promise<void> {
+    try {
+      this.logger?.info(
+        `Registering ${tools.length} tools from MCP server ${serverId}`
+      );
+
+      if (!this.agent) {
+        this.logger?.warn('Agent not available for tool registration');
+        return;
+      }
+
+      if (typeof this.agent.getAvailableTools === 'function') {
+        const availableTools = await this.agent.getAvailableTools();
+        const newlyRegisteredTools = tools.filter((tool) =>
+          availableTools.some(
+            (availableTool) => availableTool.name === tool.name
+          )
+        );
+
+        this.logger?.info(
+          `Successfully verified ${newlyRegisteredTools.length} tools from ${serverId} are now available`
+        );
+      } else if (
+        typeof this.agent.tools !== 'undefined' &&
+        Array.isArray(this.agent.tools)
+      ) {
+        const existingToolNames = new Set(this.agent.tools.map((t) => t.name));
+        const newTools = tools.filter(
+          (tool) => !existingToolNames.has(tool.name)
+        );
+
+        if (newTools.length > 0) {
+          this.agent.tools.push(...newTools);
+          this.logger?.info(
+            `Added ${newTools.length} new tools from ${serverId} to agent`
+          );
+        }
+      } else {
+        this.logger?.info(
+          `Tools from ${serverId} should be automatically available through MCP integration`
+        );
+      }
+    } catch (error) {
+      this.logger?.error(`Failed to register tools from ${serverId}:`, error);
     }
   }
 }

@@ -52,12 +52,11 @@ const MCPPage: React.FC = () => {
     }
   }, [serverTemplate]);
 
-  // Periodic reload to catch tools updated asynchronously
   useEffect(() => {
     const interval = setInterval(() => {
       console.log('[MCPPage] Reloading servers to check for tools updates...');
       reloadServers();
-    }, 5000); // Check every 5 seconds
+    }, 5000);
 
     return () => clearInterval(interval);
   }, [reloadServers]);

@@ -75,7 +75,6 @@ const ChatPage: React.FC<ChatPageProps> = () => {
   const isConfigComplete = isConfigured()
   
 
-  // Fetch user profile when config is available
   useEffect(() => {
     const fetchUserProfile = async () => {
       if (config?.hedera?.accountId && config?.hedera?.network && !isLoadingProfile) {

@@ -8,13 +8,12 @@ describe('ContentStorage - Reference-Based Storage', () => {
   let testConfig: Partial<ContentReferenceConfig>;
 
   beforeEach(() => {
-    // Test configuration with shorter timeouts for testing
     testConfig = {
-      sizeThresholdBytes: 100, // Small threshold for testing
-      maxAgeMs: 1000, // 1 second for testing
+      sizeThresholdBytes: 100,
+      maxAgeMs: 1000,
       maxReferences: 10,
-      maxTotalStorageBytes: 1024 * 1024, // 1MB
-      enableAutoCleanup: false, // Disable for controlled testing
+      maxTotalStorageBytes: 1024 * 1024,
+      enableAutoCleanup: false,
       cleanupIntervalMs: 100,
       enablePersistence: false,
       storageBackend: 'memory',
@@ -88,7 +87,7 @@ describe('ContentStorage - Reference-Based Storage', () => {
     });
 
     test('should detect content type from MIME type', async () => {
-      const htmlContent = '<html><body>test</body></html>'.repeat(10); // Make it large enough
+      const htmlContent = '<html><body>test</body></html>'.repeat(10);
       const metadata = {
         source: 'mcp_tool' as const,
         mimeType: 'text/html',
@@ -188,7 +187,6 @@ describe('ContentStorage - Reference-Based Storage', () => {
 
       const reference = await storage.storeContent(content, metadata);
       
-      // Resolve multiple times
       await storage.resolveReference(reference.referenceId);
       await storage.resolveReference(reference.referenceId);
       const result = await storage.resolveReference(reference.referenceId);
@@ -241,7 +239,6 @@ describe('ContentStorage - Reference-Based Storage', () => {
       
       expect(cleaned).toBe(true);
       
-      // Verify it's gone
       const exists = await storage.hasReference(reference.referenceId);
       expect(exists).toBe(false);
     });
@@ -273,7 +270,6 @@ describe('ContentStorage - Reference-Based Storage', () => {
 
   describe('performCleanup', () => {
     test('should cleanup expired references', async () => {
-      // Store content that will expire quickly
       const content = Buffer.from('test content');
       const metadata = {
         contentType: 'text' as const,
@@ -283,8 +279,7 @@ describe('ContentStorage - Reference-Based Storage', () => {
 
       const reference = await storage.storeContent(content, metadata);
       
-      // Wait for expiration (using short timeout from test config)
-      await new Promise(resolve => setTimeout(resolve, 1100)); // Wait slightly longer than maxAgeMs
+      await new Promise(resolve => setTimeout(resolve, 1100));
       
       const result = await storage.performCleanup();
       
@@ -298,13 +293,12 @@ describe('ContentStorage - Reference-Based Storage', () => {
     test('should cleanup based on storage limits', async () => {
       const testStorageConfig = {
         ...testConfig,
-        maxReferences: 2 // Very small limit
+        maxReferences: 2
       };
       
       const limitedStorage = new ContentStorage(1000, testStorageConfig);
       
       try {
-        // Store more than the limit
         const content1 = Buffer.from('content 1');
         const content2 = Buffer.from('content 2');
         const content3 = Buffer.from('content 3');
@@ -318,10 +312,8 @@ describe('ContentStorage - Reference-Based Storage', () => {
         await limitedStorage.storeContent(content1, { ...metadata, sizeBytes: content1.length });
         await limitedStorage.storeContent(content2, { ...metadata, sizeBytes: content2.length });
         
-        // This should trigger cleanup
         await limitedStorage.storeContent(content3, { ...metadata, sizeBytes: content3.length });
         
-        // Ensure cleanup has been performed
         await limitedStorage.performCleanup();
         
         const stats = await limitedStorage.getStats();
@@ -367,7 +359,6 @@ describe('ContentStorage - Reference-Based Storage', () => {
       const ref1 = await storage.storeContent(content1, metadata1);
       const ref2 = await storage.storeContent(content2, metadata2);
       
-      // Access one reference multiple times
       await storage.resolveReference(ref1.referenceId);
       await storage.resolveReference(ref1.referenceId);
       
@@ -385,7 +376,6 @@ describe('ContentStorage - Reference-Based Storage', () => {
 
   describe('integration with message storage', () => {
     test('should maintain backward compatibility with message storage', () => {
-      // Verify that the extended ContentStorage still works for messages
       const messages = [
         { content: 'test message 1', _getType: () => 'human' } as any,
         { content: 'test message 2', _getType: () => 'ai' } as any
@@ -405,7 +395,7 @@ describe('ContentStorage - Reference-Based Storage', () => {
 
   describe('content type detection', () => {
     test('should detect JSON content', async () => {
-      const jsonContent = JSON.stringify({ test: 'data', array: [1, 2, 3] }).repeat(10); // Make it large enough
+      const jsonContent = JSON.stringify({ test: 'data', array: [1, 2, 3] }).repeat(10);
       const reference = await storage.storeContentIfLarge(jsonContent, {
         source: 'mcp_tool',
         fileName: 'test.json'
@@ -416,7 +406,7 @@ describe('ContentStorage - Reference-Based Storage', () => {
     });
 
     test('should detect HTML content', async () => {
-      const htmlContent = '<html><head><title>Test</title></head><body>Content</body></html>'.repeat(5); // Make it large enough
+      const htmlContent = '<html><head><title>Test</title></head><body>Content</body></html>'.repeat(5);
       const reference = await storage.storeContentIfLarge(htmlContent, {
         source: 'mcp_tool',
         fileName: 'test.html'
@@ -427,7 +417,7 @@ describe('ContentStorage - Reference-Based Storage', () => {
     });
 
     test('should detect markdown content', async () => {
-      const markdownContent = ('# Title\n\nThis is **bold** text.\n').repeat(10); // Make it large enough
+      const markdownContent = ('# Title\n\nThis is **bold** text.\n').repeat(10);
       const reference = await storage.storeContentIfLarge(markdownContent, {
         source: 'mcp_tool',
         fileName: 'test.md'
@@ -461,7 +451,7 @@ describe('ContentStorage - Reference-Based Storage', () => {
         fileName: 'long.txt'
       });
 
-      expect(reference!.preview.length).toBeLessThanOrEqual(203); // 200 + '...'
+      expect(reference!.preview.length).toBeLessThanOrEqual(203);
       expect(reference!.preview).toContain('...');
     });
   });

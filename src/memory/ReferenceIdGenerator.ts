@@ -31,12 +31,10 @@ export class ReferenceIdGenerator {
       return false;
     }
     
-    // Check length (base64url encoding of SHA-256 hash = 43 chars)
     if (id.length !== 43) {
       return false;
     }
     
-    // Check character set (base64url: A-Z, a-z, 0-9, -, _)
     return /^[A-Za-z0-9_-]+$/.test(id);
   }
   
@@ -51,13 +49,11 @@ export class ReferenceIdGenerator {
       return null;
     }
     
-    // Check for ref:// format
     const refFormatMatch = input.match(/^ref:\/\/([A-Za-z0-9_-]{43})$/);
     if (refFormatMatch) {
       return refFormatMatch[1] as ReferenceId;
     }
     
-    // Check if input is directly a valid reference ID
     return this.isValidReferenceId(input) ? input : null;
   }
   

@@ -13,22 +13,17 @@ export class ElectronLoggerAdapter implements ILogger {
     this.moduleContext = options.module || 'app';
     this.level = options.level || 'info';
     
-    // Create a scoped logger for this instance
     this.logger = electronLog.create({ logId: this.moduleContext });
     
-    // Configure electron-log
     this.logger.transports.file.fileName = 'conversational-agent.log';
     this.logger.transports.file.level = this.level;
     this.logger.transports.console.level = this.level;
     
-    // Set format
     this.logger.transports.file.format = '[{y}-{m}-{d} {h}:{i}:{s}.{ms}] [{level}] [{processType}] {text}';
     this.logger.transports.console.format = '[{h}:{i}:{s}.{ms}] [{level}] [{processType}] {text}';
     
-    // Add module context to all logs
     this.logger.variables.module = this.moduleContext;
     
-    // Disable in test environment
     if (process.env.NODE_ENV === 'test' || options.silent) {
       this.setSilent(true);
     }
@@ -74,7 +69,6 @@ export class ElectronLoggerAdapter implements ILogger {
   }
 
   trace(...args: any[]): void {
-    // electron-log doesn't have trace, use debug instead
     this.logger.debug('[TRACE]', this.formatMessage(args));
   }
 

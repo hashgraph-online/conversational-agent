@@ -48,6 +48,16 @@ interface TokenCreationData {
   treasuryAccountId?: string;
 }
 
+interface AirdropData {
+  tokenTransfers?: Array<{
+    tokenId: string;
+    transfers: Array<{
+      accountId: string;
+      amount: string;
+    }>;
+  }>;
+}
+
 interface TransactionDetailsProps {
   type: string;
   humanReadableType: string;
@@ -58,6 +68,8 @@ interface TransactionDetailsProps {
   scheduleId?: string;
   contractCall?: ContractCallInfo;
   tokenCreationInfo?: TokenCreationData;
+  tokenCreation?: TokenCreationData; // Also support tokenCreation (from parser)
+  airdrop?: AirdropData;
   className?: string;
   hideHeader?: boolean;
   executedTransactionEntityId?: string | null;
@@ -144,6 +156,9 @@ export const TransactionDetails: React.FC<TransactionDetailsProps> = ({
   memo,
   expirationTime,
   scheduleId,
+  tokenCreationInfo,
+  tokenCreation,
+  airdrop,
   className,
   hideHeader,
   network = 'testnet',
@@ -151,6 +166,9 @@ export const TransactionDetails: React.FC<TransactionDetailsProps> = ({
 }) => {
   const hasTransfers = transfers.length > 0;
   const hasTokenTransfers = tokenTransfers.length > 0;
+  const tokenCreationData = tokenCreationInfo || tokenCreation;
+  const hasTokenCreation = !!tokenCreationData;
+  const hasAirdrop = !!airdrop?.tokenTransfers?.length;
 
   const formattedExpirationTime = expirationTime
     ? formatDate(expirationTime)
@@ -282,6 +300,141 @@ export const TransactionDetails: React.FC<TransactionDetailsProps> = ({
                     {transfer.amount >= 0 ? '+' : ''}
                     {transfer.amount}
                   </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {hasTokenCreation && tokenCreationData && (
+          <div className='space-y-2'>
+            <Typography
+              variant='caption'
+              className='font-medium text-gray-700 dark:text-gray-300'
+            >
+              Token Creation Details
+            </Typography>
+            <div className='bg-white dark:bg-gray-800 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 shadow-sm'>
+              <div className='p-4 space-y-3'>
+                {tokenCreationData.tokenName && (
+                  <div className='flex justify-between items-center'>
+                    <span className='text-sm font-medium text-gray-700 dark:text-gray-300'>
+                      Token Name
+                    </span>
+                    <span className='text-sm text-gray-600 dark:text-gray-400'>
+                      {tokenCreationData.tokenName}
+                    </span>
+                  </div>
+                )}
+                {tokenCreationData.tokenSymbol && (
+                  <div className='flex justify-between items-center'>
+                    <span className='text-sm font-medium text-gray-700 dark:text-gray-300'>
+                      Symbol
+                    </span>
+                    <span className='text-sm text-gray-600 dark:text-gray-400 font-mono'>
+                      {tokenCreationData.tokenSymbol}
+                    </span>
+                  </div>
+                )}
+                {tokenCreationData.initialSupply && (
+                  <div className='flex justify-between items-center'>
+                    <span className='text-sm font-medium text-gray-700 dark:text-gray-300'>
+                      Initial Supply
+                    </span>
+                    <span className='text-sm text-gray-600 dark:text-gray-400'>
+                      {Number(tokenCreationData.initialSupply).toLocaleString()}
+                    </span>
+                  </div>
+                )}
+                {tokenCreationData.decimals !== undefined && (
+                  <div className='flex justify-between items-center'>
+                    <span className='text-sm font-medium text-gray-700 dark:text-gray-300'>
+                      Decimals
+                    </span>
+                    <span className='text-sm text-gray-600 dark:text-gray-400'>
+                      {tokenCreationData.decimals}
+                    </span>
+                  </div>
+                )}
+                {tokenCreationData.maxSupply && (
+                  <div className='flex justify-between items-center'>
+                    <span className='text-sm font-medium text-gray-700 dark:text-gray-300'>
+                      Max Supply
+                    </span>
+                    <span className='text-sm text-gray-600 dark:text-gray-400'>
+                      {Number(tokenCreationData.maxSupply).toLocaleString()}
+                    </span>
+                  </div>
+                )}
+                {tokenCreationData.supplyType && (
+                  <div className='flex justify-between items-center'>
+                    <span className='text-sm font-medium text-gray-700 dark:text-gray-300'>
+                      Supply Type
+                    </span>
+                    <span className='text-sm text-gray-600 dark:text-gray-400'>
+                      {tokenCreationData.supplyType}
+                    </span>
+                  </div>
+                )}
+                {tokenCreationData.treasuryAccountId && (
+                  <div className='flex justify-between items-center'>
+                    <span className='text-sm font-medium text-gray-700 dark:text-gray-300'>
+                      Treasury Account
+                    </span>
+                    <span className='text-sm text-gray-600 dark:text-gray-400 font-mono'>
+                      {tokenCreationData.treasuryAccountId}
+                    </span>
+                  </div>
+                )}
+                {tokenCreationData.memo && (
+                  <div>
+                    <div className='text-sm font-medium text-gray-700 dark:text-gray-300 mb-1'>
+                      Token Memo
+                    </div>
+                    <div className='text-sm text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-700 p-2 rounded'>
+                      {tokenCreationData.memo}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {hasAirdrop && airdrop && (
+          <div className='space-y-2'>
+            <Typography
+              variant='caption'
+              className='font-medium text-gray-700 dark:text-gray-300'
+            >
+              Token Airdrop Details
+            </Typography>
+            <div className='bg-white dark:bg-gray-800 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 shadow-sm'>
+              {airdrop.tokenTransfers?.map((tokenTransfer, idx) => (
+                <div key={`airdrop-${idx}`} className='border-b border-gray-200 dark:border-gray-700 last:border-b-0'>
+                  <div className='p-3 bg-gray-50 dark:bg-gray-900/50'>
+                    <div className='flex items-center gap-2'>
+                      <FiHash className='h-3.5 w-3.5 text-brand-blue' />
+                      <span className='text-sm font-medium text-gray-700 dark:text-gray-300'>
+                        Token ID: {tokenTransfer.tokenId}
+                      </span>
+                    </div>
+                  </div>
+                  <div className='divide-y divide-gray-200 dark:divide-gray-700'>
+                    {tokenTransfer.transfers.map((transfer, transferIdx) => (
+                      <div
+                        key={`transfer-${transferIdx}`}
+                        className='flex justify-between items-center py-2.5 px-4'
+                      >
+                        <span className='text-sm font-medium text-gray-700 dark:text-gray-300'>
+                          {transfer.accountId}
+                        </span>
+                        <span className='text-sm font-semibold text-brand-green bg-brand-green/10 px-2 py-0.5 rounded'>
+                          +{transfer.amount} tokens
+                        </span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               ))}
             </div>

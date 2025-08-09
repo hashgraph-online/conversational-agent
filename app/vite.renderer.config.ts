@@ -25,7 +25,9 @@ export default defineConfig({
       '@/lib': path.resolve(__dirname, './src/lib'),
       'react': path.resolve(__dirname, './node_modules/react'),
       'react-dom': path.resolve(__dirname, './node_modules/react-dom'),
-      '@noble/hashes/keccak': path.resolve(__dirname, './node_modules/@noble/hashes/sha3.js')
+      '@noble/hashes/keccak': path.resolve(__dirname, './node_modules/@noble/hashes/sha3.js'),
+      pino: path.resolve(__dirname, './src/lib/pino-stub.ts'),
+      'thread-stream': path.resolve(__dirname, './src/lib/thread-stream-stub.ts')
     },
     extensions: ['.ts', '.tsx', '.js', '.jsx', '.mjs', '.json']
   },

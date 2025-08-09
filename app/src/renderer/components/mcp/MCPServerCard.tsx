@@ -168,7 +168,6 @@ export const MCPServerCard: React.FC<MCPServerCardProps> = ({
                   console.log(`[MCPServerCard] Refreshing tools for ${server.id}...`);
                   const { refreshServerTools, reloadServers } = useMCPStore.getState();
                   await refreshServerTools(server.id);
-                  // Reload servers to get latest tools from JSON file
                   setTimeout(async () => {
                     await reloadServers();
                   }, 1000);
@@ -284,7 +283,6 @@ export const MCPServerCard: React.FC<MCPServerCardProps> = ({
                   try {
                     const { refreshServerTools, reloadServers } = useMCPStore.getState();
                     await refreshServerTools(server.id);
-                    // Reload servers to get latest tools from JSON file
                     await reloadServers();
                   } catch (error) {
                     console.error('Failed to refresh tools:', error);

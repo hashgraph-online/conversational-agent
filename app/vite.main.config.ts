@@ -12,6 +12,10 @@ export default defineConfig({
   },
   resolve: {
     conditions: ['node'],
-    extensions: ['.ts', '.js', '.mjs', '.json']
+    extensions: ['.ts', '.js', '.mjs', '.json'],
+    alias: {
+      pino: path.resolve(__dirname, './src/lib/pino-stub.ts'),
+      'thread-stream': path.resolve(__dirname, './src/lib/thread-stream-stub.ts')
+    }
   }
 });

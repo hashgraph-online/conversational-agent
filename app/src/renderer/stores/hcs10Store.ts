@@ -8,7 +8,6 @@ interface HCS10State {
   isLoading: boolean;
   error: string | null;
   
-  // Actions
   addProfile: (profile: StoredHCS10Profile) => void;
   updateProfile: (profileId: string, updates: Partial<StoredHCS10Profile>) => void;
   deleteProfile: (profileId: string) => void;
@@ -78,7 +77,6 @@ export const useHCS10Store = create<HCS10State>()(
           const result = await window.api.invoke('hcs10:getProfiles');
           
           if (result.success && result.data) {
-            // Convert date strings back to Date objects
             const profiles = result.data.map((profile: any) => ({
               ...profile,
               registeredAt: new Date(profile.registeredAt),
@@ -109,7 +107,6 @@ export const useHCS10Store = create<HCS10State>()(
     }),
     {
       name: 'hcs10-profile-storage',
-      // Only persist profiles and selectedProfileId
       partialize: (state) => ({
         profiles: state.profiles,
         selectedProfileId: state.selectedProfileId
@@ -118,7 +115,6 @@ export const useHCS10Store = create<HCS10State>()(
   )
 );
 
-// Selector hooks
 export const useHCS10Profiles = () => useHCS10Store((state) => state.profiles);
 export const useSelectedHCS10Profile = () => {
   const selectedId = useHCS10Store((state) => state.selectedProfileId);

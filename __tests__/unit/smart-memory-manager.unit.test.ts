@@ -55,14 +55,12 @@ describe('SmartMemoryManager', () => {
     });
 
     it('should store pruned messages in content storage', () => {
-      // Create a very small memory manager to force pruning
       const smallManager = new SmartMemoryManager({
         maxTokens: 50,
         reserveTokens: 10,
         modelName: 'gpt-4o'
       });
 
-      // Add longer messages that will definitely exceed the limit
       const messages = [
         'Tell me about blockchain technology and how it works in detail with examples',
         'Blockchain is a distributed ledger technology that provides transparency and security',
@@ -83,7 +81,6 @@ describe('SmartMemoryManager', () => {
       const activeMessages = smallManager.getMessages();
       const storageStats = smallManager.getStorageStats();
       
-      // Should have pruned some messages due to tight limits
       expect(activeMessages.length).toBeLessThan(messages.length);
       expect(storageStats.totalMessages).toBeGreaterThan(0);
     });
@@ -122,7 +119,6 @@ describe('SmartMemoryManager', () => {
       
       expect(memoryManager.getMessages()).toHaveLength(0);
       
-      // Storage stats should remain accessible
       const stats = memoryManager.getStorageStats();
       expect(stats).toBeDefined();
     });
@@ -130,7 +126,6 @@ describe('SmartMemoryManager', () => {
     it('should optionally clear storage as well', () => {
       memoryManager.addMessage(new HumanMessage('Test message'));
       
-      // Force some storage by creating a small manager
       const smallManager = new SmartMemoryManager({ maxTokens: 50, reserveTokens: 10 });
       for (let i = 0; i < 10; i++) {
         smallManager.addMessage(new HumanMessage(`Long message ${i} with content that should trigger pruning`));
@@ -138,7 +133,7 @@ describe('SmartMemoryManager', () => {
       
       expect(smallManager.getStorageStats().totalMessages).toBeGreaterThan(0);
       
-      smallManager.clear(true); // Clear storage too
+      smallManager.clear(true);
       
       expect(smallManager.getMessages()).toHaveLength(0);
       expect(smallManager.getStorageStats().totalMessages).toBe(0);
@@ -170,7 +165,6 @@ describe('SmartMemoryManager', () => {
 
   describe('searchHistory', () => {
     beforeEach(() => {
-      // Setup test history in storage
       const testManager = new SmartMemoryManager({ maxTokens: 50, reserveTokens: 10 });
       
       const testMessages = [
@@ -184,7 +178,6 @@ describe('SmartMemoryManager', () => {
 
       testMessages.forEach(msg => testManager.addMessage(msg));
       
-      // Copy storage to our test manager
       memoryManager = testManager;
     });
 
@@ -210,7 +203,6 @@ describe('SmartMemoryManager', () => {
 
   describe('getRecentHistory', () => {
     beforeEach(() => {
-      // Force some history into storage
       const testManager = new SmartMemoryManager({ maxTokens: 50, reserveTokens: 10 });
       
       for (let i = 0; i < 10; i++) {
@@ -284,7 +276,6 @@ describe('SmartMemoryManager', () => {
 
   describe('LangChain compatibility', () => {
     it('should work with LangChain memory interface expectations', () => {
-      // Test key LangChain memory methods
       memoryManager.addMessage(new HumanMessage('User input'));
       memoryManager.addMessage(new AIMessage('Assistant response'));
       
@@ -306,7 +297,6 @@ describe('SmartMemoryManager', () => {
 
   describe('token management', () => {
     it('should stay within token limits', () => {
-      // Add many messages to test token management
       for (let i = 0; i < 50; i++) {
         memoryManager.addMessage(new HumanMessage(`Message ${i} with some content to consume tokens`));
       }
@@ -316,7 +306,6 @@ describe('SmartMemoryManager', () => {
     });
 
     it('should maintain reserve tokens', () => {
-      // Fill memory close to capacity
       while (memoryManager.getMemoryStats().remainingCapacity > 150) {
         memoryManager.addMessage(new HumanMessage('Filling memory with content'));
       }
@@ -352,7 +341,7 @@ describe('SmartMemoryManager', () => {
       const endTime = Date.now();
       const duration = endTime - startTime;
       
-      expect(duration).toBeLessThan(5000); // Should complete in reasonable time
+      expect(duration).toBeLessThan(5000);
       expect(memoryManager.getMessages().length).toBeGreaterThan(0);
     });
   });
@@ -371,14 +360,12 @@ describe('SmartMemoryManager', () => {
     });
 
     it('should prune messages when limits are reduced', () => {
-      // Add several messages
       for (let i = 0; i < 10; i++) {
         memoryManager.addMessage(new HumanMessage(`Test message ${i} with content`));
       }
       
       const initialCount = memoryManager.getMessages().length;
       
-      // Reduce limits significantly
       memoryManager.updateConfig({
         maxTokens: 50,
         reserveTokens: 10

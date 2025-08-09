@@ -126,13 +126,13 @@ export function registerTransactionHandlers() {
   /**
    * Execute transaction bytes directly with stored credentials
    */
-  ipcMain.handle('execute-transaction-bytes', async (_, transactionBytes: string): Promise<TransactionExecutionResult> => {
+  ipcMain.handle('execute-transaction-bytes', async (_, transactionBytes: string, entityContext?: { name?: string, description?: string }): Promise<TransactionExecutionResult> => {
     try {
       logger.info('Executing transaction bytes:', {
-        bytesLength: transactionBytes?.length || 0
+        bytesLength: transactionBytes?.length || 0,
+        hasEntityContext: !!entityContext
       });
 
-      // Validate input
       if (!transactionBytes || typeof transactionBytes !== 'string') {
         return {
           success: false,
@@ -140,7 +140,6 @@ export function registerTransactionHandlers() {
         };
       }
 
-      // Get current configuration
       const config = await configService.load();
       if (!config) {
         return {
@@ -149,7 +148,6 @@ export function registerTransactionHandlers() {
         };
       }
 
-      // Validate Hedera configuration
       if (!config.hedera?.accountId || !config.hedera?.privateKey) {
         return {
           success: false,
@@ -157,7 +155,6 @@ export function registerTransactionHandlers() {
         };
       }
 
-      // Check if transaction was already executed
       if (hederaService.isTransactionExecuted(transactionBytes)) {
         const executed = hederaService.getExecutedTransaction(transactionBytes);
         return {
@@ -166,7 +163,6 @@ export function registerTransactionHandlers() {
         };
       }
 
-      // Execute the transaction
       const result = await hederaService.executeTransactionBytes(
         transactionBytes,
         config.hedera.accountId,
@@ -177,8 +173,39 @@ export function registerTransactionHandlers() {
       if (result.success) {
         logger.info('Transaction executed successfully', {
           transactionId: result.transactionId,
-          status: result.status
+          status: result.status,
+          entityId: result.entityId,
+          entityType: result.entityType
         });
+
+        if (result.entityId && result.entityType) {
+          let entityName = entityContext?.name;
+          
+          if (!entityName && entityContext?.description) {
+            const nameMatch = entityContext.description.match(/(?:token|account|topic|schedule|contract)\s+([A-Za-z0-9_-]+)/i);
+            if (nameMatch) {
+              entityName = nameMatch[1];
+            }
+          }
+          
+          if (!entityName) {
+            entityName = `${result.entityType}_${Date.now()}`;
+          }
+
+          agentService.storeEntityAssociation(
+            result.entityId,
+            entityName,
+            result.entityType,
+            result.transactionId
+          );
+          
+          logger.info('Stored entity association:', {
+            entityName,
+            entityType: result.entityType,
+            entityId: result.entityId,
+            transactionId: result.transactionId
+          });
+        }
       } else {
         logger.error('Transaction execution failed', {
           error: result.error,

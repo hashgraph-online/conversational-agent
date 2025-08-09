@@ -5,6 +5,8 @@ export default defineConfig({
         include: ['./__tests__/**/*.test.ts'],
         testTimeout: 60000,
         hookTimeout: 60000,
+        globals: true,
+        environment: 'node',
         coverage: {
             provider: "v8",
             reporter: ["text", "json", "html"],

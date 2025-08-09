@@ -246,6 +246,7 @@ export const TransactionApprovalCard: React.FC<TransactionApprovalCardProps> = (
                   amount: parseFloat(t.amount)
                 })) || []}
                 tokenTransfers={scheduleInfo.parsedTransaction.tokenTransfers || []}
+                tokenCreation={scheduleInfo.parsedTransaction.tokenCreation}
                 memo={scheduleInfo.parsedTransaction.memo}
                 expirationTime={scheduleInfo.expirationTime}
                 scheduleId={scheduleId}

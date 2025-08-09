@@ -5,6 +5,9 @@ import * as fs from 'fs'
 import { app } from 'electron'
 import { MCPServerValidator } from '../validators/MCPServerValidator'
 import type { ValidationResult } from '../validators/MCPServerValidator'
+import { MCPConnectionPoolManager } from './MCPConnectionPoolManager'
+import { ConcurrencyManager } from '../utils/ConcurrencyManager'
+import type { ConcurrentTask } from '../../shared/types/mcp-performance'
 
 export interface MCPServerConfig {
   id: string
@@ -57,11 +60,20 @@ export class MCPService {
   private connectionStartTimes: Map<string, Date> = new Map()
   private connectingServers: Set<string> = new Set()
   private initializedServers: Set<string> = new Set()
+  private poolManager: MCPConnectionPoolManager
+  private concurrencyManager: ConcurrencyManager
+  private performanceOptimizationsEnabled: boolean = true
+  private toolRegistrationCallback?: (serverId: string, tools: any[]) => void
 
   private constructor() {
     this.logger = new Logger({ module: 'MCPService' })
     this.configPath = path.join(app.getPath('userData'), 'mcp-servers.json')
     this.validator = new MCPServerValidator()
+    this.poolManager = MCPConnectionPoolManager.getInstance()
+    this.concurrencyManager = ConcurrencyManager.getInstance({ 
+      maxConcurrency: 5,
+      queueTimeoutMs: 30000
+    })
   }
 
   /**
@@ -75,6 +87,14 @@ export class MCPService {
   }
 
   /**
+   * Set callback for tool registration when tools are fetched
+   */
+  setToolRegistrationCallback(callback: (serverId: string, tools: any[]) => void): void {
+    this.toolRegistrationCallback = callback
+    this.logger.debug('Tool registration callback set in MCPService')
+  }
+
+  /**
    * Load MCP server configurations from disk
    */
   async loadServers(): Promise<MCPServerConfig[]> {
@@ -83,14 +103,12 @@ export class MCPService {
         const data = await fs.promises.readFile(this.configPath, 'utf8')
         const loadedConfigs = JSON.parse(data)
         
-        // Reset all connection status to disconnected on load
-        // Connection status is runtime state, not persisted state
         this.serverConfigs = loadedConfigs.map((config: MCPServerConfig) => ({
           ...config,
           status: 'disconnected' as const,
           errorMessage: undefined,
-          lastConnected: config.lastConnected, // Keep last connected time
-          tools: config.tools || [] // Preserve tools from JSON file
+          lastConnected: config.lastConnected,
+          tools: config.tools || []
         }))
         
         this.logger.info(`Loaded ${this.serverConfigs.length} MCP server configurations`)
@@ -119,11 +137,9 @@ export class MCPService {
     try {
       this.serverConfigs = servers
       
-      // Ensure the directory exists
       const configDir = path.dirname(this.configPath)
       await fs.promises.mkdir(configDir, { recursive: true })
       
-      // Write to a temp file first, then rename for atomic operation
       const tempPath = `${this.configPath}.tmp`
       await fs.promises.writeFile(tempPath, JSON.stringify(servers, null, 2))
       await fs.promises.rename(tempPath, this.configPath)
@@ -297,11 +313,10 @@ export class MCPService {
    */
   async connectServer(serverId: string): Promise<MCPConnectionResult> {
     try {
-      // Prevent multiple simultaneous connections to the same server
       if (this.connectingServers.has(serverId) || this.servers.has(serverId)) {
         this.logger.warn(`Connection to server ${serverId} already in progress or connected, skipping`)
         return {
-          success: true, // Return success if already connected
+          success: true,
           tools: []
         }
       }
@@ -386,18 +401,16 @@ export class MCPService {
           if (!connected) {
             connected = true
             clearTimeout(timeout)
-            this.connectingServers.delete(serverId) // Remove from connecting set
+            this.connectingServers.delete(serverId)
             this.logger.info(`Successfully connected to MCP server: ${serverConfig.name}`)
             
             serverConfig.status = 'handshaking'
             
-            // Immediately resolve with success, then fetch tools in background
             resolve({
               success: true,
               tools: []
             })
             
-            // Fetch tools immediately after connection is established
             this.fetchAndSaveTools(serverId)
           }
         })
@@ -406,7 +419,7 @@ export class MCPService {
           if (!connected) {
             connected = true
             clearTimeout(timeout)
-            this.connectingServers.delete(serverId) // Remove from connecting set
+            this.connectingServers.delete(serverId)
             this.servers.delete(serverId)
             this.initializedServers.delete(serverId)
             serverConfig.status = 'error'
@@ -431,7 +444,7 @@ export class MCPService {
         childProcess.on('close', (code: number | null) => {
           this.servers.delete(serverId)
           this.initializedServers.delete(serverId)
-          this.connectingServers.delete(serverId) // Remove from connecting set
+          this.connectingServers.delete(serverId)
           if (!connected) {
             connected = true
             clearTimeout(timeout)
@@ -443,7 +456,7 @@ export class MCPService {
         })
       })
     } catch (error) {
-      this.connectingServers.delete(serverId) // Remove from connecting set on error
+      this.connectingServers.delete(serverId)
       this.logger.error(`Failed to connect to server ${serverId}:`, error)
       return {
         success: false,
@@ -486,9 +499,9 @@ export class MCPService {
           if (!resolved) {
             this.logger.warn(`Tools request timed out for server ${serverId}`)
             resolved = true
-            resolve([]) // Return empty array instead of rejecting
+            resolve([])
           }
-        }, 30000) // Increase timeout to 30 seconds
+        }, 30000)
 
         let responseBuffer = ''
         let initialized = this.initializedServers.has(serverId)
@@ -496,7 +509,7 @@ export class MCPService {
         const onData = (data: Buffer) => {
           responseBuffer += data.toString()
           const lines = responseBuffer.split('\n')
-          responseBuffer = lines.pop() || '' // Keep incomplete line in buffer
+          responseBuffer = lines.pop() || ''
 
           for (const line of lines) {
             if (!line.trim()) continue
@@ -505,13 +518,11 @@ export class MCPService {
               const response = JSON.parse(line)
               this.logger.debug(`MCP Server ${serverId} response:`, response)
 
-              // Handle initialization response first
               if (!initialized && response.result && response.result.protocolVersion) {
                 initialized = true
                 this.initializedServers.add(serverId)
                 this.logger.info(`MCP Server ${serverId} initialized with protocol version ${response.result.protocolVersion}`)
                 
-                // Now request tools
                 const toolsRequest = {
                   jsonrpc: '2.0',
                   id: Date.now(),
@@ -521,51 +532,42 @@ export class MCPService {
                 continue
               }
 
-              // Handle tools list response
               if (response.result && Array.isArray(response.result.tools)) {
                 if (!resolved) {
                   clearTimeout(timeout)
                   resolved = true
-                  // Don't remove the data listener immediately - let it stay active
                   this.logger.info(`Retrieved ${response.result.tools.length} tools from server ${serverId}`)
                   resolve(response.result.tools)
                   return
                 }
               }
 
-              // Handle error responses
               if (response.error) {
                 this.logger.error(`MCP Server ${serverId} error:`, response.error)
                 if (response.error.code === -32601) {
-                  // Method not found - server might not support tools/list
                   if (!resolved) {
                     clearTimeout(timeout)
                     resolved = true
-                    // Don't remove the data listener - let it stay active
                     resolve([])
                     return
                   }
                 }
               }
             } catch (parseError) {
-              // Not JSON or malformed - continue processing other lines
               continue
             }
           }
         }
 
-        // Only add listeners if not already initialized (to avoid duplicates)
         if (!initialized) {
           process.stdout?.on('data', onData)
           process.stderr?.on('data', (data: Buffer) => {
             this.logger.debug(`MCP Server ${serverId} stderr:`, data.toString())
           })
         } else {
-          // For already initialized servers, use once() to get just the response
           process.stdout?.once('data', onData)
         }
 
-        // If already initialized, just request tools
         if (initialized) {
           this.logger.debug(`Server ${serverId} already initialized, requesting tools directly`)
           const toolsRequest = {
@@ -575,7 +577,6 @@ export class MCPService {
           }
           process.stdin?.write(JSON.stringify(toolsRequest) + '\n')
         } else {
-          // Start with initialization
           const initRequest = {
             jsonrpc: '2.0',
             id: 1,
@@ -618,21 +619,18 @@ export class MCPService {
    * Fetch and save tools for a server (internal method)
    */
   private async fetchAndSaveTools(serverId: string): Promise<void> {
-    // Use a delay to ensure server is fully ready
     setTimeout(async () => {
       try {
-        // Check if server is still connected before fetching tools
         if (this.servers.has(serverId)) {
           this.logger.debug(`Attempting to fetch tools for server ${serverId}`)
           const tools = await this.getServerTools(serverId)
           this.logger.info(`Successfully fetched ${tools.length} tools from server ${serverId}`)
           
-          // Update the server config in memory
           const currentServerConfig = this.serverConfigs.find(s => s.id === serverId)
           if (currentServerConfig) {
             this.logger.info(`Before updating tools for ${serverId}: existing tools = ${(currentServerConfig.tools || []).length}`)
             currentServerConfig.status = 'ready'
-            currentServerConfig.tools = tools // Save tools to server config
+            currentServerConfig.tools = tools
             currentServerConfig.lastConnected = new Date()
             currentServerConfig.updatedAt = new Date()
             this.updateConnectionHealth(serverId, 'success')
@@ -640,11 +638,18 @@ export class MCPService {
             this.logger.info(`After updating tools for ${serverId}: new tools = ${tools.length}`)
             this.logger.debug(`Tools being saved for ${serverId}:`, tools.map(t => t.name).join(', '))
             
-            // Save the updated server config with tools
             await this.saveServers(this.serverConfigs)
             this.logger.info(`Server ${serverId} now ready with ${tools.length} tools saved to disk`)
             
-            // Verify tools were actually saved
+            if (this.toolRegistrationCallback && tools.length > 0) {
+              try {
+                this.toolRegistrationCallback(serverId, tools)
+                this.logger.info(`Called tool registration callback for ${serverId} with ${tools.length} tools`)
+              } catch (callbackError) {
+                this.logger.error(`Tool registration callback failed for ${serverId}:`, callbackError)
+              }
+            }
+            
             const verifyConfig = this.serverConfigs.find(s => s.id === serverId)
             if (verifyConfig && verifyConfig.tools) {
               this.logger.info(`Verification: ${serverId} has ${verifyConfig.tools.length} tools in memory after save`)
@@ -664,11 +669,10 @@ export class MCPService {
           currentServerConfig.updatedAt = new Date()
           this.updateConnectionHealth(serverId, 'success')
           
-          // Save the updated server config (preserving existing tools)
           await this.saveServers(this.serverConfigs)
         }
       }
-    }, 5000) // Wait 5 seconds for server to be fully ready
+    }, 5000)
   }
 
   /**
@@ -846,5 +850,213 @@ export class MCPService {
    */
   clearValidationCache(): void {
     this.validator.clearCache()
+  }
+
+  /**
+   * Connect multiple servers in parallel with optimizations
+   */
+  async connectServersParallel(
+    serverIds: string[], 
+    options?: {
+      maxConcurrency?: number;
+      failFast?: boolean;
+      useConnectionPool?: boolean;
+    }
+  ): Promise<Array<{ serverId: string; success: boolean; error?: string }>> {
+    const { 
+      maxConcurrency = 5, 
+      failFast = false, 
+      useConnectionPool = this.performanceOptimizationsEnabled 
+    } = options || {};
+
+    this.logger.info(`Connecting ${serverIds.length} servers in parallel`, {
+      maxConcurrency,
+      failFast,
+      useConnectionPool
+    });
+
+    const connectionTasks: ConcurrentTask<any>[] = serverIds.map((serverId, index) => {
+      const serverConfig = this.serverConfigs.find(s => s.id === serverId);
+      if (!serverConfig) {
+        throw new Error(`Server configuration not found for ${serverId}`);
+      }
+
+      return this.concurrencyManager.createTask(
+        `connect-${serverId}`,
+        async () => {
+          if (useConnectionPool) {
+            await this.poolManager.initializePool(serverConfig);
+          }
+          return await this.connectServer(serverId);
+        },
+        {
+          priority: 3 - Math.min(index, 2),
+          timeoutMs: 30000,
+          retryAttempts: 2
+        }
+      );
+    });
+
+    const originalConcurrency = this.concurrencyManager.getStatus().config.maxConcurrency;
+    if (maxConcurrency !== originalConcurrency) {
+      this.concurrencyManager.updateConcurrency(maxConcurrency);
+    }
+
+    try {
+      const results = await this.concurrencyManager.executeParallel(connectionTasks, {
+        failFast,
+        maxRetries: 1
+      });
+
+      if (maxConcurrency !== originalConcurrency) {
+        this.concurrencyManager.updateConcurrency(originalConcurrency);
+      }
+
+      const formatted = results.map(result => ({
+        serverId: result.taskId.replace('connect-', ''),
+        success: result.success,
+        error: result.error?.message
+      }));
+
+      const successful = formatted.filter(r => r.success).length;
+      this.logger.info(`Parallel connection completed`, {
+        successful,
+        failed: formatted.length - successful,
+        total: formatted.length
+      });
+
+      return formatted;
+    } catch (error) {
+      if (maxConcurrency !== originalConcurrency) {
+        this.concurrencyManager.updateConcurrency(originalConcurrency);
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * Get performance metrics from optimization systems
+   */
+  getPerformanceMetrics(): {
+    poolMetrics?: any;
+    concurrencyStats?: any;
+    enabled: boolean;
+  } {
+    if (!this.performanceOptimizationsEnabled) {
+      return { enabled: false };
+    }
+
+    return {
+      poolMetrics: this.poolManager.getPerformanceMetrics(),
+      concurrencyStats: this.concurrencyManager.getStats(),
+      enabled: true
+    };
+  }
+
+  /**
+   * Enable or disable performance optimizations
+   */
+  setPerformanceOptimizations(enabled: boolean): void {
+    this.performanceOptimizationsEnabled = enabled;
+    this.logger.info(`Performance optimizations ${enabled ? 'enabled' : 'disabled'}`);
+  }
+
+  /**
+   * Optimized connection method that uses pooling when available
+   */
+  async connectServerOptimized(serverId: string): Promise<MCPConnectionResult> {
+    if (!this.performanceOptimizationsEnabled) {
+      return this.connectServer(serverId);
+    }
+
+    const serverConfig = this.serverConfigs.find(s => s.id === serverId);
+    if (!serverConfig) {
+      return {
+        success: false,
+        error: 'Server configuration not found'
+      };
+    }
+
+    try {
+      await this.poolManager.initializePool(serverConfig);
+      
+      const connection = await this.poolManager.acquireConnection(serverId);
+      if (!connection) {
+        this.logger.warn(`Could not acquire pooled connection for ${serverId}, falling back to direct connection`);
+        return this.connectServer(serverId);
+      }
+
+      serverConfig.status = 'connected';
+      serverConfig.lastConnected = new Date();
+      
+      this.logger.info(`Connected to server ${serverId} using connection pool`);
+      
+      return {
+        success: true,
+        tools: connection.tools || []
+      };
+    } catch (error) {
+      this.logger.error(`Optimized connection failed for ${serverId}:`, error);
+      return this.connectServer(serverId);
+    }
+  }
+
+  /**
+   * Batch connect servers with intelligent scheduling
+   */
+  async connectServersBatch(
+    serverConfigs: MCPServerConfig[],
+    batchSize: number = 3,
+    delayMs: number = 1000
+  ): Promise<void> {
+    if (!this.performanceOptimizationsEnabled) {
+      for (const config of serverConfigs) {
+        try {
+          await this.connectServer(config.id);
+        } catch (error) {
+          this.logger.warn(`Failed to connect ${config.id}:`, error);
+        }
+      }
+      return;
+    }
+
+    this.logger.info(`Connecting ${serverConfigs.length} servers in batches`, {
+      batchSize,
+      delayMs
+    });
+
+    for (let i = 0; i < serverConfigs.length; i += batchSize) {
+      const batch = serverConfigs.slice(i, i + batchSize);
+      const batchIds = batch.map(s => s.id);
+      
+      this.logger.debug(`Processing batch ${Math.floor(i / batchSize) + 1}`, {
+        serverIds: batchIds
+      });
+
+      try {
+        await this.connectServersParallel(batchIds, {
+          maxConcurrency: batchSize,
+          failFast: false,
+          useConnectionPool: true
+        });
+      } catch (error) {
+        this.logger.error(`Batch connection failed for servers ${batchIds.join(', ')}:`, error);
+      }
+
+      if (i + batchSize < serverConfigs.length) {
+        await new Promise(resolve => setTimeout(resolve, delayMs));
+      }
+    }
+  }
+
+  /**
+   * Cleanup performance optimization resources
+   */
+  async cleanupOptimizations(): Promise<void> {
+    if (this.performanceOptimizationsEnabled) {
+      this.logger.info('Cleaning up performance optimization resources');
+      await this.poolManager.cleanup();
+      await this.concurrencyManager.shutdown();
+    }
   }
 }

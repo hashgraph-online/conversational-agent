@@ -6,7 +6,7 @@ import type { BaseMessage } from '@langchain/core/messages';
 describe('MemoryWindow', () => {
   let memoryWindow: MemoryWindow;
   const tokenCounter = new TokenCounter('gpt-4o');
-  const maxTokens = 200;  // Much smaller for testing
+  const maxTokens = 200;
   const reserveTokens = 50;
 
   beforeEach(() => {
@@ -40,7 +40,6 @@ describe('MemoryWindow', () => {
     });
 
     it('should prune old messages when token limit exceeded', () => {
-      // Add many messages to exceed token limit
       const messages: BaseMessage[] = [];
       for (let i = 0; i < 50; i++) {
         messages.push(new HumanMessage(`This is a longer message ${i} that will consume tokens and eventually cause pruning when we exceed the maximum token limit.`));
@@ -59,11 +58,9 @@ describe('MemoryWindow', () => {
     });
 
     it('should preserve recent messages during pruning', () => {
-      // Add initial messages
       const oldMessage = new HumanMessage('Old message that should be pruned');
       memoryWindow.addMessage(oldMessage);
       
-      // Add many long messages to force pruning
       for (let i = 0; i < 30; i++) {
         memoryWindow.addMessage(new HumanMessage(`Long message ${i} that will force pruning of older messages when token limits are exceeded.`));
       }
@@ -76,10 +73,9 @@ describe('MemoryWindow', () => {
     });
 
     it('should handle very large single messages', () => {
-      const largeMessage = new HumanMessage('a'.repeat(5000)); // Very large message
+      const largeMessage = new HumanMessage('a'.repeat(5000));
       const result = memoryWindow.addMessage(largeMessage);
       
-      // Should still add the message even if it's large
       expect(result.added).toBe(true);
       expect(memoryWindow.getMessages()).toHaveLength(1);
     });
@@ -87,17 +83,14 @@ describe('MemoryWindow', () => {
 
   describe('pruneToFit', () => {
     it('should remove oldest messages to fit within token limit', () => {
-      // Create a very small memory window to force pruning
       const smallMemory = new MemoryWindow(50, 10, tokenCounter);
       
-      // Fill with messages to exceed limit
       for (let i = 0; i < 10; i++) {
         smallMemory.addMessage(new HumanMessage(`Message ${i} with some content that takes up quite a few tokens to trigger pruning.`));
       }
 
       const initialCount = smallMemory.getMessages().length;
       
-      // Manually call pruneToFit to test it directly
       const prunedMessages = smallMemory.pruneToFit();
       
       expect(prunedMessages.length).toBeGreaterThan(0);
@@ -106,13 +99,9 @@ describe('MemoryWindow', () => {
     });
 
     it('should preserve message pairs when pruning conversations', () => {
-      // This test is challenging because auto-pruning in addMessage might interfere
-      // Let's test that pruning preserves conversational flow by creating a scenario
-      // where we can force pruning
       
       const smallMemory = new MemoryWindow(100, 10, tokenCounter);
       
-      // Add enough conversation pairs to exceed the limit when we force pruning
       const conversations = [];
       for (let i = 0; i < 3; i++) {
         const humanMsg = new HumanMessage(`User question ${i}: What can you tell me about blockchain technology and how it works in detail?`);
@@ -120,19 +109,15 @@ describe('MemoryWindow', () => {
         conversations.push(humanMsg, aiMsg);
       }
 
-      // Add all messages at once to bypass auto-pruning
       conversations.forEach(msg => smallMemory.addMessage(msg));
       
-      // Now force pruning by updating to very small limits
       smallMemory.updateLimits(30, 5);
       
       const remainingMessages = smallMemory.getMessages();
       
-      // If there are remaining messages, they should be in pairs (even number)
       if (remainingMessages.length > 0) {
         expect(remainingMessages.length % 2).toBe(0);
       } else {
-        // If no messages remain due to very strict limits, that's also valid
         expect(remainingMessages.length).toBeGreaterThanOrEqual(0);
       }
     });
@@ -194,7 +179,6 @@ describe('MemoryWindow', () => {
       const messages1 = memoryWindow.getMessages();
       const messages2 = memoryWindow.getMessages();
       
-      // Should be different array instances
       expect(messages1).not.toBe(messages2);
       expect(messages1).toEqual(messages2);
     });
@@ -219,7 +203,6 @@ describe('MemoryWindow', () => {
       const systemPrompt = 'You are a helpful assistant specialized in blockchain technology.';
       memoryWindow.setSystemPrompt(systemPrompt);
       
-      // Should account for system prompt tokens
       const tokenCount = memoryWindow.getCurrentTokenCount();
       expect(tokenCount).toBeGreaterThan(0);
     });
@@ -277,16 +260,13 @@ describe('MemoryWindow', () => {
     });
 
     it('should return false for messages that exceed total capacity', () => {
-      // Create a message that's larger than our total token limit
-      const longText = 'a'.repeat(10000); // This should be way more than 200 tokens
+      const longText = 'a'.repeat(10000);
       const largeMessage = new HumanMessage(longText);
       
-      // Should return false for messages larger than total capacity
       expect(memoryWindow.canAddMessage(largeMessage)).toBe(false);
     });
 
     it('should consider reserve tokens', () => {
-      // Fill memory close to limit
       while (memoryWindow.getRemainingTokenCapacity() > reserveTokens + 50) {
         memoryWindow.addMessage(new HumanMessage('Adding message to fill memory'));
       }
@@ -320,7 +300,6 @@ describe('MemoryWindow', () => {
     it('should maintain performance with many messages', () => {
       const startTime = Date.now();
       
-      // Add many messages
       for (let i = 0; i < 100; i++) {
         memoryWindow.addMessage(new HumanMessage(`Performance test message ${i}`));
       }
@@ -328,7 +307,6 @@ describe('MemoryWindow', () => {
       const endTime = Date.now();
       const duration = endTime - startTime;
       
-      // Should complete within reasonable time (less than 5 seconds)
       expect(duration).toBeLessThan(5000);
     });
   });

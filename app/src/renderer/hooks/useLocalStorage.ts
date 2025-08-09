@@ -10,9 +10,7 @@ export function useLocalStorage<T>(
   key: string,
   initialValue: T
 ): [T, (value: T | ((val: T) => T)) => void, () => void] {
-  // Get from local storage then parse stored json or return initialValue
   const readValue = (): T => {
-    // Prevent build errors during server-side rendering
     if (typeof window === 'undefined') {
       return initialValue;
     }
@@ -26,19 +24,14 @@ export function useLocalStorage<T>(
     }
   };
 
-  // State to store our value
   const [storedValue, setStoredValue] = useState<T>(readValue);
 
-  // Return a wrapped version of useState's setter function that persists the new value to localStorage
   const setValue = (value: T | ((val: T) => T)) => {
     try {
-      // Allow value to be a function so we have same API as useState
       const valueToStore = value instanceof Function ? value(storedValue) : value;
       
-      // Save state
       setStoredValue(valueToStore);
       
-      // Save to local storage
       if (typeof window !== 'undefined') {
         window.localStorage.setItem(key, JSON.stringify(valueToStore));
       }
@@ -47,7 +40,6 @@ export function useLocalStorage<T>(
     }
   };
 
-  // Function to clear the stored value
   const clearValue = () => {
     try {
       setStoredValue(initialValue);
@@ -59,7 +51,6 @@ export function useLocalStorage<T>(
     }
   };
 
-  // Listen to localStorage changes across tabs/windows
   useEffect(() => {
     const handleStorageChange = (event: StorageEvent) => {
       if (event.key === key && event.newValue) {
@@ -71,10 +62,8 @@ export function useLocalStorage<T>(
       }
     };
 
-    // Add event listener
     window.addEventListener('storage', handleStorageChange);
 
-    // Remove event listener on cleanup
     return () => {
       window.removeEventListener('storage', handleStorageChange);
     };

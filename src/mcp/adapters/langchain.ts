@@ -71,11 +71,9 @@ export function convertMCPToolToLangChain(
           responseText = JSON.stringify(result);
         }
 
-        // Check if content should be stored as reference
         const responseBuffer = Buffer.from(responseText, 'utf8');
         
-        // Use a lower threshold for MCP tools (10KB) to avoid token limit issues
-        const MCP_REFERENCE_THRESHOLD = 10 * 1024; // 10KB
+        const MCP_REFERENCE_THRESHOLD = 10 * 1024;
         const shouldStoreMCPContent = responseBuffer.length > MCP_REFERENCE_THRESHOLD;
         
         if (shouldStoreMCPContent || shouldUseReference(responseBuffer)) {
@@ -90,7 +88,6 @@ export function convertMCPToolToLangChain(
               });
               return `content-ref:${referenceId}`;
             } catch (storeError) {
-              // If storage fails, fall back to returning the content
               console.warn('Failed to store large MCP content as reference:', storeError);
             }
           }

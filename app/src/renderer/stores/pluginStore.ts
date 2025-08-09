@@ -500,17 +500,14 @@ export const usePluginStore = create<PluginStore>((set, get) => ({
     }
   },
   
-  // Local plugin loading is not yet implemented
   loadLocalPlugin: async (path: string) => {
     throw new Error('Local plugin loading is not yet implemented')
   },
   
-  // Local plugin reloading is not yet implemented
   reloadLocalPlugin: async (pluginId: string) => {
     throw new Error('Local plugin reloading is not yet implemented')
   },
   
-  // Custom plugin registry is not yet implemented
   setRegistry: async (registry: string, auth?: { token?: string; username?: string; password?: string }) => {
     throw new Error('Custom plugin registry is not yet implemented')
   },

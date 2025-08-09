@@ -44,20 +44,17 @@ export const useUpdater = (): UpdaterHookReturn => {
   const [currentVersion, setCurrentVersion] = useState('1.0.0');
 
   useEffect(() => {
-    // Check if electron APIs are available
     if (!window.electron) {
       console.warn('Electron APIs not available - update functionality disabled');
       return;
     }
 
-    // Get current version
     window.electron.ipcRenderer.invoke('get-app-version').then((version: string) => {
       setCurrentVersion(version);
     }).catch((err) => {
       console.error('Failed to get app version:', err);
     });
 
-    // Set up event listeners for update events
     const removeCheckingListener = window.electron.ipcRenderer.on('update:checking', () => {
       setUpdateState('checking');
       setError(null);
@@ -90,7 +87,6 @@ export const useUpdater = (): UpdaterHookReturn => {
       setProgress(null);
     });
 
-    // Cleanup function
     return () => {
       removeCheckingListener();
       removeAvailableListener();

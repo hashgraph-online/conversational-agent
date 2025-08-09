@@ -76,7 +76,7 @@ export class ReferenceResponseProcessor {
       const suggestedActions: string[] = [];
 
       if (autoDisplayReferences) {
-        for (const { reference, position, originalText } of detection.references) {
+        for (const { reference, originalText } of detection.references) {
           const displayResult = await this.contextManager.displayReference(reference, displayOptions);
           
           processedContent = processedContent.replace(originalText, displayResult.displayText);
@@ -185,7 +185,7 @@ export class ReferenceResponseProcessor {
     }> = [];
 
     const contentReferenceRegex = /"type":\s*"content_reference"[^}]*"referenceId":\s*"([^"]+)"[^}]*}/g;
-    let match;
+    let match: RegExpExecArray | null;
     
     while ((match = contentReferenceRegex.exec(content)) !== null) {
       try {
@@ -212,7 +212,7 @@ export class ReferenceResponseProcessor {
     }
 
     const plainRefRegex = /ref:\/\/([A-Za-z0-9_-]{43})|(?:^|\s)([A-Za-z0-9_-]{43})(?=\s|$)/g;
-    let plainMatch;
+    let plainMatch: RegExpExecArray | null;
     
     while ((plainMatch = plainRefRegex.exec(content)) !== null) {
       const referenceId = plainMatch[1] || plainMatch[2];
@@ -246,7 +246,6 @@ export class ReferenceResponseProcessor {
         const parsed = JSON.parse(preview);
         preview = JSON.stringify(parsed, null, 0);
       } catch {
-        // Keep original if not valid JSON
       }
     }
     

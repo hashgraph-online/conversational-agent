@@ -160,19 +160,19 @@ export interface ContentReferenceConfig {
  * Default configuration values
  */
 export const DEFAULT_CONTENT_REFERENCE_CONFIG: ContentReferenceConfig = {
-  sizeThresholdBytes: 10 * 1024, // 10KB
-  maxAgeMs: 60 * 60 * 1000, // 1 hour
+  sizeThresholdBytes: 10 * 1024,
+  maxAgeMs: 60 * 60 * 1000,
   maxReferences: 100,
-  maxTotalStorageBytes: 100 * 1024 * 1024, // 100MB
+  maxTotalStorageBytes: 100 * 1024 * 1024,
   enableAutoCleanup: true,
-  cleanupIntervalMs: 5 * 60 * 1000, // 5 minutes
+  cleanupIntervalMs: 5 * 60 * 1000,
   enablePersistence: false,
   storageBackend: 'memory',
   cleanupPolicies: {
-    recent: { maxAgeMs: 30 * 60 * 1000, priority: 1 }, // 30 minutes, highest priority
-    userContent: { maxAgeMs: 2 * 60 * 60 * 1000, priority: 2 }, // 2 hours
-    agentGenerated: { maxAgeMs: 60 * 60 * 1000, priority: 3 }, // 1 hour
-    default: { maxAgeMs: 60 * 60 * 1000, priority: 4 } // 1 hour, lowest priority
+    recent: { maxAgeMs: 30 * 60 * 1000, priority: 1 },
+    userContent: { maxAgeMs: 2 * 60 * 60 * 1000, priority: 2 },
+    agentGenerated: { maxAgeMs: 60 * 60 * 1000, priority: 3 },
+    default: { maxAgeMs: 60 * 60 * 1000, priority: 4 }
   }
 };
 

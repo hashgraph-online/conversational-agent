@@ -14,15 +14,12 @@ export async function clearMCPCache(): Promise<{ success: boolean; message: stri
       return { success: false, message: 'Database not available' }
     }
     
-    // Clear all MCP servers
     const deleteServers = db.prepare('DELETE FROM mcp_servers').run()
     logger.info(`Cleared ${deleteServers.changes} servers from cache`)
     
-    // Clear search cache
     const deleteCache = db.prepare('DELETE FROM search_cache').run()
     logger.info(`Cleared ${deleteCache.changes} search cache entries`)
     
-    // Reset registry sync status
     const resetSync = db.prepare(`UPDATE registry_sync SET status = 'pending', last_sync_at = NULL, last_success_at = NULL`).run()
     logger.info(`Reset ${resetSync.changes} registry sync records`)
     

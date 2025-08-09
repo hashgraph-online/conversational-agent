@@ -8,7 +8,7 @@ export interface ParsedTransaction {
   details: Record<string, any>;
   transfers?: Array<{
     accountId: string;
-    amount: string | number; // Can be string from standards-sdk or number for display
+    amount: string | number;
   }>;
   tokenTransfers?: Array<{
     tokenId: string;
@@ -24,12 +24,27 @@ export interface ParsedTransaction {
     parameters?: any;
   };
   tokenCreation?: {
-    name?: string;
-    symbol?: string;
+    tokenName?: string;
+    tokenSymbol?: string;
+    initialSupply?: string;
     decimals?: number;
+    maxSupply?: string;
+    tokenType?: string;
+    supplyType?: string;
+    memo?: string;
+    treasuryAccountId?: string;
   };
   consensusSubmitMessage?: {
     topicId: string;
     message: string;
+  };
+  airdrop?: {
+    tokenTransfers?: Array<{
+      tokenId: string;
+      transfers: Array<{
+        accountId: string;
+        amount: string;
+      }>;
+    }>;
   };
 }

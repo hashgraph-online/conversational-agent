@@ -37,26 +37,22 @@ export const tagToCapabilityMap: Record<string, AIAgentCapability> = {
  * This is only for UI-specific fields that don't exist in HCS-11
  */
 export const HCS10ProfileFormSchema = z.object({
-  // Map UI field names to HCS-11 field names
-  name: z.string().min(3, 'Name must be at least 3 characters'), // maps to display_name
-  description: z.string().min(10, 'Description must be at least 10 characters'), // maps to bio
+  name: z.string().min(3, 'Name must be at least 3 characters'),
+  description: z.string().min(10, 'Description must be at least 10 characters'),
   profileType: z.enum(['person', 'aiAgent']),
   alias: z.string().optional(),
   creator: z.string().min(2, 'Creator must be at least 2 characters'),
   version: z.string().min(1, 'Version is required'),
   
-  // AI Agent specific fields
   agentType: z.enum(['autonomous', 'manual']).optional(),
   capabilities: z.array(z.string()),
   
-  // Social links in object format for UI convenience
   socials: z.object({
     twitter: z.string().optional(),
     github: z.string().optional(),
     website: z.string().optional(),
   }).optional(),
   
-  // Profile image handling
   profileImage: z.string().optional(),
   logo: z.string().optional(),
   profileImageFile: z.object({
@@ -65,7 +61,6 @@ export const HCS10ProfileFormSchema = z.object({
     type: z.string(),
   }).optional(),
   
-  // Additional fields
   feeConfiguration: z.object({
     hbarFee: z.number().optional(),
     tokenFee: z.object({
@@ -76,7 +71,6 @@ export const HCS10ProfileFormSchema = z.object({
   customProperties: z.record(z.string(), z.unknown()).optional(),
 });
 
-// Re-export the schema for backwards compatibility
 export const HCS10ProfileSchema = HCS10ProfileFormSchema;
 
 /**
@@ -95,7 +89,6 @@ export function formDataToHCS11Profile(formData: HCS10ProfileFormData): HCS11Pro
     bio: formData.description,
     profileImage: formData.profileImage || formData.logo,
     properties: formData.customProperties,
-    // Convert object socials to array format
     socials: formData.socials ? 
       Object.entries(formData.socials)
         .filter(([_, value]) => value)
@@ -112,7 +105,6 @@ export function formDataToHCS11Profile(formData: HCS10ProfileFormData): HCS11Pro
       type: ProfileType.PERSONAL,
     } as PersonalProfile;
   } else {
-    // Map string capabilities to enum values
     const capabilities = formData.capabilities.map(cap => 
       tagToCapabilityMap[cap] || AIAgentCapability.TEXT_GENERATION
     );
@@ -123,7 +115,7 @@ export function formDataToHCS11Profile(formData: HCS10ProfileFormData): HCS11Pro
       aiAgent: {
         type: formData.agentType === 'autonomous' ? AIAgentType.AUTONOMOUS : AIAgentType.MANUAL,
         capabilities,
-        model: formData.creator, // Using creator as model for now
+        model: formData.creator,
         creator: formData.creator,
       }
     } as AIAgentProfile;

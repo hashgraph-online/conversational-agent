@@ -26,7 +26,6 @@ export const UpdateManager: React.FC = () => {
     openRepository
   } = useUpdater();
 
-  // Show notification for certain states
   const shouldShowNotification = showNotification && (
     updateState === 'available' || 
     updateState === 'downloading' || 

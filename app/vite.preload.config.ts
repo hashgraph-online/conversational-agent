@@ -18,4 +18,11 @@ export default defineConfig({
     minify: false,
     emptyOutDir: false
   }
+  ,
+  resolve: {
+    alias: {
+      pino: '/Users/michaelkantor/CascadeProjects/hashgraph-online/conversational-agent/app/src/lib/pino-stub.ts',
+      'thread-stream': '/Users/michaelkantor/CascadeProjects/hashgraph-online/conversational-agent/app/src/lib/thread-stream-stub.ts'
+    }
+  }
 });

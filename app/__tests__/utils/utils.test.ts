@@ -28,7 +28,6 @@ describe('utils', () => {
     })
 
     it('should merge conflicting Tailwind classes correctly', () => {
-      // twMerge should handle conflicting classes by keeping the last one
       const result = cn('text-red-500', 'text-blue-500')
       
       expect(result).not.toContain('text-red-500')
@@ -78,7 +77,6 @@ describe('utils', () => {
     it('should merge size classes correctly', () => {
       const result = cn('w-4', 'w-6', 'h-4', 'h-8')
       
-      // twMerge should keep the last conflicting class for each property
       expect(result).not.toContain('w-4')
       expect(result).toContain('w-6')
       expect(result).not.toContain('h-4')
@@ -88,8 +86,6 @@ describe('utils', () => {
     it('should merge padding classes correctly', () => {
       const result = cn('p-2', 'px-4', 'py-6')
       
-      // px-4 should override p-2's horizontal padding
-      // py-6 should override p-2's vertical padding
       expect(result).not.toContain('p-2')
       expect(result).toContain('px-4')
       expect(result).toContain('py-6')
@@ -118,15 +114,12 @@ describe('utils', () => {
       const size = 'lg'
       
       const result = cn(
-        // Base styles
         'inline-flex items-center justify-center rounded-md font-medium',
-        // Variant styles
         {
           'bg-blue-600 text-white hover:bg-blue-700': variant === 'primary',
           'bg-red-600 text-white hover:bg-red-700': variant === 'destructive',
           'bg-gray-200 text-gray-900 hover:bg-gray-300': variant === 'secondary',
         },
-        // Size styles
         {
           'h-8 px-3 text-sm': size === 'sm',
           'h-10 px-4': size === 'md',

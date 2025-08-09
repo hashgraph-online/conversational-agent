@@ -51,7 +51,13 @@ export class LangChainAgent extends BaseAgent {
       this.tools = this.filterTools(allTools);
 
       if (this.config.mcp?.servers && this.config.mcp.servers.length > 0) {
-        await this.initializeMCP();
+        if (this.config.mcp.autoConnect !== false) {
+          await this.initializeMCP();
+        } else {
+          this.logger.info('MCP servers configured but autoConnect=false, skipping synchronous connection');
+          // Initialize MCP manager for later async connections
+          this.mcpManager = new MCPClientManager(this.logger);
+        }
       }
 
       this.smartMemory = new SmartMemoryManager({
@@ -70,7 +76,6 @@ export class LangChainAgent extends BaseAgent {
 
       this.systemMessage = this.buildSystemPrompt();
       
-      // Set the system prompt in smart memory
       this.smartMemory.setSystemPrompt(this.systemMessage);
 
       await this.createExecutor();
@@ -94,9 +99,7 @@ export class LangChainAgent extends BaseAgent {
     try {
       this.logger.info('LangChainAgent.chat called with:', { message, contextLength: context?.messages?.length || 0 });
       
-      // If context is provided, populate smart memory with previous messages
       if (context?.messages && context.messages.length > 0) {
-        // Clear existing memory and add messages from context
         this.smartMemory.clear();
         
         for (const msg of context.messages) {
@@ -104,7 +107,6 @@ export class LangChainAgent extends BaseAgent {
         }
       }
       
-      // Add the current user message to memory
       const { HumanMessage } = await import('@langchain/core/messages');
       this.smartMemory.addMessage(new HumanMessage(message));
       
@@ -131,7 +133,6 @@ export class LangChainAgent extends BaseAgent {
         intermediateSteps: result.intermediateSteps,
       };
 
-      // Extract tool calls from intermediate steps
       if (result.intermediateSteps && Array.isArray(result.intermediateSteps)) {
         const toolCalls = result.intermediateSteps.map((step: any, index: number) => ({
           id: `call_${index}`,
@@ -163,7 +164,6 @@ export class LangChainAgent extends BaseAgent {
         response.output = 'Agent action complete.';
       }
 
-      // Add the AI response to memory
       if (response.output) {
         const { AIMessage } = await import('@langchain/core/messages');
         this.smartMemory.addMessage(new AIMessage(response.output));
@@ -319,7 +319,6 @@ export class LangChainAgent extends BaseAgent {
       prompt,
     });
 
-    // Create executor without memory - we handle memory manually with SmartMemoryManager
     this.executor = new ContentAwareAgentExecutor({
       agent,
       tools: langchainTools,
@@ -343,9 +342,31 @@ export class LangChainAgent extends BaseAgent {
       }
     }
 
+    let userFriendlyMessage = 'Sorry, I encountered an error processing your request.';
+    let userFriendlyOutput = 'Sorry, I encountered an error processing your request.';
+    
+    if (errorMessage.includes('429')) {
+      if (errorMessage.includes('quota')) {
+        userFriendlyMessage = 'API quota exceeded. Please check your OpenAI billing and usage limits.';
+        userFriendlyOutput = 'I\'m currently unable to respond because the API quota has been exceeded. Please check your OpenAI account billing and usage limits, then try again.';
+      } else {
+        userFriendlyMessage = 'Too many requests. Please wait a moment and try again.';
+        userFriendlyOutput = 'I\'m receiving too many requests right now. Please wait a moment and try again.';
+      }
+    } else if (errorMessage.includes('401') || errorMessage.includes('unauthorized')) {
+      userFriendlyMessage = 'API authentication failed. Please check your API key configuration.';
+      userFriendlyOutput = 'There\'s an issue with the API authentication. Please check your OpenAI API key configuration in settings.';
+    } else if (errorMessage.includes('timeout')) {
+      userFriendlyMessage = 'Request timed out. Please try again.';
+      userFriendlyOutput = 'The request took too long to process. Please try again.';
+    } else if (errorMessage.includes('network') || errorMessage.includes('fetch')) {
+      userFriendlyMessage = 'Network error. Please check your internet connection and try again.';
+      userFriendlyOutput = 'There was a network error. Please check your internet connection and try again.';
+    }
+
     const errorResponse: ChatResponse = {
-      output: 'Sorry, I encountered an error processing your request.',
-      message: 'Error processing request.',
+      output: userFriendlyOutput,
+      message: userFriendlyMessage,
       error: errorMessage,
       notes: [],
     };
@@ -392,6 +413,68 @@ export class LangChainAgent extends BaseAgent {
           `Failed to connect to MCP server ${status.serverName}: ${status.error}`
         );
       }
+    }
+  }
+
+  /**
+   * Connect to MCP servers asynchronously after agent boot
+   */
+  async connectMCPServers(): Promise<void> {
+    if (!this.config.mcp?.servers || this.config.mcp.servers.length === 0) {
+      return;
+    }
+
+    if (!this.mcpManager) {
+      this.logger.warn('MCP manager not initialized. Cannot connect to servers.');
+      return;
+    }
+
+    this.logger.info('Starting async MCP server connections...');
+
+    for (const serverConfig of this.config.mcp.servers) {
+      // Connect servers asynchronously without blocking
+      this.connectServer(serverConfig).catch(error => {
+        this.logger.error(`Connection to MCP server ${serverConfig.name} failed:`, error);
+      });
+    }
+  }
+
+  /**
+   * Connect to a single MCP server
+   */
+  private async connectServer(serverConfig: any): Promise<void> {
+    try {
+      this.logger.info(`Connecting to MCP server: ${serverConfig.name}`);
+      
+      const status = await this.mcpManager!.connectServer(serverConfig);
+      
+      if (status.connected) {
+        this.logger.info(
+          `Connected to MCP server ${status.serverName} with ${status.tools.length} tools`
+        );
+        
+        // Add tools to the agent
+        for (const mcpTool of status.tools) {
+          const langchainTool = convertMCPToolToLangChain(
+            mcpTool,
+            this.mcpManager!,
+            serverConfig
+          );
+          this.tools.push(langchainTool);
+        }
+        
+        // Recreate executor with new tools if already initialized
+        if (this.initialized && this.executor) {
+          await this.createExecutor();
+        }
+        
+      } else {
+        this.logger.error(
+          `Failed to connect to MCP server ${status.serverName}: ${status.error}`
+        );
+      }
+    } catch (error) {
+      this.logger.error(`Error connecting to MCP server ${serverConfig.name}:`, error);
     }
   }
 

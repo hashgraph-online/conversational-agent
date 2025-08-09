@@ -10,16 +10,14 @@ export class TokenCounter {
   private encoding: ReturnType<typeof encoding_for_model>;
   private modelName: TiktokenModel;
 
-  // Token overhead per message for chat completion format
-  private static readonly MESSAGE_OVERHEAD = 3; // <|start|>role<|end|>content<|end|>
-  private static readonly ROLE_OVERHEAD = 1; // Additional token for role specification
+  private static readonly MESSAGE_OVERHEAD = 3;
+  private static readonly ROLE_OVERHEAD = 1;
 
   constructor(modelName: TiktokenModel = 'gpt-4o') {
     this.modelName = modelName;
     try {
       this.encoding = encoding_for_model(modelName);
-    } catch (error) {
-      // Fallback to gpt-4o if specific model encoding is not available
+    } catch {
       console.warn(`Model ${modelName} not found, falling back to gpt-4o encoding`);
       this.encoding = encoding_for_model('gpt-4o');
       this.modelName = 'gpt-4o';
@@ -41,7 +39,6 @@ export class TokenCounter {
       return tokens.length;
     } catch (error) {
       console.warn('Error counting tokens, falling back to word-based estimation:', error);
-      // Fallback: rough estimation based on words (typically 1.3 tokens per word)
       return Math.ceil(text.split(/\s+/).length * 1.3);
     }
   }
@@ -52,10 +49,9 @@ export class TokenCounter {
    * @returns Number of tokens including message formatting overhead
    */
   countMessageTokens(message: BaseMessage): number {
-    const contentTokens = this.countTokens(message.content as string);
+    const contentTokens = this.countTokens(String(message.content ?? ''));
     const roleTokens = this.countTokens(this.getMessageRole(message));
     
-    // Add overhead for message structure and role
     return contentTokens + roleTokens + TokenCounter.MESSAGE_OVERHEAD + TokenCounter.ROLE_OVERHEAD;
   }
 
@@ -69,9 +65,11 @@ export class TokenCounter {
       return 0;
     }
 
-    return messages.reduce((total, message) => {
-      return total + this.countMessageTokens(message);
-    }, 0);
+    let total = 0;
+    for (const message of messages) {
+      total += this.countMessageTokens(message);
+    }
+    return total;
   }
 
   /**
@@ -88,7 +86,6 @@ export class TokenCounter {
     const contentTokens = this.countTokens(systemPrompt);
     const roleTokens = this.countTokens('system');
     
-    // System messages have similar overhead to regular messages
     return contentTokens + roleTokens + TokenCounter.MESSAGE_OVERHEAD + TokenCounter.ROLE_OVERHEAD;
   }
 
@@ -102,7 +99,6 @@ export class TokenCounter {
     const systemTokens = this.estimateSystemPromptTokens(systemPrompt);
     const messageTokens = this.countMessagesTokens(messages);
     
-    // Add a small buffer for chat completion overhead
     const completionOverhead = 10;
     
     return systemTokens + messageTokens + completionOverhead;
@@ -127,7 +123,7 @@ export class TokenCounter {
       case 'tool':
         return 'tool';
       default:
-        return 'user'; // Default fallback
+        return 'user';
     }
   }
 
@@ -145,8 +141,8 @@ export class TokenCounter {
   dispose(): void {
     try {
       this.encoding.free();
-    } catch (error) {
-      console.warn('Error disposing encoding:', error);
+    } catch {
+      console.warn('Error disposing encoding');
     }
   }
 }

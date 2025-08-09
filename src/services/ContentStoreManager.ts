@@ -24,7 +24,6 @@ class ContentStorageAdapter implements ContentStoreInterface {
 
   async resolveReference(referenceId: string): Promise<ReferenceResolutionResult> {
     const result = await this.storage.resolveReference(referenceId);
-    // Convert to match the interface from standards-sdk
     if (result.success && result.content) {
       const response: ReferenceResolutionResult = {
         content: result.content
@@ -38,7 +37,6 @@ class ContentStorageAdapter implements ContentStoreInterface {
       }
       return response;
     } else {
-      // If resolution fails, throw an error as the interface expects content to be present
       throw new Error(result.error || 'Reference not found');
     }
   }
@@ -75,7 +73,6 @@ class ContentResolver implements ContentResolverInterface {
   constructor(private adapter: ContentStorageAdapter) {}
 
   async resolveReference(referenceId: string): Promise<ReferenceResolutionResult> {
-    // The adapter already handles the conversion
     return await this.adapter.resolveReference(referenceId);
   }
 

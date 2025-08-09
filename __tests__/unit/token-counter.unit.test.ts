@@ -66,7 +66,6 @@ describe('TokenCounter', () => {
       const contentTokens = tokenCounter.countTokens(shortContent);
       const messageTokens = tokenCounter.countMessageTokens(message);
       
-      // Message should have more tokens due to role and formatting overhead
       expect(messageTokens).toBeGreaterThan(contentTokens);
     });
 
@@ -78,7 +77,6 @@ describe('TokenCounter', () => {
       const humanTokens = tokenCounter.countMessageTokens(humanMessage);
       const aiTokens = tokenCounter.countMessageTokens(aiMessage);
       
-      // Both should be greater than 0, might differ based on role overhead
       expect(humanTokens).toBeGreaterThan(0);
       expect(aiTokens).toBeGreaterThan(0);
     });
@@ -96,7 +94,6 @@ describe('TokenCounter', () => {
       const totalCount = tokenCounter.countMessagesTokens(messages);
       expect(totalCount).toBeGreaterThan(0);
       
-      // Verify it's the sum of individual messages
       const individualSum = messages.reduce((sum, msg) => 
         sum + tokenCounter.countMessageTokens(msg), 0
       );
@@ -116,7 +113,7 @@ describe('TokenCounter', () => {
       }
       
       const totalCount = tokenCounter.countMessagesTokens(messages);
-      expect(totalCount).toBeGreaterThan(1000); // Should be substantial for 200 messages
+      expect(totalCount).toBeGreaterThan(1000);
     });
   });
 

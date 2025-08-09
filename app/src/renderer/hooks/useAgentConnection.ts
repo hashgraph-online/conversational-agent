@@ -53,7 +53,6 @@ export const useAgentConnection = () => {
     }))
 
     try {
-      // Simulate progress updates
       const progressUpdates = [
         { progress: 20, status: 'Loading MCP servers...' },
         { progress: 40, status: 'Initializing Hedera connection...' },
@@ -112,25 +111,20 @@ export const useAgentConnection = () => {
     }
 
     if (connectionState.isPreloading) {
-      // Wait for preload to complete
       await getPreloadPromise()
     } else if (!preloadAttempted.current) {
-      // Start fresh connection if not preloaded
       await connect()
     }
   }, [isConnected, connectionState.isPreloading, getPreloadPromise, connect])
 
-  // Auto-preload when config is available
   useEffect(() => {
     if (config && isConfigComplete && !preloadAttempted.current && !isConnected) {
-      // Defer preload to next tick to avoid blocking UI
       setTimeout(() => {
         getPreloadPromise()
       }, 100)
     }
   }, [config, isConfigComplete, isConnected, getPreloadPromise])
 
-  // Reset preload state when config changes
   useEffect(() => {
     preloadAttempted.current = false
     preloadPromise.current = null
@@ -143,20 +137,16 @@ export const useAgentConnection = () => {
   }, [config?.hedera?.accountId, config?.hedera?.privateKey, config?.openai?.apiKey, config?.anthropic?.apiKey])
 
   return {
-    // Agent store state
     status,
     isConnected,
     connectionError: connectionError || connectionState.preloadError,
     
-    // Connection methods
     connect: fastConnect,
     
-    // Preload state
     isPreloading: connectionState.isPreloading,
     connectionProgress: connectionState.connectionProgress,
     connectionStatus: connectionState.connectionStatus,
     
-    // Config state
     isConfigComplete
   }
 }

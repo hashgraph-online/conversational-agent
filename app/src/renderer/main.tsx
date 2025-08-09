@@ -4,7 +4,6 @@ import App from './App'
 import './styles/index.css'
 import { initializeRendererLogger } from './utils/logger-init'
 
-// Initialize electron-log for the renderer process
 initializeRendererLogger()
 
 try {

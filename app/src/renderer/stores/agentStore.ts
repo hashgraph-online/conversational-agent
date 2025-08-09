@@ -265,13 +265,12 @@ export const useAgentStore = create<AgentStore>((set, get) => {
           };
 
           const { operationalMode } = get();
-          
+
           if (
             operationalMode === 'autonomous' &&
             result.response.metadata?.transactionBytes
           ) {
             try {
-              // Validate transaction bytes format
               if (
                 AutonomousTransactionParser.validateTransactionBytes(
                   result.response.metadata.transactionBytes

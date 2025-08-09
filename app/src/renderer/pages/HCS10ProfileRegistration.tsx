@@ -45,7 +45,6 @@ export function HCS10ProfileRegistration() {
     null
   );
 
-  // Progress state for UI
   const [progress, setProgress] = useState<{
     message: string;
     percent: number;
@@ -57,9 +56,8 @@ export function HCS10ProfileRegistration() {
    */
   const fetchExistingProfile = useCallback(async () => {
     try {
-      // Check if user has existing profiles in the store
       if (profiles && profiles.length > 0) {
-        const profile = profiles[0]; // Get the first profile
+        const profile = profiles[0];
         setHasExistingProfile(true);
 
         const storeFormData: Partial<HCS10ProfileFormData> = {
@@ -113,7 +111,7 @@ export function HCS10ProfileRegistration() {
       setRegistrationResult(null);
       setShowStatusDialog(false);
     }
-  }, []); // Run only once on mount
+  }, []);
 
   /**
    * Set up IPC listener for real-time progress updates
@@ -185,8 +183,7 @@ export function HCS10ProfileRegistration() {
     };
 
     checkInProgressRegistration();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [existingProfile?.name]); // Intentionally exclude setAgentCreationState to prevent infinite loop
+  }, [existingProfile?.name]);
 
   /**
    * Handle form submission with real-time progress tracking
@@ -233,7 +230,6 @@ export function HCS10ProfileRegistration() {
       if (result.success && result.data) {
         setRegistrationResult(result.data);
 
-        // Add to local store
         addProfile({
           id: `profile-${Date.now()}`,
           accountId: result.data.accountId,
@@ -288,14 +284,11 @@ export function HCS10ProfileRegistration() {
         try {
           await window.electron.invoke('hcs10:cancelRegistration');
           
-          // Clear all registration state
           clearAgentCreationState();
           
-          // Reset component state
           setIsRegistering(false);
           setRegistrationError(null);
           
-          // Clear progress state completely - don't persist cancelled state
           const clearedProgress = {
             message: '',
             percent: 0,
@@ -304,7 +297,6 @@ export function HCS10ProfileRegistration() {
           setRegistrationProgress(clearedProgress);
           
         } catch (error) {
-          // Even if cancellation fails, reset the local state
           clearAgentCreationState();
           setIsRegistering(false);
           setRegistrationError(null);
@@ -368,10 +360,8 @@ export function HCS10ProfileRegistration() {
                   size='sm'
                   onClick={async () => {
                     try {
-                      // Clear backend state files
                       await window.electron.invoke('hcs10:clearAllStates');
                       
-                      // Clear only registration state, not form data
                       clearAgentCreationState();
                       setRegistrationProgress({
                         message: '',
@@ -383,7 +373,6 @@ export function HCS10ProfileRegistration() {
                       });
                       setRegistrationError(null);
                       setRegistrationResult(null);
-                      // Don't clear existingProfile - keep the form data
                     } catch (error) {
                       console.error('Failed to reset registration state:', error);
                     }

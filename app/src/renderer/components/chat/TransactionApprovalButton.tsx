@@ -40,9 +40,8 @@ const TransactionContent = ({
 }): React.ReactNode => {
 
   if (transactionDetails) {
-    const showHeader =
-      !description?.includes(transactionDetails.humanReadableType) &&
-      !description?.includes('Transfer');
+    // Hide the header in TransactionDetails if we're already showing the type in the description
+    const hideHeader = true; // Always hide since we show it in the parent component
 
     const hbarTransfersForDisplay = (transactionDetails.transfers || []).map(
       (t) => ({
@@ -65,7 +64,9 @@ const TransactionContent = ({
         scheduleId={scheduleId}
         contractCall={transactionDetails.contractCall}
         tokenCreationInfo={transactionDetails.tokenCreation}
-        hideHeader={!showHeader}
+        tokenCreation={transactionDetails.tokenCreation}
+        airdrop={transactionDetails.airdrop}
+        hideHeader={hideHeader}
         network={network}
         consensusSubmitMessage={transactionDetails.consensusSubmitMessage}
         variant='embedded'
@@ -86,6 +87,7 @@ export const TransactionApprovalButton: React.FC<TransactionApprovalButtonProps>
   onApprove,
   onReject
 }) => {
+
   const [isApproving, setIsApproving] = useState(false);
   const [isApproved, setIsApproved] = useState(false);
   const [isExecuted, setIsExecuted] = useState(false);
@@ -165,7 +167,6 @@ export const TransactionApprovalButton: React.FC<TransactionApprovalButtonProps>
       if (!transactionBytes) {
           return;
       }
-
 
       setIsLoadingDetails(true);
       try {
@@ -248,7 +249,14 @@ export const TransactionApprovalButton: React.FC<TransactionApprovalButtonProps>
         await new Promise(resolve => setTimeout(resolve, 500));
         setExecutionStatus('submitting');
         
-        const result = await window.electron.executeTransactionBytes(transactionBytes);
+        const entityContext = {
+          description: description || '',
+          name: transactionDetails?.tokenCreation?.name || 
+                transactionDetails?.details?.tokenCreation?.name ||
+                undefined
+        };
+        
+        const result = await window.electron.executeTransactionBytes(transactionBytes, entityContext);
         
         if (result.success) {
           setExecutionStatus('confirming');
@@ -439,7 +447,7 @@ export const TransactionApprovalButton: React.FC<TransactionApprovalButtonProps>
                             ? ` on ${formatDate(executedTimestamp)}`
                             : ''
                         }`
-                      : description}
+                      : (description || (transactionDetails?.humanReadableType && transactionDetails.humanReadableType !== 'Unknown Transaction' ? transactionDetails.humanReadableType : 'Transaction requires approval'))}
                   </Typography>
                 </div>
               </div>

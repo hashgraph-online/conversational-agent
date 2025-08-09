@@ -161,7 +161,6 @@ export const MCPRegistry: React.FC<MCPRegistryProps> = ({
   useEffect(() => {
     searchRegistries('', [], 0, false)
     loadCacheStats()
-    // Load installed servers
     loadInstalledServers()
   }, [loadCacheStats])
   
@@ -274,14 +273,13 @@ export const MCPRegistry: React.FC<MCPRegistryProps> = ({
       return
     }
     
-    // Check if already installed
     if (installedServers.includes(server.name.toLowerCase())) {
       setError(`${server.name} is already installed`)
       return
     }
 
     setInstallingIds(prev => new Set(prev).add(server.id))
-    setError(null) // Clear any previous errors
+    setError(null)
     
     try {
       const result = await window.electron.installMCPFromRegistry(
@@ -290,19 +288,15 @@ export const MCPRegistry: React.FC<MCPRegistryProps> = ({
       )
 
       if (result.success) {
-        // Mark as installed
         setInstalledIds(prev => new Set(prev).add(server.id))
         setInstalledServers(prev => [...prev, server.name.toLowerCase()])
         
-        // Show success message
         setSuccessMessage(`${server.name} installed successfully!`)
         
-        // Clear success message after 5 seconds
         setTimeout(() => {
           setSuccessMessage(null)
         }, 5000)
         
-        // Show installed state for 5 seconds, then hide (user can refresh to see persistent state)
         setTimeout(() => {
           setInstalledIds(prev => {
             const newSet = new Set(prev)
@@ -313,7 +307,6 @@ export const MCPRegistry: React.FC<MCPRegistryProps> = ({
         
         onInstall?.(server)
         
-        // Reload installed servers after a delay to ensure it's saved
         setTimeout(() => {
           loadInstalledServers()
         }, 1000)
@@ -626,7 +619,6 @@ const ServerCard: React.FC<ServerCardProps> = ({ server, onInstall, isInstalling
     }
   }
 
-  // Check if server can be installed
   const isInstallable = !!(
     server.packageName ||
     (server.repository?.url && server.repository.url.includes('github.com'))

@@ -41,7 +41,6 @@ export const ConfigInitProvider: React.FC<ConfigInitProviderProps> = ({ children
     }
   }, [loadConfig])
 
-  // Apply theme after config is loaded
   useEffect(() => {
     if (config?.advanced?.theme) {
       configService.applyTheme(config.advanced.theme).catch(error => {

@@ -39,7 +39,7 @@ export class HCS10RegistrationService extends EventEmitter {
   private progressCallCount = 0;
   private progressStartTime = 0;
   private lastEmitTime = 0;
-  private minEmitInterval = 500; // Minimum 500ms between emits
+  private minEmitInterval = 500;
 
   private constructor() {
     super();
@@ -69,16 +69,13 @@ export class HCS10RegistrationService extends EventEmitter {
         capabilities: profileData.capabilities.length,
       });
 
-      // Set up abort controller for cancellation
       this.currentRegistration = {
         profileName: profileData.name,
         abortController: new AbortController()
       };
 
-      // Prepare metadata for HCS-10 registration
       const metadata = await this.prepareMetadata(profileData);
 
-      // Get agent configuration to determine operational mode
       const agentConfig = await this.getAgentConfig();
       const isAutonomous = agentConfig.operationalMode === 'autonomous';
 
@@ -87,14 +84,12 @@ export class HCS10RegistrationService extends EventEmitter {
         hasFeesConfigured: !!profileData.feeConfiguration,
       });
 
-      // Execute registration using direct SDK functions with progress tracking
       const result = await this.executeRegistration(
         metadata,
         profileData,
         isAutonomous
       );
 
-      // Store the registered profile
       await this.storeProfile({
         ...profileData,
         accountId: result.accountId,
@@ -120,19 +115,16 @@ export class HCS10RegistrationService extends EventEmitter {
       name: profileData.name,
       description: profileData.description,
       capabilities: profileData.capabilities,
-      socials: profileData.socials, // Already in the correct object format
+      socials: profileData.socials,
     };
 
-    // Handle profile image - prefer file data over URL
     if (profileData.profileImageFile) {
-      // Convert base64 to buffer for HCS-11 inscription
       const base64Data =
         profileData.profileImageFile.data.split(',')[1] ||
         profileData.profileImageFile.data;
       metadata.profilePictureBuffer = base64Data;
       metadata.profilePictureFilename = profileData.profileImageFile.name;
     } else if (profileData.profileImage) {
-      // Fallback to URL/path if provided
       metadata.profileImage = profileData.profileImage;
     }
 
@@ -152,7 +144,6 @@ export class HCS10RegistrationService extends EventEmitter {
     isAutonomous: boolean
   ): Promise<HCS10ProfileResponse> {
     try {
-      // Get configuration
       const config = await this.configService.load();
 
       if (!config.hedera?.accountId || !config.hedera?.privateKey) {
@@ -161,7 +152,6 @@ export class HCS10RegistrationService extends EventEmitter {
         );
       }
 
-      // Create HCS10Client with credentials
       const hcs10Client = new HCS10Client({
         network: config.hedera.network || 'testnet',
         operatorId: config.hedera.accountId,
@@ -170,7 +160,6 @@ export class HCS10RegistrationService extends EventEmitter {
         prettyPrint: false,
       });
 
-      // Create SDK Logger for the agent builder
       const sdkLogger = new SDKLogger({
         module: 'HCS10Registration',
         level: 'info',
@@ -200,7 +189,6 @@ export class HCS10RegistrationService extends EventEmitter {
         )
         .setExistingAccount(config.hedera.accountId, config.hedera.privateKey);
 
-      // Add socials if provided
       if (metadata.socials && Object.keys(metadata.socials).length > 0) {
         Object.entries(metadata.socials).forEach(([platform, handle]) => {
           if (handle && typeof handle === 'string') {
@@ -209,7 +197,6 @@ export class HCS10RegistrationService extends EventEmitter {
         });
       }
 
-      // Add custom properties if provided
       if (profileData.customProperties) {
         Object.entries(profileData.customProperties).forEach(([key, value]) => {
           if (value) {
@@ -345,7 +332,7 @@ export class HCS10RegistrationService extends EventEmitter {
   private async getAgentConfig(): Promise<any> {
     const config = await this.configService.load();
     return {
-      operationalMode: 'autonomous', // Default to autonomous for now
+      operationalMode: 'autonomous',
     };
   }
 
