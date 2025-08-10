@@ -14,7 +14,7 @@ function Input({ className, type, ...props }: React.ComponentProps<"input">) {
         "file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium",
         "disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50",
         "hover:border-gray-300/50 dark:hover:border-white/10",
-        "focus:border-[#5599fe]/50 focus:ring-2 focus:ring-[#5599fe]/20 focus:shadow-[#5599fe]/10",
+        "focus:border-[hsl(var(--primary))]/50 focus:ring-2 focus:ring-[hsl(var(--primary))]/20 focus:shadow-[hsl(var(--primary))]/10",
         "aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
         "min-h-[44px] touch-manipulation font-mono",
         className

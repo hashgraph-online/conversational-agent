@@ -729,7 +729,7 @@ const ChatPage: React.FC<ChatPageProps> = () => {
                 transition={{ duration: 0.8, ease: "easeOut" }}
                 whileHover={{ 
                   scale: 1.1, 
-                  shadow: "0 25px 50px rgba(166, 121, 240, 0.4)",
+                  // Remove unsupported 'shadow' prop for whileHover; use CSS class instead
                   transition: { duration: 0.3 }
                 }}
               >

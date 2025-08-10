@@ -38,41 +38,38 @@ export class SafeConversationalAgent extends ConversationalAgent {
   private config: AgentConfig;
 
   constructor(config: AgentConfig) {
-    super({
-      ...config,
-      entityMemoryEnabled: config.entityMemoryEnabled ?? true,
-      entityMemoryConfig: config.entityMemoryConfig,
-    });
+    // Pass through config; extra fields may not exist in older type defs
+    super(config as any);
 
     this.config = config;
   }
 
   async initialize() {
     try {
-      this.logger?.info('Initializing SafeConversationalAgent with base class...');
+      (this as any).logger?.info('Initializing SafeConversationalAgent with base class...');
 
 
       await super.initialize();
 
-      this.logger?.info('Agent initialized successfully', {
+      (this as any).logger?.info('Agent initialized successfully', {
         provider: this.config.llmProvider || 'openai',
-        hasMemoryManager: !!this.memoryManager,
-        memoryManagerType: this.memoryManager?.constructor.name,
+        hasMemoryManager: !!(this as any).memoryManager,
+        memoryManagerType: (this as any).memoryManager?.constructor?.name,
       });
 
-    
+
       if (this.config.mcpServers && this.config.mcpServers.length > 0) {
         this.startMCPConnections();
       }
     } catch (error) {
-      this.logger?.error('Failed to initialize agent:', error);
+      (this as any).logger?.error('Failed to initialize agent:', error);
       throw error;
     }
   }
 
   async processMessage(message: string, chatHistory: any[] = []): Promise<any> {
     try {
-      this.logger?.info('Processing message...');
+      (this as any).logger?.info('Processing message...');
 
 
       const result = await super.processMessage(
@@ -86,7 +83,7 @@ export class SafeConversationalAgent extends ConversationalAgent {
       if (result && typeof result === 'object') {
         const transactionBytes = result.transactionBytes ||
           result.metadata?.transactionBytes ||
-          result.rawToolOutput?.transactionBytes ||
+          (result as any).rawToolOutput?.transactionBytes ||
           null;
 
         if (transactionBytes && !result.transactionBytes) {
@@ -99,7 +96,7 @@ export class SafeConversationalAgent extends ConversationalAgent {
           };
         }
 
-        this.logger?.info('Agent processMessage result:', {
+        (this as any).logger?.info('Agent processMessage result:', {
           hasTransactionBytes: !!transactionBytes,
           hasScheduleId: !!result.scheduleId,
           operationalMode: this.config.operationalMode
@@ -108,18 +105,18 @@ export class SafeConversationalAgent extends ConversationalAgent {
 
       return result;
     } catch (error) {
-      this.logger?.error('Error in processMessage:', error);
+      (this as any).logger?.error('Error in processMessage:', error);
       throw error;
     }
   }
 
   async disconnect(): Promise<void> {
     try {
-      this.logger?.info('Disconnecting SafeConversationalAgent...');
-      await this.cleanup();
-      this.logger?.info('SafeConversationalAgent disconnected successfully');
+      (this as any).logger?.info('Disconnecting SafeConversationalAgent...');
+      await (this as any).cleanup();
+      (this as any).logger?.info('SafeConversationalAgent disconnected successfully');
     } catch (error) {
-      this.logger?.error('Error during disconnect:', error);
+      (this as any).logger?.error('Error during disconnect:', error);
       throw error;
     }
   }
@@ -129,7 +126,7 @@ export class SafeConversationalAgent extends ConversationalAgent {
    */
   async executeToolCall(toolCall: any) {
     try {
-      this.logger?.info('Executing tool call', { toolName: toolCall.name });
+      (this as any).logger?.info('Executing tool call', { toolName: toolCall.name });
 
       const toolRequestMessage = `Please execute the following tool:
 Tool: ${toolCall.name}
@@ -146,7 +143,7 @@ Arguments: ${JSON.stringify(toolCall.arguments, null, 2)}`;
 
       throw new Error('Tool execution failed: No response');
     } catch (error) {
-      this.logger?.error('Tool call execution failed:', error);
+      (this as any).logger?.error('Tool call execution failed:', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Tool execution failed',
@@ -168,13 +165,13 @@ Arguments: ${JSON.stringify(toolCall.arguments, null, 2)}`;
     );
 
     if (enabledServers.length > 0) {
-      this.logger?.info(`MCP connections will be established asynchronously for ${enabledServers.length} servers`, {
+      (this as any).logger?.info(`MCP connections will be established asynchronously for ${enabledServers.length} servers`, {
         servers: enabledServers.map((s: any) => s.name),
       });
 
       setTimeout(() => {
         enabledServers.forEach((server: any) => {
-          this.logger?.info(`MCP server ${server.name} connection initiated asynchronously`);
+          (this as any).logger?.info(`MCP server ${server.name} connection initiated asynchronously`);
         });
       }, 1000);
     }

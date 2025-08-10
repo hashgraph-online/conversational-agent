@@ -85,7 +85,7 @@ const MCPPage: React.FC = () => {
       setIsAddModalOpen(false);
       setEditingServer(null);
       setServerTemplate(null);
-    } catch (error) {}
+    } catch (error) { }
   };
 
   const handleEditServer = (serverId: string) => {
@@ -104,14 +104,14 @@ const MCPPage: React.FC = () => {
     ) {
       try {
         await deleteServer(serverId);
-      } catch (error) {}
+      } catch (error) { }
     }
   };
 
   const handleToggleServer = async (serverId: string, enabled: boolean) => {
     try {
       await toggleServer(serverId, enabled);
-    } catch (error) {}
+    } catch (error) { }
   };
 
   const handleTestConnection = async (serverId: string) => {
@@ -152,7 +152,7 @@ const MCPPage: React.FC = () => {
           <div className='flex items-center justify-between mb-4'>
             <Typography
               variant='h1'
-              className='text-3xl font-bold bg-gradient-to-r from-[#a679f0] via-[#5599fe] to-[#48df7b] bg-clip-text text-transparent'
+              className='text-3xl font-bold bg-gradient-to-r from-[hsl(var(--brand-secondary))] via-[hsl(var(--brand-primary))] to-[hsl(var(--brand-accent))] bg-clip-text text-transparent'
             >
               MCP Servers
             </Typography>
@@ -184,7 +184,7 @@ const MCPPage: React.FC = () => {
                   variant='default'
                   size='sm'
                   onClick={() => setIsAddModalOpen(true)}
-                  className='text-xs bg-[#5599fe] text-white hover:bg-[#4488ed]'
+                  className='text-xs bg-primary text-primary-foreground hover:bg-[hsl(var(--primary))]/90'
                 >
                   <FiPlus className='w-4 h-4 mr-1.5' />
                   Add Server
@@ -198,9 +198,9 @@ const MCPPage: React.FC = () => {
         </div>
 
         {servers.length === 0 && !isLoading && (
-          <div className='mb-6 p-3 bg-gradient-to-br from-[#5599fe]/10 to-[#5599fe]/5 rounded-lg border border-[#5599fe]/20'>
+          <div className='mb-6 p-3 bg-gradient-to-br from-[hsl(var(--primary))]/10 to-[hsl(var(--primary))]/5 rounded-lg border border-[hsl(var(--primary))]/20'>
             <div className='flex items-center gap-2'>
-              <FiInfo className='h-4 w-4 text-[#5599fe]' />
+              <FiInfo className='h-4 w-4 text-primary' />
               <Typography variant='body2' className='text-sm'>
                 <span className='font-medium'>Get Started:</span> MCP servers
                 extend your agent with new capabilities like file access, web

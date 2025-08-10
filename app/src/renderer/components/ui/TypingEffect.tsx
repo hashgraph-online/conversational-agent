@@ -21,7 +21,7 @@ const TypingEffect: React.FC<TypingEffectProps> = ({
   const [displayedText, setDisplayedText] = useState('')
   const [isDeleting, setIsDeleting] = useState(false)
   const [textIndex, setTextIndex] = useState(0)
-  
+
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const pauseTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
@@ -64,7 +64,7 @@ const TypingEffect: React.FC<TypingEffectProps> = ({
   return (
     <span className={className}>
       {displayedText}
-      <span className="inline-block w-0.5 h-5 ml-0.5 bg-[#5599fe] animate-pulse" />
+      <span className="inline-block w-0.5 h-5 ml-0.5 bg-primary animate-pulse" />
     </span>
   )
 }

@@ -9,7 +9,6 @@ export type {
   ContractCallData,
   TokenCreationData,
   ConsensusSubmitMessageData,
-  TokenAirdropData,
   ParsedTransaction as SDKParsedTransaction
 } from '@hashgraphonline/standards-sdk/dist/es/utils/transaction-parser-types';
 

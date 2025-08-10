@@ -12,7 +12,7 @@ import { motion } from 'framer-motion';
 import { cn } from '../lib/utils';
 import { MyAgentsList } from '../components/hcs10/MyAgentsList';
 
-interface HomePageProps {}
+interface HomePageProps { }
 
 interface FeatureCard {
   icon: React.ElementType;
@@ -75,7 +75,7 @@ const HomePage: React.FC<HomePageProps> = () => {
         {[...Array(3)].map((_, i) => (
           <motion.div
             key={i}
-            className='absolute w-2 h-2 bg-gradient-to-r from-[#a679f0] to-[#5599fe] rounded-full opacity-40'
+            className='absolute w-2 h-2 bg-gradient-to-r from-[hsl(var(--secondary))] to-[hsl(var(--primary))] rounded-full opacity-40'
             animate={{
               x: [0, 100, -50, 0],
               y: [0, -100, 50, 0],
@@ -95,7 +95,7 @@ const HomePage: React.FC<HomePageProps> = () => {
 
 
       <motion.div
-        className='absolute top-10 right-10 w-48 h-48 bg-[#a679f0]/10 rounded-full blur-3xl'
+        className='absolute top-10 right-10 w-48 h-48 bg-[hsl(var(--secondary))]/10 rounded-full blur-3xl'
         animate={{
           scale: [1, 1.2, 1],
           opacity: [0.1, 0.2, 0.1],
@@ -107,7 +107,7 @@ const HomePage: React.FC<HomePageProps> = () => {
         }}
       />
       <motion.div
-        className='absolute bottom-10 left-10 w-48 h-48 bg-[#48df7b]/10 rounded-full blur-3xl'
+        className='absolute bottom-10 left-10 w-48 h-48 bg-[hsl(var(--accent))]/10 rounded-full blur-3xl'
         animate={{
           scale: [1.2, 1, 1.2],
           opacity: [0.1, 0.2, 0.1],
@@ -128,7 +128,7 @@ const HomePage: React.FC<HomePageProps> = () => {
         >
           <Typography
             variant='h2'
-            className='font-bold text-4xl md:text-5xl animate-gradient bg-gradient-to-r from-[#a679f0] via-[#5599fe] to-[#48df7b] bg-clip-text text-transparent font-mono'
+            className='font-bold text-4xl md:text-5xl animate-gradient bg-gradient-to-r from-[hsl(var(--brand-secondary))] via-[hsl(var(--brand-primary))] to-[hsl(var(--brand-accent))] bg-clip-text text-transparent font-mono'
             style={{ backgroundSize: '200% 200%' }}
           >
             HashgraphOnline
@@ -159,10 +159,10 @@ const HomePage: React.FC<HomePageProps> = () => {
         {features.map((feature, index) => {
           const Icon = feature.icon;
           const colorClasses = {
-            purple: 'from-[#a679f0] to-[#5599fe]',
-            blue: 'from-[#5599fe] to-[#48df7b]',
-            green: 'from-[#48df7b] to-[#5599fe]',
-            orange: 'from-[#5599fe] to-[#a679f0]',
+            purple: 'from-[hsl(var(--secondary))] to-[hsl(var(--primary))]',
+            blue: 'from-[hsl(var(--primary))] to-[hsl(var(--accent))]',
+            green: 'from-[hsl(var(--accent))] to-[hsl(var(--primary))]',
+            orange: 'from-[hsl(var(--primary))] to-[hsl(var(--secondary))]',
           };
           const isActive = activeFeature === index;
 
@@ -179,7 +179,7 @@ const HomePage: React.FC<HomePageProps> = () => {
               className={cn(
                 'group relative bg-white/80 dark:bg-gray-900/50 backdrop-blur-sm rounded-2xl card border transition-all duration-300 text-left overflow-hidden',
                 isActive
-                  ? 'border-[#5599fe]/50 shadow-2xl shadow-[#5599fe]/20'
+                  ? 'border-[hsl(var(--primary))]/50 shadow-2xl shadow-[hsl(var(--primary))]/20'
                   : 'border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700 hover:shadow-xl'
               )}
             >
@@ -213,7 +213,7 @@ const HomePage: React.FC<HomePageProps> = () => {
                 </div>
                 <Typography
                   variant='h5'
-                  className='font-semibold group-hover:text-transparent group-hover:bg-gradient-to-r group-hover:from-[#5599fe] group-hover:to-[#a679f0] group-hover:bg-clip-text transition-all duration-300'
+                  className='font-semibold group-hover:text-transparent group-hover:bg-gradient-to-r group-hover:from-[hsl(var(--primary))] group-hover:to-[hsl(var(--secondary))] group-hover:bg-clip-text transition-all duration-300'
                 >
                   {feature.title}
                 </Typography>
@@ -227,7 +227,7 @@ const HomePage: React.FC<HomePageProps> = () => {
                   {feature.description}
                 </Typography>
               </div>
-              <div className='flex items-center gap-2 text-[#5599fe] dark:text-[#5599fe]'>
+              <div className='flex items-center gap-2 text-primary'>
                 <span className='text-sm font-medium'>Open</span>
                 <FiArrowRight className='w-4 h-4 transition-transform group-hover:translate-x-1' />
               </div>

@@ -272,10 +272,24 @@ export const useAgentStore = create<AgentStore>((set, get) => {
             result.response.metadata?.transactionBytes
           ) {
             try {
-              const validation = TransactionParser.validateTransactionBytes(
-                result.response.metadata.transactionBytes
-              );
-              if (validation.isValid) {
+              // Validate by attempting to parse; older SDK may not expose validateTransactionBytes
+              let isValid = false;
+              try {
+                if ((TransactionParser as any).validateTransactionBytes) {
+                  const validation = (TransactionParser as any).validateTransactionBytes(
+                    result.response.metadata.transactionBytes
+                  );
+                  isValid = !!validation?.isValid;
+                } else {
+                  await TransactionParser.parseTransactionBody(
+                    result.response.metadata.transactionBytes
+                  );
+                  isValid = true;
+                }
+              } catch {
+                isValid = false;
+              }
+              if (isValid) {
                 assistantMessage.metadata = {
                   ...assistantMessage.metadata,
                   transactionBytes: result.response.metadata.transactionBytes,
@@ -283,10 +297,13 @@ export const useAgentStore = create<AgentStore>((set, get) => {
                 };
 
                 try {
-                  const parsedTransaction =
-                    await TransactionParser.parseTransactionBytes(
-                      result.response.metadata.transactionBytes
-                    );
+                  const parsedTransaction = (TransactionParser as any).parseTransactionBytes
+                    ? await (TransactionParser as any).parseTransactionBytes(
+                        result.response.metadata.transactionBytes
+                      )
+                    : await TransactionParser.parseTransactionBody(
+                        result.response.metadata.transactionBytes
+                      );
                   assistantMessage.metadata.parsedTransaction =
                     parsedTransaction;
                 } catch (parseError) {

@@ -23,13 +23,13 @@ export type TypographyProps = {
   as?: React.ElementType;
   gradient?: boolean;
   color?:
-    | 'default'
-    | 'muted'
-    | 'purple'
-    | 'blue'
-    | 'green'
-    | 'secondary'
-    | 'white';
+  | 'default'
+  | 'muted'
+  | 'purple'
+  | 'blue'
+  | 'green'
+  | 'secondary'
+  | 'white';
   noMargin?: boolean;
 };
 
@@ -45,49 +45,49 @@ const Typography: React.FC<
   noMargin = false,
   ...rest
 }) => {
-  const Component = as || getComponent(variant);
+    const Component = as || getComponent(variant);
 
-  const variantClasses: Record<TypographyVariant, string> = {
-    h1: 'text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight',
-    h2: 'text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold tracking-tight',
-    h3: 'text-base sm:text-lg md:text-xl font-bold',
-    h4: 'text-sm sm:text-base md:text-lg font-bold',
-    h5: 'text-base sm:text-lg md:text-xl font-medium',
-    h6: 'text-sm sm:text-base md:text-lg font-medium',
-    subtitle1: 'text-sm sm:text-base md:text-lg font-semibold',
-    subtitle2: 'text-xs sm:text-sm md:text-base font-semibold',
-    body1: 'text-xs sm:text-sm md:text-base font-normal',
-    body2: 'text-xs sm:text-sm font-normal',
-    caption: 'text-xs font-medium',
-    overline: 'text-xs font-medium uppercase tracking-widest font-mono',
-  };
+    const variantClasses: Record<TypographyVariant, string> = {
+      h1: 'text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight',
+      h2: 'text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold tracking-tight',
+      h3: 'text-base sm:text-lg md:text-xl font-bold',
+      h4: 'text-sm sm:text-base md:text-lg font-bold',
+      h5: 'text-base sm:text-lg md:text-xl font-medium',
+      h6: 'text-sm sm:text-base md:text-lg font-medium',
+      subtitle1: 'text-sm sm:text-base md:text-lg font-semibold',
+      subtitle2: 'text-xs sm:text-sm md:text-base font-semibold',
+      body1: 'text-xs sm:text-sm md:text-base font-normal',
+      body2: 'text-xs sm:text-sm font-normal',
+      caption: 'text-xs font-medium',
+      overline: 'text-xs font-medium uppercase tracking-widest font-mono',
+    };
 
-  const colorClasses = gradient
-    ? gradients.text
-    : {
+    const colorClasses = gradient
+      ? gradients.text
+      : {
         default: 'text-gray-900 dark:text-white',
         muted: 'text-gray-600 dark:text-gray-400',
-        purple: 'text-[#a679f0]',
-        blue: 'text-[#5599fe]',
-        green: 'text-[#48df7b]',
+        purple: 'text-[hsl(var(--brand-secondary))]',
+        blue: 'text-[hsl(var(--brand-primary))]',
+        green: 'text-[hsl(var(--brand-accent))]',
         secondary: 'text-gray-600 dark:text-gray-400',
         white: 'text-white',
       }[color];
 
-  return (
-    <Component
-      className={cn(
-        variantClasses[variant],
-        gradient ? colorClasses : colorClasses,
-        noMargin && 'm-0',
-        className
-      )}
-      {...rest}
-    >
-      {children}
-    </Component>
-  );
-};
+    return (
+      <Component
+        className={cn(
+          variantClasses[variant],
+          gradient ? colorClasses : colorClasses,
+          noMargin && 'm-0',
+          className
+        )}
+        {...rest}
+      >
+        {children}
+      </Component>
+    );
+  };
 
 /**
  * Maps typography variants to their corresponding HTML element types.

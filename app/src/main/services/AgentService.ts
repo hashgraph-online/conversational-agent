@@ -545,16 +545,16 @@ export class AgentService {
 
         this.logger.info('Detailed agent structure check:', {
           agentType: this.agent.constructor.name,
-          hasMemoryManagerDirect: !!this.agent.memoryManager,
-          memoryManagerType: typeof this.agent.memoryManager,
+          hasMemoryManagerDirect: !!(this.agent as any).memoryManager,
+          memoryManagerType: typeof (this.agent as any).memoryManager,
           agentKeys: Object.keys(this.agent),
           prototypeKeys: Object.getOwnPropertyNames(Object.getPrototypeOf(this.agent)),
-          hasContentStorage: !!(this.agent.memoryManager?.contentStorage),
-          contentStorageType: typeof this.agent.memoryManager?.contentStorage,
-          hasStoreMethod: typeof this.agent.memoryManager?.contentStorage?.storeContentIfLarge
+          hasContentStorage: !!((this.agent as any).memoryManager?.contentStorage),
+          contentStorageType: typeof (this.agent as any).memoryManager?.contentStorage,
+          hasStoreMethod: typeof (this.agent as any).memoryManager?.contentStorage?.storeContentIfLarge
         });
 
-        const memoryManager = this.agent.memoryManager;
+        const memoryManager = (this.agent as any).memoryManager;
         const contentStorage = memoryManager?.contentStorage;
 
         if (contentStorage && typeof contentStorage.storeContentIfLarge === 'function') {
@@ -852,7 +852,7 @@ export class AgentService {
         return;
       }
 
-      const safeAgent = this.agent as any;
+      const safeAgent = this.agent as unknown as any;
       if (safeAgent.memoryManager && typeof safeAgent.memoryManager.storeEntityAssociation === 'function') {
         safeAgent.memoryManager.storeEntityAssociation(entityId, entityName, entityType, transactionId);
         this.logger.info('Stored entity association:', {

@@ -8,53 +8,53 @@ export const colors = {
   brand: {
     white: '#ffffff',
     dark: '#3f4174',
-    blue: '#5599fe',
-    green: '#48df7b',
-    purple: '#a679f0',
+    blue: 'hsl(var(--brand-primary))',
+    green: 'hsl(var(--brand-accent))',
+    purple: 'hsl(var(--brand-secondary))',
   },
-  
+
   primary: {
-    DEFAULT: '#5599fe',
+    DEFAULT: 'hsl(var(--brand-primary))',
     50: '#eff6ff',
     100: '#dbeafe',
     200: '#bfdbfe',
     300: '#93c5fd',
     400: '#60a5fa',
-    500: '#5599fe',
+    500: 'hsl(var(--brand-primary))',
     600: '#2563eb',
     700: '#1d4ed8',
     800: '#1e40af',
     900: '#1e3a8a',
   },
-  
+
   secondary: {
-    DEFAULT: '#b56cff',
+    DEFAULT: 'hsl(var(--brand-secondary))',
     50: '#F3E5F5',
     100: '#E1BEE7',
     200: '#CE93D8',
     300: '#BA68C8',
     400: '#AB47BC',
-    500: '#b56cff',
+    500: 'hsl(var(--brand-secondary))',
     600: '#8E24AA',
     700: '#7B1FA2',
     800: '#6A1B9A',
     900: '#4A148C',
   },
-  
+
   accent: {
-    DEFAULT: '#48df7b',
+    DEFAULT: 'hsl(var(--brand-accent))',
     50: '#E8F5E9',
     100: '#C8E6C9',
     200: '#A5D6A7',
     300: '#81C784',
     400: '#66BB6A',
-    500: '#48df7b',
+    500: 'hsl(var(--brand-accent))',
     600: '#43A047',
     700: '#388E3C',
     800: '#2E7D32',
     900: '#1B5E20',
   },
-  
+
   danger: {
     DEFAULT: '#F44336',
     50: '#FFEBEE',
@@ -68,15 +68,15 @@ export const colors = {
     800: '#C62828',
     900: '#B71C1C',
   },
-  
+
   hedera: {
-    purple: '#b56cff',
-    blue: '#5599fe',
-    green: '#48df7b',
+    purple: 'hsl(var(--brand-secondary))',
+    blue: 'hsl(var(--brand-primary))',
+    green: 'hsl(var(--brand-accent))',
     charcoal: '#464646',
     smoke: '#8c8c8c',
   },
-  
+
   gray: {
     50: '#fafafa',
     100: '#f4f4f5',
@@ -90,7 +90,7 @@ export const colors = {
     900: '#18181b',
     950: '#0a0a0a',
   },
-  
+
   background: '#ffffff',
   foreground: '#0a0a0a',
   card: '#ffffff',
@@ -103,8 +103,8 @@ export const colors = {
   'destructive-foreground': '#ffffff',
   border: '#e4e4e7',
   input: '#e4e4e7',
-  ring: '#5599fe',
-  
+  ring: 'hsl(var(--brand-primary))',
+
   dark: {
     background: '#0a0a0a',
     foreground: '#fafafa',
@@ -118,7 +118,7 @@ export const colors = {
     'destructive-foreground': '#fafafa',
     border: '#27272a',
     input: '#27272a',
-    ring: '#5599fe',
+    ring: 'hsl(var(--brand-primary))',
   },
 } as const;
 
