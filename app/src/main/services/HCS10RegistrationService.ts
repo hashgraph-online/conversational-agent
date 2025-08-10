@@ -11,18 +11,22 @@ import { app } from 'electron';
 import {
   HCS10Client,
   AgentBuilder,
+  PersonBuilder,
   AIAgentCapability,
   InboundTopicType,
   Logger as SDKLogger,
   SocialPlatform,
   RegistrationProgressData,
   AgentCreationState,
+  InscribeProfileResponse,
+  CreateAgentResponse,
 } from '@hashgraphonline/standards-sdk';
 import { tagToCapabilityMap } from '../../shared/schemas/hcs10';
 import { EventEmitter } from 'events';
 
 /**
  * Service for handling HCS-10 profile registration using direct SDK functions
+ * Supports both person profiles (using PersonBuilder) and agent profiles (using AgentBuilder)
  */
 export class HCS10RegistrationService extends EventEmitter {
   private static instance: HCS10RegistrationService;
@@ -58,7 +62,7 @@ export class HCS10RegistrationService extends EventEmitter {
   }
 
   /**
-   * Registers an HCS-10 profile using direct SDK functions with comprehensive progress callbacks
+   * Registers an HCS-10 profile (person or agent) using direct SDK functions with comprehensive progress callbacks
    */
   async registerProfile(
     profileData: HCS10ProfileFormData
@@ -136,7 +140,7 @@ export class HCS10RegistrationService extends EventEmitter {
   }
 
   /**
-   * Executes the HCS-10 registration using direct SDK functions with comprehensive progress tracking
+   * Executes the HCS-10 profile registration (person or agent) using direct SDK functions with comprehensive progress tracking
    */
   private async executeRegistration(
     metadata: any,
@@ -166,49 +170,72 @@ export class HCS10RegistrationService extends EventEmitter {
         prettyPrint: false,
       });
 
-      const mappedCapabilities = profileData.capabilities.map(cap => 
-        tagToCapabilityMap[cap] || AIAgentCapability.TEXT_GENERATION
-      );
+      // Determine if this is a person or agent profile based on profileType
+      const isPersonProfile = profileData.profileType === 'person';
 
-      const agentBuilder = new AgentBuilder()
-        .setName(profileData.name)
-        .setAlias(
-          `${profileData.name
-            .toLowerCase()
-            .replace(/[^a-z0-9]/g, '-')}-${Date.now()}`
-        )
-        .setBio(profileData.description)
-        .setCapabilities(mappedCapabilities)
-        .setType(isAutonomous ? 'autonomous' : 'manual')
-        .setModel('conversational-agent-2024')
-        .setNetwork(config.hedera.network || 'testnet')
-        .setInboundTopicType(
-          profileData.feeConfiguration?.hbarFee
-            ? InboundTopicType.FEE_BASED
-            : InboundTopicType.PUBLIC
-        )
-        .setExistingAccount(config.hedera.accountId, config.hedera.privateKey);
+      let profileBuilder: PersonBuilder | AgentBuilder;
 
+      if (isPersonProfile) {
+        // Create PersonBuilder for human profiles
+        profileBuilder = new PersonBuilder()
+          .setName(profileData.name)
+          .setAlias(
+            profileData.alias || 
+            `${profileData.name
+              .toLowerCase()
+              .replace(/[^a-z0-9]/g, '-')}-${Date.now()}`
+          )
+          .setBio(profileData.description);
+      } else {
+        // Create AgentBuilder for AI agent profiles
+        const mappedCapabilities = profileData.capabilities.map(cap => 
+          tagToCapabilityMap[cap] || AIAgentCapability.TEXT_GENERATION
+        );
+
+        profileBuilder = new AgentBuilder()
+          .setName(profileData.name)
+          .setAlias(
+            profileData.alias ||
+            `${profileData.name
+              .toLowerCase()
+              .replace(/[^a-z0-9]/g, '-')}-${Date.now()}`
+          )
+          .setBio(profileData.description)
+          .setCapabilities(mappedCapabilities)
+          .setType(isAutonomous ? 'autonomous' : 'manual')
+          .setModel('conversational-agent-2024')
+          .setNetwork(config.hedera.network || 'testnet')
+          .setInboundTopicType(
+            profileData.feeConfiguration?.hbarFee
+              ? InboundTopicType.FEE_BASED
+              : InboundTopicType.PUBLIC
+          )
+          .setExistingAccount(config.hedera.accountId, config.hedera.privateKey);
+      }
+
+      // Add socials to both PersonBuilder and AgentBuilder
       if (metadata.socials && Object.keys(metadata.socials).length > 0) {
         Object.entries(metadata.socials).forEach(([platform, handle]) => {
           if (handle && typeof handle === 'string') {
-            agentBuilder.addSocial(platform as SocialPlatform, handle);
+            profileBuilder.addSocial(platform as SocialPlatform, handle);
           }
         });
       }
 
+      // Add custom properties to both PersonBuilder and AgentBuilder
       if (profileData.customProperties) {
         Object.entries(profileData.customProperties).forEach(([key, value]) => {
           if (value) {
-            agentBuilder.addProperty(key, value);
+            profileBuilder.addProperty(key, value);
           }
         });
       }
 
+      // Set profile picture for both PersonBuilder and AgentBuilder
       if (metadata.profilePictureBuffer && metadata.profilePictureFilename) {
         try {
           const buffer = Buffer.from(metadata.profilePictureBuffer, 'base64');
-          agentBuilder.setProfilePicture(
+          profileBuilder.setProfilePicture(
             buffer,
             metadata.profilePictureFilename
           );
@@ -217,22 +244,22 @@ export class HCS10RegistrationService extends EventEmitter {
         }
       }
 
-      this.logger.info('Starting HCS-10 agent registration with direct SDK');
+      this.logger.info(`Starting HCS-10 ${isPersonProfile ? 'person' : 'agent'} profile registration with direct SDK`);
 
       const existingState = await this.loadRegistrationState(profileData.name);
       
-      this.logger.info('Starting HCS-10 agent registration with progress tracking', {
+      this.logger.info(`Starting HCS-10 ${isPersonProfile ? 'person' : 'agent'} profile registration with progress tracking`, {
         hasExistingState: !!existingState,
         currentStage: existingState?.currentStage || 'init',
         completedPercentage: existingState?.completedPercentage || 0
       });
 
-      this.logger.info('Starting HCS-10 agent registration on existing account', {
+      this.logger.info(`Starting HCS-10 ${isPersonProfile ? 'person' : 'agent'} profile registration on existing account`, {
         accountId: config.hedera.accountId,
         network: config.hedera.network
       });
       
-      const result = await hcs10Client.createAndRegisterAgent(agentBuilder, {
+      const result = await hcs10Client.create(profileBuilder, {
         existingState: existingState || undefined,
         progressCallback: (data: RegistrationProgressData) => {
           const now = Date.now();
@@ -280,30 +307,67 @@ export class HCS10RegistrationService extends EventEmitter {
         },
       });
 
-      if (!result.metadata) {
-        throw new Error('Agent registration failed - no metadata returned');
+      await this.clearRegistrationState(profileData.name);
+
+      // Handle different response types for person vs agent profiles
+      let accountId: string;
+      let transactionId: string;
+
+      // Check if the result succeeded
+      if (!(result as any).success) {
+        throw new Error(`Profile registration failed: ${(result as any).error || 'Unknown error'}`);
       }
 
-      await this.clearRegistrationState(profileData.name);
-      
-      const registrationResult = result.metadata;
-
-      this.emit('registrationProgress', {
-        stage: 'completed',
-        message: 'Registration completed successfully!',
-        progressPercent: 100,
-        details: { accountId: registrationResult.accountId },
-        timestamp: new Date().toISOString()
-      });
+      if (isPersonProfile) {
+        // Handle InscribeProfileResponse for person profiles
+        const personResult = result as InscribeProfileResponse;
+        
+        // For person profiles, we use the operator's account ID since persons don't create new accounts
+        accountId = config.hedera.accountId;
+        transactionId = personResult.transactionId || 'N/A';
+        
+        this.emit('registrationProgress', {
+          stage: 'completed',
+          message: 'Person profile registered successfully!',
+          progressPercent: 100,
+          details: { 
+            accountId,
+            profileTopicId: personResult.profileTopicId,
+            inboundTopicId: personResult.inboundTopicId,
+            outboundTopicId: personResult.outboundTopicId
+          },
+          timestamp: new Date().toISOString()
+        });
+      } else {
+        // Handle CreateAgentResponse for agent profiles
+        const agentResult = result as CreateAgentResponse;
+        
+        // For agent profiles, we also use the operator's account ID since this is creating on existing account
+        accountId = config.hedera.accountId;
+        transactionId = 'N/A'; // The create method doesn't return a specific transaction ID
+        
+        this.emit('registrationProgress', {
+          stage: 'completed',
+          message: 'Agent profile registered successfully!',
+          progressPercent: 100,
+          details: { 
+            accountId,
+            profileTopicId: agentResult.profileTopicId,
+            inboundTopicId: agentResult.inboundTopicId,
+            outboundTopicId: agentResult.outboundTopicId
+          },
+          timestamp: new Date().toISOString()
+        });
+      }
 
       return {
         success: true,
-        accountId: registrationResult.accountId,
-        transactionId: result.transactionId || 'N/A',
+        accountId,
+        transactionId,
         timestamp: new Date().toISOString(),
         profileUrl: `https://hashscan.io/${
           config.hedera.network || 'testnet'
-        }/account/${registrationResult.accountId}`,
+        }/account/${accountId}`,
         metadata: {
           name: profileData.name,
           description: profileData.description,
@@ -315,11 +379,11 @@ export class HCS10RegistrationService extends EventEmitter {
       };
     } catch (error) {
       this.logger.error(
-        'Failed to execute HCS10 registration with direct SDK:',
+        'Failed to execute HCS10 profile registration with direct SDK:',
         error
       );
       throw new Error(
-        `HCS10 registration failed: ${
+        `HCS10 profile registration failed: ${
           error instanceof Error ? error.message : 'Unknown error'
         }`
       );

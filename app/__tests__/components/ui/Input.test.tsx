@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { Input } from '@/renderer/components/ui/Input';
+import { Input } from '@/renderer/components/ui/input';
 
 describe('Input', () => {
   it('renders correctly', () => {
@@ -45,7 +45,7 @@ describe('Input', () => {
   it('applies default styles', () => {
     render(<Input data-testid="input" />);
     const input = screen.getByTestId('input');
-    expect(input).toHaveClass('h-9', 'w-full', 'rounded-md', 'border', 'px-3', 'py-1');
+    expect(input).toHaveClass('h-10', 'w-full', 'rounded-xl', 'border', 'px-4', 'py-2');
   });
 
   it('supports custom className', () => {
@@ -120,6 +120,6 @@ describe('Input', () => {
   it('supports focus ring styles', () => {
     render(<Input data-testid="input" />);
     const input = screen.getByTestId('input');
-    expect(input).toHaveClass('focus-visible:ring-ring/50');
+    expect(input).toHaveClass('focus:ring-2');
   });
 });

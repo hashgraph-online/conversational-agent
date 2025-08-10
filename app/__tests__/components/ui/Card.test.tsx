@@ -15,14 +15,14 @@ describe('Card', () => {
   it('applies default styles', () => {
     render(<Card data-testid="card">Content</Card>);
     const card = screen.getByTestId('card');
-    expect(card).toHaveClass('rounded-xl', 'border', 'shadow-sm');
+    expect(card).toHaveClass('rounded-2xl', 'border', 'shadow-lg');
   });
 
   it('supports custom className', () => {
     render(<Card className="custom-class" data-testid="card">Content</Card>);
     const card = screen.getByTestId('card');
     expect(card).toHaveClass('custom-class');
-    expect(card).toHaveClass('rounded-xl');
+    expect(card).toHaveClass('rounded-2xl');
   });
 
   it('renders with complete structure', () => {

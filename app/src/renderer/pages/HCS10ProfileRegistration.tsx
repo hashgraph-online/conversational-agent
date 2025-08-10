@@ -356,8 +356,8 @@ export function HCS10ProfileRegistration() {
 
           <Typography variant='body1' className='text-muted-foreground'>
             {hasExistingProfile
-              ? 'Update your existing profile on the Hedera network. Your changes will replace the current profile information.'
-              : 'Register your profile on the Hedera network to enable discovery and interaction with AI agents'}
+              ? 'Update your existing profile on the Hedera Hashgraph. Your changes will replace the current profile information.'
+              : 'Register your profile on the Hedera Hashgraph to enable discovery and interaction with AI agents'}
           </Typography>
 
           {(registrationProgress.percent > 0 ||
@@ -388,8 +388,7 @@ export function HCS10ProfileRegistration() {
                       });
                       setRegistrationError(null);
                       setRegistrationResult(null);
-                    } catch (error) {
-                    }
+                    } catch (error) {}
                   }}
                   className='text-xs'
                 >

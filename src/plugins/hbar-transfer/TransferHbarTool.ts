@@ -27,7 +27,7 @@ const TransferHbarZodSchemaCore = z.object({
 /**
  * A Hedera transaction tool for transferring HBAR between accounts.
  * Supports single and multi-party transfers with automatic balance validation.
- * Extends BaseHederaTransactionTool to handle HBAR transfer transactions on the Hedera network.
+ * Extends BaseHederaTransactionTool to handle HBAR transfer transactions on the Hedera Hashgraph.
  */
 export class TransferHbarTool extends BaseHederaTransactionTool<
   typeof TransferHbarZodSchemaCore

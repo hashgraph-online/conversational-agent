@@ -21,7 +21,7 @@ const AcknowledgementsPage: React.FC = () => {
     {
       name: 'Hiero JavaScript SDK',
       description:
-        'The official JavaScript/TypeScript SDK for interacting with Hedera networks',
+        'The official JavaScript/TypeScript SDK for interacting with Hedera Hashgraphs',
       link: 'https://github.com/hiero-ledger/hiero-sdk-js',
       icon: HiCommandLine,
       gradient: 'from-[#7c3aed] to-[#a855f7]',
@@ -29,7 +29,7 @@ const AcknowledgementsPage: React.FC = () => {
     {
       name: 'Hedera Agent Kit',
       description:
-        "The foundational toolkit that powers HashgraphOnline's interaction with the Hedera network",
+        "The foundational toolkit that powers HashgraphOnline's interaction with the Hedera Hashgraph",
       link: 'https://github.com/hedera-dev/hedera-agent-kit',
       icon: HiCube,
       gradient: 'from-[#a679f0] to-[#5599fe]',
@@ -222,7 +222,6 @@ const AcknowledgementsPage: React.FC = () => {
 
   return (
     <div className='flex flex-col h-full bg-gray-50 dark:bg-gray-950 relative overflow-hidden'>
-
       <div className='absolute inset-0 opacity-[0.01] dark:opacity-[0.02] pointer-events-none'>
         <motion.div
           className='absolute inset-0'
@@ -243,7 +242,6 @@ const AcknowledgementsPage: React.FC = () => {
 
       <div className='min-h-screen bg-background'>
         <div className='container mx-auto px-6 py-8 max-w-6xl'>
-
           <div className='mb-8'>
             <Typography
               variant='h1'
@@ -261,7 +259,6 @@ const AcknowledgementsPage: React.FC = () => {
               making this project possible.
             </Typography>
           </div>
-
 
           <motion.section
             initial={{ opacity: 0, y: 20 }}
@@ -320,7 +317,6 @@ const AcknowledgementsPage: React.FC = () => {
             </div>
           </motion.section>
 
-
           <motion.section
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -359,7 +355,6 @@ const AcknowledgementsPage: React.FC = () => {
             </div>
           </motion.section>
 
-
           <motion.section
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -393,7 +388,6 @@ const AcknowledgementsPage: React.FC = () => {
               ))}
             </div>
           </motion.section>
-
 
           <motion.section
             initial={{ opacity: 0, y: 20 }}
@@ -463,7 +457,6 @@ const AcknowledgementsPage: React.FC = () => {
             </div>
           </motion.section>
 
-
           <motion.section
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -519,7 +512,6 @@ const AcknowledgementsPage: React.FC = () => {
             </div>
           </motion.section>
 
-
           <motion.section
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -567,7 +559,6 @@ const AcknowledgementsPage: React.FC = () => {
               </div>
             </Card>
           </motion.section>
-
 
           <motion.div
             initial={{ opacity: 0 }}

@@ -162,7 +162,7 @@ export abstract class BaseAgent {
 
     parts.push(
       `You are a helpful Hedera assistant. Your primary operator account is ${operatorId}. ` +
-        `You have tools to interact with the Hedera network. ` +
+        `You have tools to interact with the Hedera Hashgraph. ` +
         `When using any tool, provide all necessary parameters as defined by that tool's schema and description.`
     );
 

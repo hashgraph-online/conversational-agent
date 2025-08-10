@@ -131,7 +131,7 @@ describe('TokenCounter', () => {
 
     it('should estimate more tokens for longer system prompts', () => {
       const shortPrompt = 'Be helpful.';
-      const longPrompt = 'You are a sophisticated AI assistant specialized in Hedera network operations. You have access to various tools for blockchain interactions including token transfers, topic management, and smart contract operations. Always provide accurate and detailed responses while being mindful of transaction costs and security implications.';
+      const longPrompt = 'You are a sophisticated AI assistant specialized in Hedera Hashgraph operations. You have access to various tools for blockchain interactions including token transfers, topic management, and smart contract operations. Always provide accurate and detailed responses while being mindful of transaction costs and security implications.';
       
       const shortCount = tokenCounter.estimateSystemPromptTokens(shortPrompt);
       const longCount = tokenCounter.estimateSystemPromptTokens(longPrompt);

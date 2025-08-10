@@ -1,28 +1,22 @@
-import {
-  ConversationalAgent,
-} from '@hashgraphonline/conversational-agent';
-import type { MCPServerConfig } from './MCPService';
-
-/**
- * Builds the system message preamble for the agent.
- */
-function buildSystemMessage(accountId: string) {
-  return `You are a helpful assistant managing Hashgraph Online HCS-10 connections, messages, HCS-2 registries, and content inscription.
-Account: ${accountId}`;
-}
+import { ConversationalAgent } from '@hashgraphonline/conversational-agent';
+import type { AgentOperationalMode } from '@hashgraphonline/conversational-agent';
+import type { NetworkType } from '@hashgraphonline/standards-sdk';
+import type { MCPServerConfig as LibMCPServerConfig } from '@hashgraphonline/conversational-agent/dist/types/mcp/types';
 
 /**
  * Configuration interface extending ConversationalAgentOptions with entity memory options
  */
-type AgentConfig = {
-  accountId?: string;
-  privateKey?: string;
-  network?: string;
-  openAIApiKey?: string;
+export type AgentConfig = {
+  accountId: string;
+  privateKey: string;
+  network: NetworkType;
+  openAIApiKey: string;
   openAIModelName?: string;
-  llmProvider?: string;
-  operationalMode?: string;
-  mcpServers?: MCPServerConfig[];
+  llmProvider?: 'openai' | 'anthropic';
+  operationalMode?: AgentOperationalMode;
+  mcpServers?: LibMCPServerConfig[];
+  verbose?: boolean;
+  disableLogging?: boolean;
 
   /** Enable entity memory functionality */
   entityMemoryEnabled?: boolean;
@@ -49,8 +43,9 @@ export class SafeConversationalAgent extends ConversationalAgent {
 
   async initialize() {
     try {
-      this.logger?.info('Initializing SafeConversationalAgent with base class...');
-
+      this.logger?.info(
+        'Initializing SafeConversationalAgent with base class...'
+      );
 
       await super.initialize();
 
@@ -60,7 +55,6 @@ export class SafeConversationalAgent extends ConversationalAgent {
         memoryManagerType: this.memoryManager?.constructor.name,
       });
 
-    
       if (this.config.mcpServers && this.config.mcpServers.length > 0) {
         this.startMCPConnections();
       }
@@ -74,7 +68,6 @@ export class SafeConversationalAgent extends ConversationalAgent {
     try {
       this.logger?.info('Processing message...');
 
-
       const result = await super.processMessage(
         message,
         chatHistory.map((item) => ({
@@ -84,25 +77,29 @@ export class SafeConversationalAgent extends ConversationalAgent {
       );
 
       if (result && typeof result === 'object') {
-        const transactionBytes = result.transactionBytes ||
+        const transactionBytes =
+          result.transactionBytes ||
           result.metadata?.transactionBytes ||
-          result.rawToolOutput?.transactionBytes ||
+          (result as any).rawToolOutput?.transactionBytes ||
           null;
 
         if (transactionBytes && !result.transactionBytes) {
           result.transactionBytes = transactionBytes;
         }
-        if (transactionBytes && (!result.metadata || !result.metadata.transactionBytes)) {
+        if (
+          transactionBytes &&
+          (!result.metadata || !result.metadata.transactionBytes)
+        ) {
           result.metadata = {
             ...result.metadata,
-            transactionBytes
+            transactionBytes,
           };
         }
 
         this.logger?.info('Agent processMessage result:', {
           hasTransactionBytes: !!transactionBytes,
           hasScheduleId: !!result.scheduleId,
-          operationalMode: this.config.operationalMode
+          operationalMode: this.config.operationalMode,
         });
       }
 
@@ -168,13 +165,18 @@ Arguments: ${JSON.stringify(toolCall.arguments, null, 2)}`;
     );
 
     if (enabledServers.length > 0) {
-      this.logger?.info(`MCP connections will be established asynchronously for ${enabledServers.length} servers`, {
-        servers: enabledServers.map((s: any) => s.name),
-      });
+      this.logger?.info(
+        `MCP connections will be established asynchronously for ${enabledServers.length} servers`,
+        {
+          servers: enabledServers.map((s: any) => s.name),
+        }
+      );
 
       setTimeout(() => {
         enabledServers.forEach((server: any) => {
-          this.logger?.info(`MCP server ${server.name} connection initiated asynchronously`);
+          this.logger?.info(
+            `MCP server ${server.name} connection initiated asynchronously`
+          );
         });
       }, 1000);
     }

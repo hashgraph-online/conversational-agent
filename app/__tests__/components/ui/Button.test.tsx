@@ -12,19 +12,21 @@ describe('Button', () => {
   it('applies default variant styles by default', () => {
     render(<Button>Default</Button>);
     const button = screen.getByRole('button');
-    expect(button).toHaveClass('bg-hgo-blue');
+    expect(button).toHaveClass('bg-gradient-to-r');
+    expect(button).toHaveClass('from-[#5599fe]');
   });
 
   it('applies secondary variant styles', () => {
     render(<Button variant="secondary">Secondary</Button>);
     const button = screen.getByRole('button');
-    expect(button).toHaveClass('bg-gray-600');
+    expect(button).toHaveClass('bg-white/10');
+    expect(button).toHaveClass('backdrop-blur-sm');
   });
 
   it('applies ghost variant styles', () => {
     render(<Button variant="ghost">Ghost</Button>);
     const button = screen.getByRole('button');
-    expect(button).not.toHaveClass('bg-gray-100');
+    expect(button).toHaveClass('hover:bg-white/10');
     expect(button).toHaveClass('text-gray-600');
   });
 
@@ -56,15 +58,15 @@ describe('Button', () => {
   it('supports different sizes', () => {
     const { rerender } = render(<Button size="sm">Small</Button>);
     let button = screen.getByRole('button');
-    expect(button).toHaveClass('h-9', 'px-3', 'text-xs');
+    expect(button).toHaveClass('px-2', 'py-1', 'text-xs');
 
     rerender(<Button size="default">Default</Button>);
     button = screen.getByRole('button');
-    expect(button).toHaveClass('h-11', 'px-6', 'text-base');
+    expect(button).toHaveClass('px-3', 'py-1.5', 'text-xs');
 
     rerender(<Button size="lg">Large</Button>);
     button = screen.getByRole('button');
-    expect(button).toHaveClass('h-12', 'px-8', 'text-lg');
+    expect(button).toHaveClass('px-3.5', 'py-2', 'text-sm');
   });
 
   it('supports gradient variant', () => {
@@ -76,7 +78,7 @@ describe('Button', () => {
   it('supports outline variant', () => {
     render(<Button variant="outline">Outline</Button>);
     const button = screen.getByRole('button');
-    expect(button).toHaveClass('border-2', 'bg-transparent');
+    expect(button).toHaveClass('border', 'bg-white/5');
   });
 
   it('supports custom className', () => {

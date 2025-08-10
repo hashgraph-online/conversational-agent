@@ -1,19 +1,23 @@
-import React, { useEffect, useState, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { motion, AnimatePresence } from 'framer-motion'
-import Typography from '../components/ui/Typography'
-import Logo from '../components/ui/Logo'
-import { Button } from '../components/ui/Button'
-import { Badge } from '../components/ui/badge'
-import { Tooltip, TooltipContent, TooltipTrigger } from '../components/ui/tooltip'
-import { Alert, AlertDescription } from '../components/ui/alert'
-import { useAgentStore } from '../stores/agentStore'
-import { useConfigStore } from '../stores/configStore'
-import { HCS10Client } from '@hashgraphonline/standards-sdk'
-import { 
-  FiSettings, 
-  FiRefreshCw, 
-  FiSend, 
+import React, { useEffect, useState, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
+import Typography from '../components/ui/Typography';
+import Logo from '../components/ui/Logo';
+import { Button } from '../components/ui/Button';
+import { Badge } from '../components/ui/badge';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '../components/ui/tooltip';
+import { Alert, AlertDescription } from '../components/ui/alert';
+import { useAgentStore } from '../stores/agentStore';
+import { useConfigStore } from '../stores/configStore';
+import { HCS10Client } from '@hashgraphonline/standards-sdk';
+import {
+  FiSettings,
+  FiRefreshCw,
+  FiSend,
   FiMessageSquare,
   FiZap,
   FiWifi,
@@ -49,61 +53,83 @@ interface UserProfile {
 }
 
 // Animated suggestion card component
-const AnimatedSuggestionCard: React.FC<{ setInputValue: (value: string) => void }> = ({ setInputValue }) => {
-  const [currentIndex, setCurrentIndex] = useState(0)
-  const [displayText, setDisplayText] = useState('')
-  const [isTyping, setIsTyping] = useState(true)
-  
+const AnimatedSuggestionCard: React.FC<{
+  setInputValue: (value: string) => void;
+}> = ({ setInputValue }) => {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [displayText, setDisplayText] = useState('');
+  const [isTyping, setIsTyping] = useState(true);
+
   const suggestions = [
-    { icon: FiCpu, text: "Inscribe this poem...", color: 'from-purple-500/70 to-purple-600/70' },
-    { icon: FiCode, text: "What's the price of HBAR?", color: 'from-blue-500/70 to-blue-600/70' },
-    { icon: FiShield, text: "Send 1 HBAR to 0.0.800", color: 'from-green-500/70 to-green-600/70' },
-    { icon: FiMessageSquare, text: "Create an NFT collection", color: 'from-indigo-500/70 to-indigo-600/70' }
-  ]
-  
-  const currentSuggestion = suggestions[currentIndex]
-  const Icon = currentSuggestion.icon
-  
+    {
+      icon: FiCpu,
+      text: 'Inscribe this poem...',
+      color: 'from-purple-500/70 to-purple-600/70',
+    },
+    {
+      icon: FiCode,
+      text: "What's the price of HBAR?",
+      color: 'from-blue-500/70 to-blue-600/70',
+    },
+    {
+      icon: FiShield,
+      text: 'Send 1 HBAR to 0.0.800',
+      color: 'from-green-500/70 to-green-600/70',
+    },
+    {
+      icon: FiMessageSquare,
+      text: 'Create an NFT collection',
+      color: 'from-indigo-500/70 to-indigo-600/70',
+    },
+  ];
+
+  const currentSuggestion = suggestions[currentIndex];
+  const Icon = currentSuggestion.icon;
+
   // Typing animation effect
   useEffect(() => {
-    const targetText = currentSuggestion.text
-    let currentText = ''
-    let charIndex = 0
-    
-    setIsTyping(true)
-    setDisplayText('')
-    
+    const targetText = currentSuggestion.text;
+    let currentText = '';
+    let charIndex = 0;
+
+    setIsTyping(true);
+    setDisplayText('');
+
     const typingInterval = setInterval(() => {
       if (charIndex < targetText.length) {
-        currentText += targetText[charIndex]
-        setDisplayText(currentText)
-        charIndex++
+        currentText += targetText[charIndex];
+        setDisplayText(currentText);
+        charIndex++;
       } else {
-        clearInterval(typingInterval)
-        setIsTyping(false)
+        clearInterval(typingInterval);
+        setIsTyping(false);
       }
-    }, 50)
-    
-    return () => clearInterval(typingInterval)
-  }, [currentIndex, currentSuggestion.text])
-  
+    }, 50);
+
+    return () => clearInterval(typingInterval);
+  }, [currentIndex, currentSuggestion.text]);
+
   // Auto-advance to next suggestion
   useEffect(() => {
     if (!isTyping) {
       const timer = setTimeout(() => {
-        setCurrentIndex((prev) => (prev + 1) % suggestions.length)
-      }, 3000)
-      
-      return () => clearTimeout(timer)
+        setCurrentIndex((prev) => (prev + 1) % suggestions.length);
+      }, 3000);
+
+      return () => clearTimeout(timer);
     }
-  }, [isTyping, suggestions.length])
-  
+  }, [isTyping, suggestions.length]);
+
   return (
-    <div className="mt-8 flex flex-col items-center gap-4">
-      <Typography variant="caption" color="muted" className="text-xs uppercase tracking-wider">
+    <div className='mt-8 flex flex-col items-center gap-4'>
+      <Typography
+        variant='caption'
+        color='muted'
+        className='text-xs uppercase tracking-wider'
+      >
         Try asking
       </Typography>
-      
+
       <motion.button
         key={currentIndex}
         initial={{ opacity: 0 }}
@@ -112,35 +138,38 @@ const AnimatedSuggestionCard: React.FC<{ setInputValue: (value: string) => void 
         whileHover={{ scale: 1.01 }}
         whileTap={{ scale: 0.99 }}
         onClick={() => setInputValue(currentSuggestion.text)}
-        className="relative px-6 py-5 bg-white/80 dark:bg-gray-900/50 backdrop-blur-sm rounded-2xl border border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700 hover:shadow-xl transition-all min-w-[320px] max-w-md group"
+        className='relative px-6 py-5 bg-white/80 dark:bg-gray-900/50 backdrop-blur-sm rounded-2xl border border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700 hover:shadow-xl transition-all min-w-[320px] max-w-md group'
       >
-        <div className="flex items-center gap-4">
+        <div className='flex items-center gap-4'>
           {/* Animated icon container with fade in/out */}
-          <AnimatePresence mode="wait">
+          <AnimatePresence mode='wait'>
             <motion.div
               key={`icon-${currentIndex}`}
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
-              transition={{ duration: 0.8, ease: "easeInOut" }}
+              transition={{ duration: 0.8, ease: 'easeInOut' }}
               className={cn(
-                "w-10 h-10 rounded-lg bg-gradient-to-br flex items-center justify-center shadow-lg flex-shrink-0",
+                'w-10 h-10 rounded-lg bg-gradient-to-br flex items-center justify-center shadow-lg flex-shrink-0',
                 currentSuggestion.color
               )}
             >
-              <Icon className="w-5 h-5 text-white" />
+              <Icon className='w-5 h-5 text-white' />
             </motion.div>
           </AnimatePresence>
-          
+
           {/* Text with typing animation - properly centered */}
-          <div className="flex-1 text-left">
-            <Typography variant="body1" className="text-gray-900 dark:text-white font-medium leading-tight">
+          <div className='flex-1 text-left'>
+            <Typography
+              variant='body1'
+              className='text-gray-900 dark:text-white font-medium leading-tight'
+            >
               {displayText}
               {isTyping && (
                 <motion.span
                   animate={{ opacity: [1, 0] }}
                   transition={{ duration: 0.5, repeat: Infinity }}
-                  className="inline-block w-0.5 h-4 bg-gray-600 dark:bg-gray-400 ml-0.5 align-middle"
+                  className='inline-block w-0.5 h-4 bg-gray-600 dark:bg-gray-400 ml-0.5 align-middle'
                 />
               )}
             </Typography>
@@ -148,8 +177,8 @@ const AnimatedSuggestionCard: React.FC<{ setInputValue: (value: string) => void 
         </div>
       </motion.button>
     </div>
-  )
-}
+  );
+};
 
 const ChatPage: React.FC<ChatPageProps> = () => {
   const navigate = useNavigate();
@@ -179,42 +208,55 @@ const ChatPage: React.FC<ChatPageProps> = () => {
 
   const isConfigComplete = isConfigured();
 
-  useEffect(() => {
-    const fetchUserProfile = async () => {
-      if (
-        config?.hedera?.accountId &&
-        config?.hedera?.network &&
-        !isLoadingProfile
-      ) {
-        setIsLoadingProfile(true);
-        try {
-          const client = new HCS10Client({
-            network: config.hedera.network as 'mainnet' | 'testnet',
-            operatorId: config.hedera.accountId,
-            operatorPrivateKey: config.hedera.privateKey,
-            logLevel: 'info',
-          });
+  const fetchUserProfile = React.useCallback(async () => {
+    if (
+      config?.hedera?.accountId &&
+      config?.hedera?.network &&
+      !isLoadingProfile
+    ) {
+      setIsLoadingProfile(true);
+      try {
+        const client = new HCS10Client({
+          network: config.hedera.network as 'mainnet' | 'testnet',
+          operatorId: config.hedera.accountId,
+          operatorPrivateKey: config.hedera.privateKey,
+          logLevel: 'info',
+        });
 
-          const profileResult = await client.retrieveProfile(
-            config.hedera.accountId
-          );
+        const profileResult = await client.retrieveProfile(
+          config.hedera.accountId,
+          true
+        );
 
-          if (profileResult.success && profileResult.profile) {
-            setUserProfile(profileResult.profile);
-          }
-        } catch (error) {
-        } finally {
-          setIsLoadingProfile(false);
+        if (profileResult.success && profileResult.profile) {
+          setUserProfile(profileResult.profile);
         }
+      } catch (error) {
+      } finally {
+        setIsLoadingProfile(false);
       }
-    };
-
-    fetchUserProfile();
+    }
   }, [
     config?.hedera?.accountId,
     config?.hedera?.network,
     config?.hedera?.privateKey,
   ]);
+
+  useEffect(() => {
+    fetchUserProfile();
+  }, [fetchUserProfile]);
+
+  useEffect(() => {
+    const handleFocus = () => {
+      fetchUserProfile();
+    };
+
+    window.addEventListener('focus', handleFocus);
+
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [fetchUserProfile]);
 
   useEffect(() => {
     const initializeAgent = async () => {
@@ -238,18 +280,6 @@ const ChatPage: React.FC<ChatPageProps> = () => {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'm') {
-        e.preventDefault();
-        if (
-          status !== ('connecting' as any) &&
-          status !== ('disconnecting' as any)
-        ) {
-          setOperationalMode(
-            operationalMode === 'autonomous' ? 'returnBytes' : 'autonomous'
-          ).catch((error) => {});
-        }
-      }
-
       if ((e.metaKey || e.ctrlKey) && e.key === 'l') {
         e.preventDefault();
       }
@@ -257,7 +287,7 @@ const ChatPage: React.FC<ChatPageProps> = () => {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [operationalMode, status, setOperationalMode]);
+  }, []);
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
@@ -306,10 +336,10 @@ const ChatPage: React.FC<ChatPageProps> = () => {
   const handleDragLeave = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    
+
     const target = e.currentTarget;
     const relatedTarget = e.relatedTarget as Node;
-    
+
     if (!target.contains(relatedTarget)) {
       setIsDragging(false);
     }
@@ -391,7 +421,7 @@ const ChatPage: React.FC<ChatPageProps> = () => {
               name: file.name,
               data: base64Content,
               type: file.type || 'application/octet-stream',
-              size: file.size
+              size: file.size,
             });
           } catch (error) {
             console.error(`Failed to process file ${file.name}:`, error);
@@ -407,7 +437,7 @@ const ChatPage: React.FC<ChatPageProps> = () => {
       setIsSubmitting(false);
       setIsLoading(false);
     }
-  };;
+  };
 
   const handleConnect = async () => {
     try {
@@ -588,9 +618,9 @@ const ChatPage: React.FC<ChatPageProps> = () => {
   }
 
   return (
-    <div className="flex flex-col bg-gradient-to-br from-gray-50/95 via-white/90 to-gray-100/95 dark:from-gray-950/98 dark:via-gray-900/95 dark:to-gray-800/98 relative h-full">
+    <div className='flex flex-col bg-gradient-to-br from-gray-50/95 via-white/90 to-gray-100/95 dark:from-gray-950/98 dark:via-gray-900/95 dark:to-gray-800/98 relative h-full'>
       {/* Enhanced luxurious animated background */}
-      <div className="absolute inset-0 opacity-[0.03] dark:opacity-[0.04] pointer-events-none">
+      <div className='absolute inset-0 opacity-[0.03] dark:opacity-[0.04] pointer-events-none'>
         <motion.div
           className='absolute inset-0'
           animate={{
@@ -600,7 +630,7 @@ const ChatPage: React.FC<ChatPageProps> = () => {
             duration: 50,
             repeat: Infinity,
             repeatType: 'reverse',
-            ease: "easeInOut"
+            ease: 'easeInOut',
           }}
           style={{
             backgroundImage: `
@@ -612,76 +642,78 @@ const ChatPage: React.FC<ChatPageProps> = () => {
           }}
         />
       </div>
-      
+
       {/* Premium gradient overlay with depth */}
-      <div className="absolute inset-0 bg-gradient-to-br from-white/30 via-transparent to-gray-50/20 dark:from-gray-950/40 dark:via-transparent dark:to-gray-900/30 pointer-events-none" />
-      <div className="absolute inset-0 bg-gradient-to-t from-transparent via-white/10 to-transparent dark:from-transparent dark:via-gray-900/10 dark:to-transparent pointer-events-none" />
-      <header className="h-14 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border-b border-gray-200/30 dark:border-gray-800/30 flex items-center justify-between px-8 lg:px-16 xl:px-24 2xl:px-32 relative z-10 gap-6 shadow-sm shadow-gray-200/10 dark:shadow-gray-900/20">
-        <div className="max-w-6xl mx-auto w-full flex items-center justify-between gap-6">
-          <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
-            <div className="flex items-center gap-2">
-              <motion.div 
+      <div className='absolute inset-0 bg-gradient-to-br from-white/30 via-transparent to-gray-50/20 dark:from-gray-950/40 dark:via-transparent dark:to-gray-900/30 pointer-events-none' />
+      <div className='absolute inset-0 bg-gradient-to-t from-transparent via-white/10 to-transparent dark:from-transparent dark:via-gray-900/10 dark:to-transparent pointer-events-none' />
+      <header className='h-14 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border-b border-gray-200/30 dark:border-gray-800/30 flex items-center justify-between px-8 lg:px-16 xl:px-24 2xl:px-32 relative z-10 gap-6 shadow-sm shadow-gray-200/10 dark:shadow-gray-900/20'>
+        <div className='max-w-6xl mx-auto w-full flex items-center justify-between gap-6'>
+          <div className='flex items-center gap-2 sm:gap-4 flex-shrink-0'>
+            <div className='flex items-center gap-2'>
+              <motion.div
                 className={cn(
-                  "w-2.5 h-2.5 rounded-full",
-                  isConnected ? "bg-[#48df7b]" : "bg-gray-400"
+                  'w-2.5 h-2.5 rounded-full',
+                  isConnected ? 'bg-[#48df7b]' : 'bg-gray-400'
                 )}
                 animate={isConnected ? { scale: [1, 1.2, 1] } : {}}
                 transition={{ duration: 2, repeat: Infinity }}
               />
-              <Typography variant="caption" color="muted" className="font-medium">
+              <Typography
+                variant='caption'
+                color='muted'
+                className='font-medium'
+              >
                 {status === 'connected' ? 'Online' : status}
               </Typography>
             </div>
           </div>
-        
-        <div className="flex items-center gap-3 sm:gap-4 flex-shrink-0">
-          <div className="hidden lg:block">
-            <ModeToggle
-              mode={operationalMode}
-              onChange={async (mode) => {
-                try {
-                  await setOperationalMode(mode)
-                } catch (error) {
-                }
-              }}
-              disabled={status === 'connecting' || status === 'disconnecting'}
-            />
-          </div>
-          
-          <div className="hidden lg:block h-8 w-px bg-gray-300/60 dark:bg-gray-700/60" />
-          
-          {config && (
-            <>
-              <div className="flex items-center gap-2 px-2.5 py-1.5 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-lg border border-gray-200/40 dark:border-gray-700/40 shadow-sm text-sm">
-                {isConnected ? (
-                  <FiWifi className='w-4 h-4 text-[#48df7b]' />
-                ) : (
-                  <FiWifiOff className='w-4 h-4 text-gray-400' />
-                )}
-                <Typography variant="caption" className="font-semibold hidden sm:inline">
-                  {config.hedera?.network?.toUpperCase() || 'TESTNET'}
-                </Typography>
-              </div>
-              
-              <div className="hidden sm:flex items-center gap-2 px-2.5 py-1.5 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-lg border border-gray-200/40 dark:border-gray-700/40 shadow-sm text-sm">
-                <FiShield className="w-4 h-4 text-[#a679f0]" />
-                <Typography variant="caption" className="font-semibold">
-                  {config.hedera?.accountId?.slice(-6) || 'Not configured'}
-                </Typography>
-              </div>
-            </>
-          )}
+
+          <div className='flex items-center gap-3 sm:gap-4 flex-shrink-0'>
+            <div className='hidden lg:block'>
+              <ModeToggle
+                mode={operationalMode}
+                onChange={() => {}}
+                disabled={true}
+              />
+            </div>
+
+            <div className='hidden lg:block h-8 w-px bg-gray-300/60 dark:bg-gray-700/60' />
+
+            {config && (
+              <>
+                <div className='flex items-center gap-2 px-2.5 py-1.5 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-lg border border-gray-200/40 dark:border-gray-700/40 shadow-sm text-sm'>
+                  {isConnected ? (
+                    <FiWifi className='w-4 h-4 text-[#48df7b]' />
+                  ) : (
+                    <FiWifiOff className='w-4 h-4 text-gray-400' />
+                  )}
+                  <Typography
+                    variant='caption'
+                    className='font-semibold hidden sm:inline'
+                  >
+                    {config.hedera?.network?.toUpperCase() || 'TESTNET'}
+                  </Typography>
+                </div>
+
+                <div className='hidden sm:flex items-center gap-2 px-2.5 py-1.5 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-lg border border-gray-200/40 dark:border-gray-700/40 shadow-sm text-sm'>
+                  <FiShield className='w-4 h-4 text-[#a679f0]' />
+                  <Typography variant='caption' className='font-semibold'>
+                    {config.hedera?.accountId?.slice(-6) || 'Not configured'}
+                  </Typography>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </header>
 
       <div className='flex-1 overflow-y-auto relative min-h-0'>
         {messages.length === 0 ? (
-          <div className="h-full flex items-center justify-center p-12 lg:p-16">
-            <div className="text-center space-y-8 max-w-3xl relative z-10 pt-12">
+          <div className='h-full flex items-center justify-center p-12 lg:p-16'>
+            <div className='text-center space-y-8 max-w-3xl relative z-10 pt-12'>
               {/* Enhanced floating orbs */}
               <motion.div
-                className="absolute -top-16 -right-24 w-80 h-80 bg-gradient-to-br from-[#a679f0]/8 to-[#5599fe]/6 rounded-full blur-3xl"
+                className='absolute -top-16 -right-24 w-80 h-80 bg-gradient-to-br from-[#a679f0]/8 to-[#5599fe]/6 rounded-full blur-3xl'
                 animate={{
                   scale: [1, 1.2, 1],
                   opacity: [0.06, 0.12, 0.06],
@@ -694,7 +726,7 @@ const ChatPage: React.FC<ChatPageProps> = () => {
                 }}
               />
               <motion.div
-                className="absolute -bottom-16 -left-24 w-80 h-80 bg-gradient-to-br from-[#48df7b]/8 to-[#5eef81]/6 rounded-full blur-3xl"
+                className='absolute -bottom-16 -left-24 w-80 h-80 bg-gradient-to-br from-[#48df7b]/8 to-[#5eef81]/6 rounded-full blur-3xl'
                 animate={{
                   scale: [1.2, 1, 1.2],
                   opacity: [0.06, 0.12, 0.06],
@@ -708,7 +740,7 @@ const ChatPage: React.FC<ChatPageProps> = () => {
                 }}
               />
               <motion.div
-                className="absolute top-1/3 -right-32 w-64 h-64 bg-gradient-to-br from-[#7eb9ff]/6 to-[#5599fe]/4 rounded-full blur-3xl"
+                className='absolute top-1/3 -right-32 w-64 h-64 bg-gradient-to-br from-[#7eb9ff]/6 to-[#5599fe]/4 rounded-full blur-3xl'
                 animate={{
                   scale: [1, 1.3, 1],
                   opacity: [0.04, 0.08, 0.04],
@@ -721,29 +753,29 @@ const ChatPage: React.FC<ChatPageProps> = () => {
                   delay: 2,
                 }}
               />
-              
-              <motion.div 
-                className="w-20 h-20 bg-gradient-to-br from-[#a679f0]/90 to-[#5599fe]/90 rounded-3xl flex items-center justify-center mx-auto shadow-2xl shadow-purple-500/20 ring-1 ring-white/10"
+
+              <motion.div
+                className='w-20 h-20 bg-gradient-to-br from-[#a679f0]/90 to-[#5599fe]/90 rounded-3xl flex items-center justify-center mx-auto shadow-2xl shadow-purple-500/20 ring-1 ring-white/10'
                 initial={{ opacity: 0, scale: 0.8, y: 20 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
-                transition={{ duration: 0.8, ease: "easeOut" }}
-                whileHover={{ 
-                  scale: 1.1, 
-                  shadow: "0 25px 50px rgba(166, 121, 240, 0.4)",
-                  transition: { duration: 0.3 }
+                transition={{ duration: 0.8, ease: 'easeOut' }}
+                whileHover={{
+                  scale: 1.1,
+                  boxShadow: '0 25px 50px rgba(166, 121, 240, 0.4)',
+                  transition: { duration: 0.3 },
                 }}
               >
-                <FiMessageSquare className="w-10 h-10 text-white" />
+                <FiMessageSquare className='w-10 h-10 text-white' />
               </motion.div>
-              <div className="space-y-4">
+              <div className='space-y-4'>
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.8, delay: 0.2 }}
                 >
-                  <Typography 
-                    variant="h3" 
-                    className="font-bold text-gray-900 dark:text-white text-3xl lg:text-4xl"
+                  <Typography
+                    variant='h3'
+                    className='font-bold text-gray-900 dark:text-white text-3xl lg:text-4xl'
                   >
                     Welcome to HashgraphOnline
                   </Typography>
@@ -753,9 +785,15 @@ const ChatPage: React.FC<ChatPageProps> = () => {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.8, delay: 0.4 }}
                 >
-                  <Typography variant="body1" color="muted" className="text-lg leading-relaxed max-w-2xl mx-auto">
-                    I can help you with Hedera network operations, HCS-1 inscriptions, HCS-20 ticks, 
-                    account management, NFT minting, smart contracts, and more. Start by asking me a question or requesting help with a task.
+                  <Typography
+                    variant='body1'
+                    color='muted'
+                    className='text-lg leading-relaxed max-w-2xl mx-auto'
+                  >
+                    I can help you with Hedera Hashgraph operations, HCS-1
+                    inscriptions, HCS-20 ticks, account management, NFT minting,
+                    smart contracts, and more. Start by asking me a question or
+                    requesting help with a task.
                   </Typography>
                 </motion.div>
               </div>
@@ -764,7 +802,7 @@ const ChatPage: React.FC<ChatPageProps> = () => {
             </div>
           </div>
         ) : (
-          <div className="py-12 px-8 lg:px-16 xl:px-24 2xl:px-32 space-y-8 max-w-6xl mx-auto w-full">
+          <div className='py-12 px-8 lg:px-16 xl:px-24 2xl:px-32 space-y-8 max-w-6xl mx-auto w-full'>
             {messages.map((message) => (
               <MessageBubble
                 key={message.id}
@@ -780,26 +818,44 @@ const ChatPage: React.FC<ChatPageProps> = () => {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.3 }}
               >
-                <div className="bg-white/90 dark:bg-gray-900/70 backdrop-blur-md border border-gray-200/60 dark:border-gray-800/60 rounded-3xl px-6 py-4 shadow-xl shadow-gray-200/20 dark:shadow-gray-900/30">
-                  <div className="flex items-center gap-4">
-                    <div className="flex gap-1.5">
-                      <motion.div 
-                        className="w-2.5 h-2.5 bg-gradient-to-br from-[#a679f0] to-[#5599fe] rounded-full"
+                <div className='bg-white/90 dark:bg-gray-900/70 backdrop-blur-md border border-gray-200/60 dark:border-gray-800/60 rounded-3xl px-6 py-4 shadow-xl shadow-gray-200/20 dark:shadow-gray-900/30'>
+                  <div className='flex items-center gap-4'>
+                    <div className='flex gap-1.5'>
+                      <motion.div
+                        className='w-2.5 h-2.5 bg-gradient-to-br from-[#a679f0] to-[#5599fe] rounded-full'
                         animate={{ y: [-4, 0, -4] }}
-                        transition={{ duration: 0.8, repeat: Infinity, delay: 0, ease: "easeInOut" }}
+                        transition={{
+                          duration: 0.8,
+                          repeat: Infinity,
+                          delay: 0,
+                          ease: 'easeInOut',
+                        }}
                       />
-                      <motion.div 
-                        className="w-2.5 h-2.5 bg-gradient-to-br from-[#5599fe] to-[#48df7b] rounded-full"
+                      <motion.div
+                        className='w-2.5 h-2.5 bg-gradient-to-br from-[#5599fe] to-[#48df7b] rounded-full'
                         animate={{ y: [-4, 0, -4] }}
-                        transition={{ duration: 0.8, repeat: Infinity, delay: 0.2, ease: "easeInOut" }}
+                        transition={{
+                          duration: 0.8,
+                          repeat: Infinity,
+                          delay: 0.2,
+                          ease: 'easeInOut',
+                        }}
                       />
-                      <motion.div 
-                        className="w-2.5 h-2.5 bg-gradient-to-br from-[#48df7b] to-[#a679f0] rounded-full"
+                      <motion.div
+                        className='w-2.5 h-2.5 bg-gradient-to-br from-[#48df7b] to-[#a679f0] rounded-full'
                         animate={{ y: [-4, 0, -4] }}
-                        transition={{ duration: 0.8, repeat: Infinity, delay: 0.4, ease: "easeInOut" }}
+                        transition={{
+                          duration: 0.8,
+                          repeat: Infinity,
+                          delay: 0.4,
+                          ease: 'easeInOut',
+                        }}
                       />
                     </div>
-                    <Typography variant="caption" className="text-gray-700 dark:text-gray-300 font-semibold tracking-wide">
+                    <Typography
+                      variant='caption'
+                      className='text-gray-700 dark:text-gray-300 font-semibold tracking-wide'
+                    >
                       Assistant is thinking...
                     </Typography>
                   </div>
@@ -813,147 +869,144 @@ const ChatPage: React.FC<ChatPageProps> = () => {
       </div>
 
       {/* Input area fixed at bottom */}
-      <div className="border-t border-gray-200/30 dark:border-gray-800/30 bg-white/98 dark:bg-gray-900/98 backdrop-blur-2xl flex-shrink-0 shadow-2xl shadow-gray-200/10 dark:shadow-gray-900/30">
+      <div className='border-t border-gray-200/30 dark:border-gray-800/30 bg-white/98 dark:bg-gray-900/98 backdrop-blur-2xl flex-shrink-0 shadow-2xl shadow-gray-200/10 dark:shadow-gray-900/30'>
         {/* Disclaimer */}
-        <div className="px-8 lg:px-16 xl:px-24 2xl:px-32 pt-4">
-          <div className="max-w-6xl mx-auto">
+        <div className='px-8 lg:px-16 xl:px-24 2xl:px-32 pt-4'>
+          <div className='max-w-6xl mx-auto'>
             <Disclaimer />
           </div>
         </div>
-        
-        <div className="px-8 lg:px-16 xl:px-24 2xl:px-32 pb-8 pt-3">
-        <div className="max-w-6xl mx-auto">
-          {fileError && (
-            <Alert className="mb-3 border-orange-200 bg-orange-50 dark:border-orange-800 dark:bg-orange-950/20">
-              <FiAlertCircle className="h-4 w-4 text-orange-600 dark:text-orange-400" />
-              <AlertDescription className="text-orange-800 dark:text-orange-200">
-                {fileError}
-              </AlertDescription>
-            </Alert>
-          )}
-          
-          {selectedFiles.length > 0 && (
-            <div className="mb-3 flex flex-wrap gap-2">
-              {selectedFiles.map((file, index) => (
-                <div
-                  key={index}
-                  className="inline-flex items-center gap-2 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-1.5 text-sm"
-                >
-                  <FiFile className="w-4 h-4 text-gray-600 dark:text-gray-400 flex-shrink-0" />
-                  <span className="truncate max-w-[200px] text-gray-900 dark:text-gray-100 font-medium">
-                    {file.name}
-                  </span>
-                  <span className="text-xs text-gray-600 dark:text-gray-400">
-                    ({file.size > 1024 * 1024 
-                      ? `${(file.size / (1024 * 1024)).toFixed(1)}MB`
-                      : `${(file.size / 1024).toFixed(1)}KB`
-                    })
-                  </span>
-                  <button
-                    onClick={() => handleRemoveFile(index)}
-                    className="ml-1 p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
-                    aria-label={`Remove ${file.name}`}
+
+        <div className='px-8 lg:px-16 xl:px-24 2xl:px-32 pb-8 pt-3'>
+          <div className='max-w-6xl mx-auto'>
+            {fileError && (
+              <Alert className='mb-3 border-orange-200 bg-orange-50 dark:border-orange-800 dark:bg-orange-950/20'>
+                <FiAlertCircle className='h-4 w-4 text-orange-600 dark:text-orange-400' />
+                <AlertDescription className='text-orange-800 dark:text-orange-200'>
+                  {fileError}
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {selectedFiles.length > 0 && (
+              <div className='mb-3 flex flex-wrap gap-2'>
+                {selectedFiles.map((file, index) => (
+                  <div
+                    key={index}
+                    className='inline-flex items-center gap-2 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-1.5 text-sm'
                   >
-                    <FiX className="w-4 h-4" />
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-          
-          <div className="flex gap-4 items-start">
-            <div 
-              className="flex-1 relative"
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-              onDrop={handleDrop}
-            >
-              <textarea
-                value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault()
-                    handleSendMessage()
-                  }
-                }}
-                placeholder={isConnected ? "Type a message..." : "Connect to start chatting..."}
-                disabled={!isConnected || isSubmitting}
-                rows={1}
-                className={cn(
-                  "w-full px-6 py-4 pr-14 rounded-2xl resize-none",
-                  "min-h-[56px] max-h-[200px]",
-                  "bg-gray-50/80 dark:bg-gray-800/60 backdrop-blur-md",
-                  "border border-gray-200/60 dark:border-gray-700/60",
-                  "focus:outline-none focus:ring-1 focus:ring-blue-500/10 focus:border-gray-300 dark:focus:border-gray-600 focus:bg-white dark:focus:bg-gray-800",
-                  "placeholder:text-gray-500 dark:placeholder:text-gray-400",
-                  "text-gray-900 dark:text-white text-base",
-                  "transition-all duration-300 ease-out",
-                  "disabled:opacity-50 disabled:cursor-not-allowed",
-                  "shadow-lg shadow-gray-200/20 dark:shadow-gray-900/20",
-                  isDragging && "ring-2 ring-blue-500/30 border-blue-500/50 bg-blue-50/10 dark:bg-blue-900/10"
-                )}
-                style={{
-                  height: 'auto',
-                  overflowY: inputValue.split('\n').length > 4 ? 'auto' : 'hidden'
-                }}
-                onInput={(e) => {
-                  const target = e.target as HTMLTextAreaElement
-                  target.style.height = 'auto'
-                  target.style.height = Math.min(target.scrollHeight, 200) + 'px'
-                }}
-              />
-              {isDragging && (
-                <div className="absolute inset-0 rounded-2xl bg-blue-500/10 dark:bg-blue-400/10 backdrop-blur-sm flex items-center justify-center pointer-events-none">
-                  <div className="bg-white/90 dark:bg-gray-800/90 rounded-xl px-4 py-3 shadow-lg">
-                    <div className="flex items-center gap-2">
-                      <FiFile className="w-5 h-5 text-blue-500" />
-                      <span className="text-sm font-medium text-gray-700 dark:text-gray-200">Drop files here to attach</span>
-                    </div>
+                    <FiFile className='w-4 h-4 text-gray-600 dark:text-gray-400 flex-shrink-0' />
+                    <span className='truncate max-w-[200px] text-gray-900 dark:text-gray-100 font-medium'>
+                      {file.name}
+                    </span>
+                    <span className='text-xs text-gray-600 dark:text-gray-400'>
+                      (
+                      {file.size > 1024 * 1024
+                        ? `${(file.size / (1024 * 1024)).toFixed(1)}MB`
+                        : `${(file.size / 1024).toFixed(1)}KB`}
+                      )
+                    </span>
+                    <button
+                      onClick={() => handleRemoveFile(index)}
+                      className='ml-1 p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors'
+                      aria-label={`Remove ${file.name}`}
+                    >
+                      <FiX className='w-4 h-4' />
+                    </button>
                   </div>
-                </div>
-              )}
-              <Button
-                onClick={handleFileButtonClick}
-                disabled={!isConnected || isSubmitting}
-                variant="ghost"
-                size="icon"
-                className="absolute right-3 top-3 h-9 w-9 hover:bg-gray-200/60 dark:hover:bg-gray-700/60 rounded-xl transition-colors duration-200"
-              >
-                <FiPaperclip className="w-4 h-4" />
-              </Button>
-              
-              {/* Character count */}
-              <div className={cn(
-                "absolute bottom-3 right-14 text-xs tabular-nums pointer-events-none font-medium",
-                inputValue.length > 1800 && "text-orange-500",
-                inputValue.length > 1950 && "text-red-500",
-                inputValue.length <= 1800 && "text-gray-400 dark:text-gray-500"
-              )}>
-                {inputValue.length}/2000
+                ))}
               </div>
+            )}
+
+            <div className='flex gap-4 items-start'>
+              <div className='flex-1 relative'>
+                <textarea
+                  value={inputValue}
+                  onChange={(e) => setInputValue(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSendMessage();
+                    }
+                  }}
+                  placeholder={
+                    isConnected
+                      ? 'Type a message...'
+                      : 'Connect to start chatting...'
+                  }
+                  disabled={!isConnected || isSubmitting}
+                  rows={1}
+                  className={cn(
+                    'w-full px-6 py-4 pr-14 rounded-2xl resize-none',
+                    'min-h-[56px] max-h-[200px]',
+                    'bg-gray-50/80 dark:bg-gray-800/60 backdrop-blur-md',
+                    'border border-gray-200/60 dark:border-gray-700/60',
+                    'focus:outline-none focus:ring-1 focus:ring-blue-500/10 focus:border-gray-300 dark:focus:border-gray-600 focus:bg-white dark:focus:bg-gray-800',
+                    'placeholder:text-gray-500 dark:placeholder:text-gray-400',
+                    'text-gray-900 dark:text-white text-base',
+                    'transition-all duration-300 ease-out',
+                    'disabled:opacity-50 disabled:cursor-not-allowed',
+                    'shadow-lg shadow-gray-200/20 dark:shadow-gray-900/20'
+                  )}
+                  style={{
+                    height: 'auto',
+                    overflowY:
+                      inputValue.split('\n').length > 4 ? 'auto' : 'hidden',
+                  }}
+                  onInput={(e) => {
+                    const target = e.target as HTMLTextAreaElement;
+                    target.style.height = 'auto';
+                    target.style.height =
+                      Math.min(target.scrollHeight, 200) + 'px';
+                  }}
+                />
+                <Button
+                  onClick={handleFileButtonClick}
+                  disabled={!isConnected || isSubmitting}
+                  variant='ghost'
+                  size='icon'
+                  className='absolute right-3 top-3 h-9 w-9 hover:bg-gray-200/60 dark:hover:bg-gray-700/60 rounded-xl transition-colors duration-200'
+                >
+                  <FiPaperclip className='w-4 h-4' />
+                </Button>
+
+                {/* Character count */}
+                <div
+                  className={cn(
+                    'absolute bottom-3 right-14 text-xs tabular-nums pointer-events-none font-medium',
+                    inputValue.length > 1800 && 'text-orange-500',
+                    inputValue.length > 1950 && 'text-red-500',
+                    inputValue.length <= 1800 &&
+                      'text-gray-400 dark:text-gray-500'
+                  )}
+                >
+                  {inputValue.length}/2000
+                </div>
+              </div>
+              <Button
+                onClick={handleSendMessage}
+                disabled={
+                  !isConnected ||
+                  isSubmitting ||
+                  (!inputValue.trim() && selectedFiles.length === 0)
+                }
+                variant='default'
+                size='default'
+                className='px-6 py-4 bg-[#5599fe] hover:bg-[#4488ee] text-white border-0 h-[56px] w-[56px] rounded-2xl shadow-lg shadow-blue-500/20 hover:shadow-blue-500/30 transition-all duration-300 ease-out flex items-center justify-center'
+              >
+                <FiSend className='w-11 h-11' />
+              </Button>
             </div>
-            <Button
-              onClick={handleSendMessage}
-              disabled={!isConnected || isSubmitting || (!inputValue.trim() && selectedFiles.length === 0)}
-              variant="default"
-              size="default"
-              className="px-6 py-4 bg-[#5599fe] hover:bg-[#4488ee] text-white border-0 h-[56px] w-[56px] rounded-2xl shadow-lg shadow-blue-500/20 hover:shadow-blue-500/30 transition-all duration-300 ease-out flex items-center justify-center"
-            >
-              <FiSend className="w-11 h-11" />
-            </Button>
           </div>
 
-        </div>
-        
-        <input
-          ref={fileInputRef}
-          type="file"
-          multiple
-          onChange={handleFileSelect}
-          className="hidden"
-          accept="*/*"
-        />
+          <input
+            ref={fileInputRef}
+            type='file'
+            multiple
+            onChange={handleFileSelect}
+            className='hidden'
+            accept='*/*'
+          />
         </div>
       </div>
     </div>

@@ -23,6 +23,9 @@ import { type TokenAmount } from '@hashgraphonline/standards-sdk/dist/es/utils/t
 import { type Transaction as HederaTransaction } from '@hashgraphonline/standards-sdk/dist/es/services/types';
 import { useConfigStore } from '../../stores/configStore';
 import { TransactionDetails } from './TransactionDetails';
+import { getTransactionEnrichmentHandler } from '../../utils/transactionEnrichmentRegistry';
+import { getHumanReadableTransactionType } from '../../utils/transactionTypeHelper';
+import { mergeTransactionDetails } from '../../utils/transactionMerger';
 
 const getValidAmount = (amount: string | number | unknown): number => {
   if (typeof amount === 'string') {
@@ -100,19 +103,6 @@ const TransactionContent = ({
         tokenTransfers={tokenTransfersForDisplay}
         expirationTime={expirationTime || undefined}
         scheduleId={scheduleId || ''}
-        contractCall={
-          transactionDetails.contractCall
-            ? {
-                contractId: transactionDetails.contractCall.contractId,
-                gas: transactionDetails.contractCall.gas ?? 0,
-                amount: transactionDetails.contractCall.amount ?? 0,
-                functionName: transactionDetails.contractCall.functionName,
-                functionParameters: (transactionDetails.contractCall as any)
-                  .functionParameters,
-              }
-            : undefined
-        }
-        tokenCreationInfo={transactionDetails.tokenCreation}
         hideHeader={hideHeader}
         network={network}
         variant='embedded'
@@ -213,16 +203,9 @@ export const TransactionApprovalButton: React.FC<
             : [];
 
           const parsedTransaction: ParsedTransaction = {
-            type: parsedTx.type,
-            humanReadableType: parsedTx.humanReadableType,
+            ...parsedTx,
             details: parsedTx,
-            transfers: parsedTx.transfers,
             tokenTransfers: convertedTokenTransfers,
-            memo: parsedTx.memo,
-            contractCall: parsedTx.contractCall,
-            tokenCreation: parsedTx.tokenCreation,
-            consensusSubmitMessage: parsedTx.consensusSubmitMessage,
-            tokenAirdrop: parsedTx.tokenAirdrop,
           };
 
           setTransactionDetails(parsedTransaction);
@@ -268,16 +251,9 @@ export const TransactionApprovalButton: React.FC<
           : [];
 
         const parsedTransaction: ParsedTransaction = {
-          type: parsedTx.type,
-          humanReadableType: parsedTx.humanReadableType,
+          ...parsedTx,
           details: parsedTx,
-          transfers: parsedTx.transfers,
           tokenTransfers: convertedTokenTransfers,
-          memo: parsedTx.memo,
-          contractCall: parsedTx.contractCall,
-          tokenCreation: parsedTx.tokenCreation,
-          consensusSubmitMessage: parsedTx.consensusSubmitMessage,
-          tokenAirdrop: parsedTx.tokenAirdrop,
         };
 
         setTransactionDetails(parsedTransaction);
@@ -456,7 +432,7 @@ export const TransactionApprovalButton: React.FC<
           ) {
             errorTitle = 'Network Error';
             errorMessage =
-              'Unable to connect to the Hedera network. Please check your connection and try again.';
+              'Unable to connect to the Hedera Hashgraph. Please check your connection and try again.';
           } else if (result.error?.includes('credentials')) {
             errorTitle = 'Configuration Error';
             errorMessage =
@@ -550,7 +526,6 @@ export const TransactionApprovalButton: React.FC<
           ),
         ])) as HederaTransaction | null;
 
-
         if (mirrorTransaction) {
           const parsedEnhancedDetails = await parseMirrorNodeTransaction(
             mirrorTransaction,
@@ -558,19 +533,10 @@ export const TransactionApprovalButton: React.FC<
           );
 
           if (parsedEnhancedDetails) {
-            const mergedDetails: ParsedTransaction = {
-              ...parsedEnhancedDetails,
-              tokenCreation:
-                (originalDetails || transactionDetails)?.tokenCreation ||
-                parsedEnhancedDetails.tokenCreation,
-              tokenAirdrop:
-                (originalDetails || transactionDetails)?.tokenAirdrop ||
-                parsedEnhancedDetails.tokenAirdrop,
-              details: {
-                ...(originalDetails || transactionDetails)?.details,
-                ...parsedEnhancedDetails.details,
-              },
-            };
+            const mergedDetails = mergeTransactionDetails(
+              parsedEnhancedDetails,
+              originalDetails || transactionDetails
+            );
 
             setEnhancedTransactionDetails(mergedDetails);
 
@@ -671,37 +637,6 @@ export const TransactionApprovalButton: React.FC<
     []
   );
 
-  const getHumanReadableTransactionType = useCallback(
-    (transactionType?: string): string => {
-      if (!transactionType) return 'Unknown Transaction';
-
-      const typeMap: Record<string, string> = {
-        CRYPTOCREATEACCOUNT: 'Account Creation',
-        CRYPTOTRANSFER: 'Transfer',
-        CONTRACTCALL: 'Smart Contract Call',
-        CONTRACTCREATEINSTANCE: 'Smart Contract Deployment',
-        TOKENCREATION: 'Token Creation',
-        TOKENASSOCIATE: 'Token Association',
-        TOKENDISSOCIATE: 'Token Dissociation',
-        TOKENMINT: 'Token Mint',
-        TOKENBURN: 'Token Burn',
-        CONSENSUSSUBMITMESSAGE: 'Topic Message',
-        SCHEDULECREATE: 'Schedule Creation',
-        SCHEDULESIGN: 'Schedule Signing',
-        TOKENUPDATE: 'Token Update',
-        ACCOUNTUPDATE: 'Account Update',
-        FILEUPDATE: 'File Update',
-        SYSTEMDELETE: 'System Delete',
-        FREEZE: 'Network Freeze',
-        CONSENSUSCREATETOPIC: 'Topic Creation',
-        CONSENSUSUPDATETOPIC: 'Topic Update',
-        CONSENSUSDELETETOPIC: 'Topic Deletion',
-      };
-
-      return typeMap[transactionType.toUpperCase()] || transactionType;
-    },
-    []
-  );
 
   const enrichTransactionDetails = useCallback(
     async (
@@ -709,55 +644,16 @@ export const TransactionApprovalButton: React.FC<
       mirrorTransaction: HederaTransaction,
       originalTransactionDetails?: ParsedTransaction | null
     ): Promise<void> => {
-      const transactionType = mirrorTransaction.name?.toUpperCase();
+      const transactionType =
+        mirrorTransaction.name?.toUpperCase() || 'UNKNOWN';
+      const enrichmentHandler =
+        getTransactionEnrichmentHandler(transactionType);
 
-      switch (transactionType) {
-        case 'TOKENCREATION':
-          if (mirrorTransaction.entity_id) {
-            parsedTransaction.details.createdTokenId =
-              mirrorTransaction.entity_id;
-            if (originalTransactionDetails?.tokenCreation) {
-              parsedTransaction.tokenCreation =
-                originalTransactionDetails.tokenCreation;
-            }
-          }
-          break;
-
-        case 'CRYPTOCREATEACCOUNT':
-          if (mirrorTransaction.entity_id) {
-            parsedTransaction.details.createdAccountId =
-              mirrorTransaction.entity_id;
-          }
-          break;
-
-        case 'CONTRACTCREATEINSTANCE':
-          if (mirrorTransaction.entity_id) {
-            parsedTransaction.contractCall = {
-              contractId: mirrorTransaction.entity_id,
-              gas: 0,
-              amount: 0,
-            };
-            parsedTransaction.details.createdContractId =
-              mirrorTransaction.entity_id;
-          }
-          break;
-
-        case 'CONSENSUSSUBMITMESSAGE':
-          if (mirrorTransaction.entity_id) {
-            parsedTransaction.consensusSubmitMessage = {
-              topicId: mirrorTransaction.entity_id,
-              message: 'Message submitted successfully',
-              messageEncoding: 'utf8',
-            };
-          }
-          break;
-
-        default:
-          if (mirrorTransaction.entity_id) {
-            parsedTransaction.details.entityId = mirrorTransaction.entity_id;
-          }
-          break;
-      }
+      enrichmentHandler.enrich(
+        parsedTransaction,
+        mirrorTransaction,
+        originalTransactionDetails
+      );
 
       parsedTransaction.details.transactionFee =
         mirrorTransaction.charged_tx_fee;
@@ -771,63 +667,13 @@ export const TransactionApprovalButton: React.FC<
   const generateEnhancedSuccessMessage = useCallback(
     (transaction: ParsedTransaction, transactionId: string): string => {
       const transactionType = transaction.type.toUpperCase();
+      const enrichmentHandler =
+        getTransactionEnrichmentHandler(transactionType);
 
-      switch (transactionType) {
-        case 'TOKENCREATION':
-          const tokenId = transaction.details.createdTokenId;
-          return tokenId
-            ? `Token created successfully! Token ID: ${tokenId}`
-            : `Token creation transaction completed. Transaction ID: ${transactionId}`;
-
-        case 'CRYPTOCREATEACCOUNT':
-          const accountId = transaction.details.createdAccountId;
-          return accountId
-            ? `Account created successfully! Account ID: ${accountId}`
-            : `Account creation transaction completed. Transaction ID: ${transactionId}`;
-
-        case 'CONTRACTCREATEINSTANCE':
-          const contractId = transaction.details.createdContractId;
-          return contractId
-            ? `Smart contract deployed successfully! Contract ID: ${contractId}`
-            : `Contract deployment transaction completed. Transaction ID: ${transactionId}`;
-
-        case 'CONSENSUSSUBMITMESSAGE':
-          const topicId = transaction.consensusSubmitMessage?.topicId;
-          return topicId
-            ? `Message submitted to topic ${topicId} successfully!`
-            : `Topic message submitted successfully. Transaction ID: ${transactionId}`;
-
-        case 'CRYPTOTRANSFER':
-          if (
-            transaction.tokenTransfers &&
-            transaction.tokenTransfers.length > 0
-          ) {
-            const tokenCount = transaction.tokenTransfers.length;
-            return `Token transfer completed successfully! (${tokenCount} token${
-              tokenCount > 1 ? 's' : ''
-            } transferred)`;
-          } else if (
-            transaction.transfers &&
-            transaction.transfers.length > 0
-          ) {
-            return `HBAR transfer completed successfully!`;
-          }
-          return `Transfer transaction completed. Transaction ID: ${transactionId}`;
-
-        case 'TOKENMINT':
-          return `Token minting completed successfully!`;
-
-        case 'TOKENBURN':
-          return `Token burning completed successfully!`;
-
-        case 'CONTRACTCALL':
-          return `Smart contract execution completed successfully!`;
-
-        default:
-          return `${
-            transaction.humanReadableType || 'Transaction'
-          } completed successfully. Transaction ID: ${transactionId}`;
-      }
+      return enrichmentHandler.generateSuccessMessage(
+        transaction,
+        transactionId
+      );
     },
     []
   );
@@ -928,27 +774,6 @@ export const TransactionApprovalButton: React.FC<
                         }
                         transfers={formattedTransfers}
                         tokenTransfers={formattedTokenTransfers}
-                        contractCall={
-                          enhancedTransactionDetails.contractCall
-                            ? {
-                                contractId:
-                                  enhancedTransactionDetails.contractCall
-                                    .contractId,
-                                gas:
-                                  enhancedTransactionDetails.contractCall.gas ??
-                                  0,
-                                amount:
-                                  enhancedTransactionDetails.contractCall
-                                    .amount ?? 0,
-                                functionName:
-                                  enhancedTransactionDetails.contractCall
-                                    .functionName,
-                                functionParameters: (
-                                  enhancedTransactionDetails.contractCall as any
-                                ).functionParameters,
-                              }
-                            : undefined
-                        }
                         executedTransactionEntityId={entityId}
                         executedTransactionType={
                           enhancedTransactionDetails.type
@@ -993,22 +818,28 @@ export const TransactionApprovalButton: React.FC<
                 </div>
 
                 <div className='ml-3 sm:ml-4 overflow-hidden'>
-                  <Typography variant='body1' className={cn(
-                    'font-medium truncate text-sm sm:text-base',
-                    isAlreadyExecuted 
-                      ? 'text-gray-700 dark:text-gray-300'
-                      : 'text-purple-800 dark:text-purple-200'
-                  )}>
+                  <Typography
+                    variant='body1'
+                    className={cn(
+                      'font-medium truncate text-sm sm:text-base',
+                      isAlreadyExecuted
+                        ? 'text-gray-700 dark:text-gray-300'
+                        : 'text-purple-800 dark:text-purple-200'
+                    )}
+                  >
                     {isAlreadyExecuted
                       ? 'Transaction Already Executed'
                       : 'Transaction Requires Approval'}
                   </Typography>
-                  <Typography variant='caption' className={cn(
-                    'text-xs sm:text-sm mt-1 sm:mt-1.5 break-words',
-                    isAlreadyExecuted
-                      ? 'text-gray-600 dark:text-gray-400'
-                      : 'text-purple-700/80 dark:text-purple-300/80'
-                  )}>
+                  <Typography
+                    variant='caption'
+                    className={cn(
+                      'text-xs sm:text-sm mt-1 sm:mt-1.5 break-words',
+                      isAlreadyExecuted
+                        ? 'text-gray-600 dark:text-gray-400'
+                        : 'text-purple-700/80 dark:text-purple-300/80'
+                    )}
+                  >
                     {isAlreadyExecuted
                       ? `This scheduled transaction has already been executed${
                           executedTimestamp

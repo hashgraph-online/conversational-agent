@@ -9,7 +9,7 @@ jest.mock('electron', () => ({
   },
 }));
 
-jest.mock('../../src/main/services/CredentialManager');
+jest.mock('../../../src/main/services/CredentialManager');
 
 describe('IPC Security Handlers', () => {
   const mockIpcMain = ipcMain as jest.Mocked<typeof ipcMain>;

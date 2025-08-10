@@ -48,7 +48,7 @@ export function TermsAgreement({ checked, onChange }: TermsAgreementProps) {
           className='text-sm leading-relaxed cursor-pointer'
         >
           I agree to the terms and conditions for creating a profile on the
-          Hedera network
+          Hedera Hashgraph
         </Label>
       </div>
     </div>

@@ -37,6 +37,7 @@ export interface ParsedTransaction {
     functionParameters?: string;
   };
   tokenCreation?: {
+    tokenId?: string;
     tokenName?: string;
     tokenSymbol?: string;
     initialSupply?: string;
@@ -47,10 +48,57 @@ export interface ParsedTransaction {
     memo?: string;
     treasuryAccountId?: string;
   };
+  consensusCreateTopic?: {
+    topicId?: string;
+    memo?: string;
+    adminKey?: string;
+    submitKey?: string;
+    autoRenewPeriod?: string;
+    autoRenewAccountId?: string;
+  };
   consensusSubmitMessage?: {
     topicId?: string;
     message?: string;
     messageEncoding?: 'utf8' | 'base64';
+  };
+  consensusUpdateTopic?: {
+    topicId?: string;
+    memo?: string;
+    adminKey?: string;
+    submitKey?: string;
+    autoRenewPeriod?: string;
+    autoRenewAccountId?: string;
+    clearAdminKey?: boolean;
+    clearSubmitKey?: boolean;
+  };
+  consensusDeleteTopic?: {
+    topicId?: string;
+  };
+  cryptoCreateAccount?: {
+    accountId?: string;
+    initialBalance?: string;
+    key?: string;
+    receiverSigRequired?: boolean;
+    autoRenewPeriod?: string;
+    memo?: string;
+  };
+  contractCreate?: {
+    contractId?: string;
+    initialBalance?: string;
+    gas?: string;
+    adminKey?: string;
+    memo?: string;
+  };
+  scheduleCreate?: {
+    scheduleId?: string;
+    scheduledTransactionBody?: string;
+    memo?: string;
+    adminKey?: string;
+  };
+  fileCreate?: {
+    fileId?: string;
+    contents?: string;
+    memo?: string;
   };
   airdrop?: {
     tokenTransfers?: Array<{

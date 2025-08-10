@@ -15,9 +15,9 @@ interface ModeToggleProps {
 }
 
 /**
- * ModeToggle component for switching between Autonomous and Return Bytes modes
+ * ModeToggle component displaying Manual mode indicator
  * @param props - Component props including current mode, change handler, and disabled state
- * @returns React component for mode toggling with visual indicators
+ * @returns React component showing Manual mode with tooltip
  */
 export const ModeToggle: React.FC<ModeToggleProps> = ({
   mode,
@@ -25,56 +25,45 @@ export const ModeToggle: React.FC<ModeToggleProps> = ({
   disabled = false,
   className
 }) => {
-  const isReturnBytes = mode === 'returnBytes'
-
-  const handleCheckedChange = (checked: boolean) => {
-    onChange(checked ? 'returnBytes' : 'autonomous')
-  }
-
   return (
     <TooltipProvider>
-      <div className={cn('flex items-center gap-3', className)}>
-        <Typography 
-          variant="caption" 
-          className={cn(
-            'font-medium transition-colors',
-            !isReturnBytes ? 'text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400'
-          )}
-        >
-          <FiZap className="inline w-3 h-3 mr-1" />
-          Autonomous
-        </Typography>
-
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <div className="flex items-center">
-              <Switch
-                checked={isReturnBytes}
-                onCheckedChange={handleCheckedChange}
-                disabled={disabled}
-                aria-label={`Switch to ${isReturnBytes ? 'Autonomous' : 'Return Bytes'} mode`}
-                className={cn(
-                  "data-[state=checked]:bg-gradient-to-r data-[state=checked]:from-[#a679f0] data-[state=checked]:to-[#5599fe]",
-                  "data-[state=unchecked]:bg-gray-300 dark:data-[state=unchecked]:bg-gray-700"
-                )}
-              />
-            </div>
-          </TooltipTrigger>
-          <TooltipContent className="bg-[#5599fe] text-white border-[#4488ee]">
-            <Typography variant="caption" className="text-white">
-              {isReturnBytes
-                ? "Return Bytes Mode: AI returns transaction bytes for manual signing"
-                : "Autonomous Mode: AI executes transactions directly"
-              }
-            </Typography>
-            <div className="mt-1">
-              <Typography variant="caption" className="text-blue-100">
-                Shortcut: Ctrl/Cmd+M
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <div className={cn('flex items-center gap-2', className)}>
+            <div className="flex items-center gap-2 px-2.5 py-1.5 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-lg border border-gray-200/40 dark:border-gray-700/40 shadow-sm">
+              <FiCode className="w-4 h-4 text-[#5599fe]" />
+              <Typography 
+                variant="caption" 
+                className="font-semibold"
+              >
+                Manual Mode
               </Typography>
             </div>
-          </TooltipContent>
-        </Tooltip>
-      </div>
+            <Typography 
+              variant="caption" 
+              className="text-xs text-gray-500 dark:text-gray-400"
+            >
+              <FiZap className="inline w-3 h-3 mr-0.5 opacity-60" />
+              Autonomous soon
+            </Typography>
+          </div>
+        </TooltipTrigger>
+        <TooltipContent className="bg-[#5599fe] text-white border-[#4488ee]">
+          <div className="space-y-1">
+            <Typography variant="caption" className="text-white font-medium">
+              Manual Mode Active
+            </Typography>
+            <Typography variant="caption" className="text-blue-100">
+              AI returns transaction bytes for manual signing
+            </Typography>
+            <div className="pt-1 border-t border-blue-400/30">
+              <Typography variant="caption" className="text-blue-100">
+                Autonomous mode coming soon!
+              </Typography>
+            </div>
+          </div>
+        </TooltipContent>
+      </Tooltip>
     </TooltipProvider>
   )
 }

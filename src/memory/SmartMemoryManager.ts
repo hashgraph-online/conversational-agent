@@ -77,7 +77,9 @@ export interface MemoryStats {
 
 const IS_ENTITY_ASSOCIATION_FLAG = '"isEntityAssociation":true';
 
+
 /**
+ * TODO: investigate using chroma / rag for long term memory
  * Smart memory manager that combines active memory window with long-term storage
  * Provides context-aware memory management with automatic pruning and searchable history
  */
@@ -260,7 +262,6 @@ export class SmartMemoryManager {
     if (newConfig.storageLimit !== undefined) {
       this._contentStorage.updateStorageLimit(this.config.storageLimit);
     }
-
   }
 
   /**
@@ -364,9 +365,7 @@ export class SmartMemoryManager {
    * Perform maintenance operations
    * Optimizes storage and cleans up resources
    */
-  performMaintenance(): void {
-  }
-
+  performMaintenance(): void {}
 
   /**
    * Store an entity association for later resolution
@@ -410,16 +409,19 @@ export class SmartMemoryManager {
       const sanitizedEntityName = entityName.trim().substring(0, 100);
       const sanitizedEntityType = entityType.trim().toLowerCase();
 
-      const association: EntityAssociation & { isEntityAssociation: boolean } = {
-        entityId: sanitizedEntityId,
-        entityName: sanitizedEntityName,
-        entityType: sanitizedEntityType,
-        createdAt: new Date(),
-        isEntityAssociation: true,
-        ...(transactionId !== undefined && transactionId !== null && transactionId.trim() !== ''
-          ? { transactionId: transactionId.trim() }
-          : {})
-      };
+      const association: EntityAssociation & { isEntityAssociation: boolean } =
+        {
+          entityId: sanitizedEntityId,
+          entityName: sanitizedEntityName,
+          entityType: sanitizedEntityType,
+          createdAt: new Date(),
+          isEntityAssociation: true,
+          ...(transactionId !== undefined &&
+          transactionId !== null &&
+          transactionId.trim() !== ''
+            ? { transactionId: transactionId.trim() }
+            : {}),
+        };
 
       const content = JSON.stringify(association);
       type LangChainLikeMessage = {
@@ -440,13 +442,11 @@ export class SmartMemoryManager {
           entityName: sanitizedEntityName,
           entityType: sanitizedEntityType,
           isEntityAssociation: true,
-        }
+        },
       };
-      
-      this._contentStorage.storeMessages([entityMessage as BaseMessage]);
 
-    } catch (_error) {
-    }
+      this._contentStorage.storeMessages([entityMessage as BaseMessage]);
+    } catch (_error) {}
   }
 
   /**
@@ -500,7 +500,7 @@ export class SmartMemoryManager {
               if (entityType && parsed.entityType !== entityType) {
                 continue;
               }
-              
+
               if (isEntityIdQuery) {
                 if (parsed.entityId !== sanitizedQuery) {
                   continue;
@@ -561,7 +561,6 @@ export class SmartMemoryManager {
         );
 
       const results = uniqueAssociations.slice(0, safeLimit);
-
 
       return results;
     } catch (_error) {
@@ -634,7 +633,6 @@ export class SmartMemoryManager {
           const bTime = getTime(b.createdAt);
           return bTime - aTime;
         });
-
 
       return results;
     } catch (_error) {

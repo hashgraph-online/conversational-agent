@@ -29,7 +29,20 @@ export * from 'hedera-agent-kit';
 
 export type { IStateManager } from '@hashgraphonline/standards-agent-kit';
 
-export type { MCPServerConfig, MCPConnectionStatus, MCPToolInfo } from './mcp/types';
-export { MCPServers, createMCPConfig, validateServerConfig } from './mcp/helpers';
+export type {
+  MCPServerConfig,
+  MCPConnectionStatus,
+  MCPToolInfo,
+} from './mcp/types';
+export {
+  MCPServers,
+  createMCPConfig,
+  validateServerConfig,
+} from './mcp/helpers';
 
 export * from './memory';
+export {
+  createEntityTools,
+  ResolveEntitiesTool,
+  ExtractEntitiesTool,
+} from './tools/EntityResolverTool';

@@ -1,7 +1,9 @@
 import { SafeConversationalAgent } from './SafeConversationalAgent';
+import type { AgentConfig as SafeAgentConfig } from './SafeConversationalAgent';
+import type { AgentOperationalMode } from '@hashgraphonline/conversational-agent';
+import type { MCPServerConfig as LibMCPServerConfig } from '@hashgraphonline/conversational-agent/dist/types/mcp/types';
 import { Logger } from '../utils/logger';
 import type { NetworkType } from '@hashgraphonline/standards-sdk';
-import type { ConversationalAgentOptions } from '@hashgraphonline/conversational-agent';
 import { MCPService } from './MCPService';
 import type { MCPServerConfig } from './MCPService';
 import { AgentLoader } from './AgentLoader';
@@ -18,6 +20,8 @@ export interface AgentConfig {
   mcpServers?: MCPServerConfig[];
   useProgressiveLoading?: boolean;
   progressiveLoadConfig?: Partial<ProgressiveLoadConfig>;
+  verbose?: boolean;
+  disableLogging?: boolean;
 }
 
 export interface AgentMessage {
@@ -76,7 +80,6 @@ export class AgentService {
     this.logger.debug('Agent loader initialized with AgentService injection');
   }
 
-
   /**
    * Initialize the conversational agent
    */
@@ -101,14 +104,14 @@ export class AgentService {
           sessionId: this.sessionId!,
           coreReadyTimeMs: 0,
           backgroundTasksRemaining: 0,
-          loadingPhase: 'completed'
+          loadingPhase: 'completed',
         };
       }
 
       this.logger.info('Config changed, reinitializing agent...', {
         modeChanged: this.lastConfig.operationalMode !== config.operationalMode,
         oldMode: this.lastConfig.operationalMode,
-        newMode: config.operationalMode
+        newMode: config.operationalMode,
       });
       this.agent = null;
       this.initialized = false;
@@ -123,7 +126,9 @@ export class AgentService {
 
     try {
       if (config.useProgressiveLoading !== false) {
-        this.logger.info('Using progressive agent loading for enhanced performance');
+        this.logger.info(
+          'Using progressive agent loading for enhanced performance'
+        );
 
         if (!this.agentLoader) {
           this.initializeProgressiveLoader();
@@ -138,25 +143,32 @@ export class AgentService {
           this.sessionId = progressiveResult.sessionId!;
 
           if (!this.agent) {
-            this.logger.warn('Agent not set after progressive initialization, this may indicate an issue');
+            this.logger.warn(
+              'Agent not set after progressive initialization, this may indicate an issue'
+            );
           }
 
           return {
             success: true,
             sessionId: this.sessionId,
             coreReadyTimeMs: progressiveResult.coreReadyTimeMs,
-            backgroundTasksRemaining: progressiveResult.backgroundTasksRemaining,
-            loadingPhase: 'core-ready'
+            backgroundTasksRemaining:
+              progressiveResult.backgroundTasksRemaining,
+            loadingPhase: 'core-ready',
           };
         } else {
-          this.logger.warn('Progressive loading failed, falling back to traditional loading:', progressiveResult.error);
+          this.logger.warn(
+            'Progressive loading failed, falling back to traditional loading:',
+            progressiveResult.error
+          );
         }
       }
 
       this.logger.info('Using traditional agent loading');
       return await this.initializeTraditional(config);
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to initialize agent';
+      const errorMessage =
+        error instanceof Error ? error.message : 'Failed to initialize agent';
       this.logger.error('Failed to initialize agent:', error);
 
       return {
@@ -164,7 +176,7 @@ export class AgentService {
         error: errorMessage,
         coreReadyTimeMs: 0,
         backgroundTasksRemaining: 0,
-        loadingPhase: 'failed'
+        loadingPhase: 'failed',
       };
     } finally {
       this.initializing = false;
@@ -197,19 +209,25 @@ export class AgentService {
     const startTime = Date.now();
 
     try {
-      let mcpServers = config.mcpServers;
+      let mcpServers = config.mcpServers as unknown as
+        | LibMCPServerConfig[]
+        | undefined;
       if (!mcpServers) {
         const mcpService = MCPService.getInstance();
         const loadedServers = await mcpService.loadServers();
 
-        mcpServers = loadedServers.map(server => {
+        mcpServers = loadedServers.map((server): LibMCPServerConfig => {
           let command: string;
           let args: string[] = [];
 
           switch (server.type) {
             case 'filesystem':
               command = 'npx';
-              args = ['-y', '@modelcontextprotocol/server-filesystem', server.config.rootPath || process.cwd()];
+              args = [
+                '-y',
+                '@modelcontextprotocol/server-filesystem',
+                server.config.rootPath || process.cwd(),
+              ];
               break;
             case 'github':
               command = 'npx';
@@ -221,7 +239,11 @@ export class AgentService {
               break;
             case 'sqlite':
               command = 'npx';
-              args = ['-y', '@modelcontextprotocol/server-sqlite', server.config.path];
+              args = [
+                '-y',
+                '@modelcontextprotocol/server-sqlite',
+                server.config.path,
+              ];
               break;
             case 'custom':
               command = server.config.command || 'npx';
@@ -242,9 +264,9 @@ export class AgentService {
             name: server.name,
             command,
             args,
-            autoConnect: true
-          } as any;
-        }) as any;
+            autoConnect: true,
+          };
+        });
       }
 
       this.logger.info('AgentService.initialize called with config:', {
@@ -257,25 +279,29 @@ export class AgentService {
         operationalMode: config.operationalMode,
         llmProvider: config.llmProvider,
         mcpServerCount: mcpServers?.length || 0,
-        enabledMcpServers: mcpServers?.filter((s: any) => s.enabled).length || 0,
-        mcpServers: mcpServers?.map((s: any) => ({
+        enabledMcpServers:
+          mcpServers?.filter((s) => s.autoConnect === true).length || 0,
+        mcpServers: mcpServers?.map((s) => ({
           name: s.name,
           command: s.command,
-          args: s.args
-        }))
+          args: s.args,
+        })),
       });
 
-      const agentConfig: ConversationalAgentOptions & { mcpServers?: MCPServerConfig[]; llmProvider?: string } = {
+      const agentConfig: SafeAgentConfig = {
         accountId: config.accountId,
         privateKey: config.privateKey,
         network: config.network,
         openAIApiKey: config.openAIApiKey,
         openAIModelName: config.modelName || 'gpt-4o-mini',
-        operationalMode: config.operationalMode || 'autonomous',
-        verbose: false,
-        disableLogging: true,
-        mcpServers: mcpServers as any,
-        llmProvider: config.llmProvider
+        operationalMode:
+          (config.operationalMode as AgentOperationalMode) || 'autonomous',
+        llmProvider: config.llmProvider,
+        mcpServers,
+        entityMemoryEnabled: true,
+        entityMemoryConfig: {},
+        verbose: config.verbose ?? false,
+        disableLogging: config.disableLogging ?? true,
       };
 
       const conversationalAgent = new SafeConversationalAgent(agentConfig);
@@ -293,10 +319,11 @@ export class AgentService {
         sessionId: this.sessionId,
         coreReadyTimeMs: initTime,
         backgroundTasksRemaining: 0,
-        loadingPhase: 'completed'
+        loadingPhase: 'completed',
       };
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to initialize agent';
+      const errorMessage =
+        error instanceof Error ? error.message : 'Failed to initialize agent';
       this.logger.error('Traditional agent initialization failed:', error);
 
       return {
@@ -304,7 +331,7 @@ export class AgentService {
         error: errorMessage,
         coreReadyTimeMs: Date.now() - startTime,
         backgroundTasksRemaining: 0,
-        loadingPhase: 'failed'
+        loadingPhase: 'failed',
       };
     }
   }
@@ -312,11 +339,13 @@ export class AgentService {
   /**
    * Extract transaction bytes from message content
    */
-  private extractTransactionBytesFromMessage(messageContent: string): string | null {
+  private extractTransactionBytesFromMessage(
+    messageContent: string
+  ): string | null {
     this.logger.info('Attempting to extract transaction bytes from message:', {
       contentLength: messageContent.length,
       contentPreview: messageContent.substring(0, 300) + '...',
-      hasCodeBlocks: messageContent.includes('```')
+      hasCodeBlocks: messageContent.includes('```'),
     });
 
     const codeBlockRegex = /```[a-z]*\n([A-Za-z0-9+/]{50,}={0,2})\n```/g;
@@ -328,13 +357,15 @@ export class AgentService {
       const potentialBytes = match[1];
       this.logger.info('Testing potential bytes from code block:', {
         length: potentialBytes?.length,
-        preview: potentialBytes?.substring(0, 50) + '...'
+        preview: potentialBytes?.substring(0, 50) + '...',
       });
 
       if (potentialBytes && potentialBytes.length > 50) {
         try {
           Buffer.from(potentialBytes, 'base64');
-          this.logger.info('Valid base64 transaction bytes found in code block');
+          this.logger.info(
+            'Valid base64 transaction bytes found in code block'
+          );
           return potentialBytes;
         } catch (error) {
           this.logger.warn('Invalid base64 in code block:', error);
@@ -352,7 +383,7 @@ export class AgentService {
       const potentialBytes = match[1];
       this.logger.info('Testing potential bytes inline:', {
         length: potentialBytes?.length,
-        preview: potentialBytes?.substring(0, 50) + '...'
+        preview: potentialBytes?.substring(0, 50) + '...',
       });
 
       if (potentialBytes && potentialBytes.length > 100) {
@@ -380,60 +411,92 @@ export class AgentService {
   ): Promise<{
     success: boolean;
     response?: AgentMessage;
-    error?: string
+    error?: string;
   }> {
     if (!this.agent || !this.initialized) {
       return {
         success: false,
-        error: 'Agent not initialized'
+        error: 'Agent not initialized',
       };
     }
 
     try {
-      this.logger.info('Sending message to agent:', { content, historyLength: chatHistory.length });
+      this.logger.info('Sending message to agent:', {
+        content,
+        historyLength: chatHistory.length,
+      });
 
       const response = await this.agent.processMessage(content, chatHistory);
 
-      this.logger.info('[AgentService] Full agent response structure:', JSON.stringify({
-        hasMessage: !!response.message,
-        hasOutput: !!response.output,
-        hasTransactionBytes: !!response.transactionBytes,
-        hasScheduleId: !!response.scheduleId,
-        hasMetadata: !!response.metadata,
-        hasIntermediateSteps: !!response.intermediateSteps,
-        hasRawToolOutput: !!response.rawToolOutput,
-        transactionBytesValue: response.transactionBytes,
-        metadataTransactionBytes: response.metadata?.transactionBytes,
-        messageLength: response.message?.length,
-        outputLength: response.output?.length,
-        directScheduleId: response.scheduleId,
-        directSuccess: response.success,
-        directOp: response.op,
-        hasError: !!response.error,
-        errorMessage: response.error
-      }, null, 2));
+      this.logger.info(
+        '[AgentService] Full agent response structure:',
+        JSON.stringify(
+          {
+            hasMessage: !!response.message,
+            hasOutput: !!response.output,
+            hasTransactionBytes: !!response.transactionBytes,
+            hasScheduleId: !!response.scheduleId,
+            hasMetadata: !!response.metadata,
+            hasIntermediateSteps: !!response.intermediateSteps,
+            hasRawToolOutput: !!response.rawToolOutput,
+            transactionBytesValue: response.transactionBytes,
+            metadataTransactionBytes: response.metadata?.transactionBytes,
+            messageLength: response.message?.length,
+            outputLength: response.output?.length,
+            directScheduleId: response.scheduleId,
+            directSuccess: response.success,
+            directOp: response.op,
+            hasError: !!response.error,
+            errorMessage: response.error,
+          },
+          null,
+          2
+        )
+      );
 
       if (response.error) {
-        this.logger.warn('[AgentService] Agent returned error:', response.error);
+        this.logger.warn(
+          '[AgentService] Agent returned error:',
+          response.error
+        );
       }
 
       if (Array.isArray(response.intermediateSteps)) {
         for (const step of response.intermediateSteps) {
-          if (step.observation && typeof step.observation === 'string' &&
-            step.observation.toLowerCase().includes('error')) {
-            this.logger.warn('[AgentService] Tool execution error detected:', step.observation);
+          if (
+            step.observation &&
+            typeof step.observation === 'string' &&
+            step.observation.toLowerCase().includes('error')
+          ) {
+            this.logger.warn(
+              '[AgentService] Tool execution error detected:',
+              step.observation
+            );
           }
-          if (step.observation && typeof step.observation === 'object' && step.observation.error) {
-            this.logger.warn('[AgentService] Tool execution error in step:', step.observation.error);
+          if (
+            step.observation &&
+            typeof step.observation === 'object' &&
+            step.observation.error
+          ) {
+            this.logger.warn(
+              '[AgentService] Tool execution error in step:',
+              step.observation.error
+            );
           }
         }
       }
 
       if (response.message) {
-        this.logger.info('[AgentService] Message content (first 500 chars):', response.message.substring(0, 500));
+        this.logger.info(
+          '[AgentService] Message content (first 500 chars):',
+          response.message.substring(0, 500)
+        );
       }
       if (response.output) {
-        this.logger.info('[AgentService] Output content (first 500 chars):', response.output.substring(0, 500));
+        this.logger.info(
+          '[AgentService] Output content (first 500 chars):',
+          response.output.substring(0, 500)
+        );
       }
 
       const scheduleId = response.scheduleId;
@@ -442,28 +505,41 @@ export class AgentService {
       if (scheduleId) {
         this.logger.info('Found schedule ID directly on response:', scheduleId);
       } else {
-        this.logger.warn('No schedule ID found on response. Check the agent configuration.');
+        this.logger.warn(
+          'No schedule ID found on response. Check the agent configuration.'
+        );
       }
 
-      let transactionBytes = response.transactionBytes || response.metadata?.transactionBytes;
+      let transactionBytes =
+        response.transactionBytes || response.metadata?.transactionBytes;
       this.logger.info('[AgentService] Initial transaction bytes check:', {
         fromResponse: !!response.transactionBytes,
         fromMetadata: !!response.metadata?.transactionBytes,
-        value: transactionBytes ? transactionBytes.substring(0, 50) + '...' : 'none'
+        value: transactionBytes
+          ? transactionBytes.substring(0, 50) + '...'
+          : 'none',
       });
 
       if (!transactionBytes) {
         const messageContent = response.message || response.output || '';
-        this.logger.info('[AgentService] No direct transaction bytes, attempting extraction from message content');
-        const extractedBytes = this.extractTransactionBytesFromMessage(messageContent);
+        this.logger.info(
+          '[AgentService] No direct transaction bytes, attempting extraction from message content'
+        );
+        const extractedBytes =
+          this.extractTransactionBytesFromMessage(messageContent);
         if (extractedBytes) {
           transactionBytes = extractedBytes;
-          this.logger.info('[AgentService] Successfully extracted transaction bytes from message:', {
-            bytesLength: extractedBytes.length,
-            preview: extractedBytes.substring(0, 50) + '...'
-          });
+          this.logger.info(
+            '[AgentService] Successfully extracted transaction bytes from message:',
+            {
+              bytesLength: extractedBytes.length,
+              preview: extractedBytes.substring(0, 50) + '...',
+            }
+          );
         } else {
-          this.logger.warn('[AgentService] Failed to extract transaction bytes from message content');
+          this.logger.warn(
+            '[AgentService] Failed to extract transaction bytes from message content'
+          );
         }
       }
 
@@ -478,8 +554,8 @@ export class AgentService {
           notes: response.notes,
           transactionBytes: transactionBytes,
           description: description || response.description,
-          ...response.metadata
-        }
+          ...response.metadata,
+        },
       };
 
       this.logger.info('Returning agent message:', {
@@ -488,21 +564,23 @@ export class AgentService {
         metadata: {
           ...agentMessage.metadata,
           hasTransactionBytes: !!agentMessage.metadata?.transactionBytes,
-          transactionBytesLength: agentMessage.metadata?.transactionBytes?.length || 0
-        }
+          transactionBytesLength:
+            agentMessage.metadata?.transactionBytes?.length || 0,
+        },
       });
 
       return {
         success: true,
-        response: agentMessage
+        response: agentMessage,
       };
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to send message';
+      const errorMessage =
+        error instanceof Error ? error.message : 'Failed to send message';
       this.logger.error('Failed to send message:', error);
 
       return {
         success: false,
-        error: errorMessage
+        error: errorMessage,
       };
     }
   }
@@ -522,47 +600,54 @@ export class AgentService {
   ): Promise<{
     success: boolean;
     response?: AgentMessage;
-    error?: string
+    error?: string;
   }> {
     if (!this.agent || !this.initialized) {
       return {
         success: false,
-        error: 'Agent not initialized'
+        error: 'Agent not initialized',
       };
     }
 
     try {
       let processedContent = content;
 
-
       if (attachments.length > 0) {
-        this.logger.info('Processing attachments with content reference system:', {
-          attachmentCount: attachments.length,
-          totalSize: attachments.reduce((sum, att) => sum + att.size, 0),
-          attachmentNames: attachments.map(a => a.name)
-        });
-
+        this.logger.info(
+          'Processing attachments with content reference system:',
+          {
+            attachmentCount: attachments.length,
+            totalSize: attachments.reduce((sum, att) => sum + att.size, 0),
+            attachmentNames: attachments.map((a) => a.name),
+          }
+        );
 
         this.logger.info('Detailed agent structure check:', {
           agentType: this.agent.constructor.name,
           hasMemoryManagerDirect: !!this.agent.memoryManager,
           memoryManagerType: typeof this.agent.memoryManager,
           agentKeys: Object.keys(this.agent),
-          prototypeKeys: Object.getOwnPropertyNames(Object.getPrototypeOf(this.agent)),
-          hasContentStorage: !!(this.agent.memoryManager?.contentStorage),
+          prototypeKeys: Object.getOwnPropertyNames(
+            Object.getPrototypeOf(this.agent)
+          ),
+          hasContentStorage: !!this.agent.memoryManager?.contentStorage,
           contentStorageType: typeof this.agent.memoryManager?.contentStorage,
-          hasStoreMethod: typeof this.agent.memoryManager?.contentStorage?.storeContentIfLarge
+          hasStoreMethod:
+            typeof this.agent.memoryManager?.contentStorage
+              ?.storeContentIfLarge,
         });
 
         const memoryManager = this.agent.memoryManager;
         const contentStorage = memoryManager?.contentStorage;
 
-        if (contentStorage && typeof contentStorage.storeContentIfLarge === 'function') {
+        if (
+          contentStorage &&
+          typeof contentStorage.storeContentIfLarge === 'function'
+        ) {
           const contentReferences: string[] = [];
 
           for (const attachment of attachments) {
             try {
-
               const base64Data = attachment.data.includes('base64,')
                 ? attachment.data.split('base64,')[1]
                 : attachment.data;
@@ -572,92 +657,116 @@ export class AgentService {
                 fileName: attachment.name,
                 bufferSize: buffer.length,
                 originalSize: attachment.size,
-                contentType: attachment.type
+                contentType: attachment.type,
               });
 
-
-              const contentRef = await contentStorage.storeContentIfLarge(buffer, {
-                contentType: attachment.type.startsWith('image/') ? 'image' : 'file',
-                mimeType: attachment.type,
-                source: 'user_upload',
-                fileName: attachment.name,
-                tags: ['attachment', 'user_file']
-              });
+              const contentRef = await contentStorage.storeContentIfLarge(
+                buffer,
+                {
+                  mimeType: attachment.type,
+                  source: 'user_upload',
+                  fileName: attachment.name,
+                  tags: ['attachment', 'user_file'],
+                }
+              );
 
               this.logger.info('Content storage result:', {
                 fileName: attachment.name,
                 contentRefCreated: !!contentRef,
-                contentRefId: contentRef?.referenceId
+                contentRefId: contentRef?.referenceId,
               });
 
               if (contentRef) {
-
                 if (attachment.type.startsWith('image/')) {
-                  contentReferences.push(`[Image File: ${attachment.name} - Content stored as reference ${contentRef.referenceId}]`);
+                  contentReferences.push(
+                    `[Image File: ${attachment.name} - Content stored as reference ${contentRef.referenceId}]`
+                  );
                 } else {
-                  contentReferences.push(`[File: ${attachment.name} - Content stored as reference ${contentRef.referenceId}]`);
+                  contentReferences.push(
+                    `[File: ${attachment.name} - Content stored as reference ${contentRef.referenceId}]`
+                  );
                 }
 
                 this.logger.info('Stored attachment as content reference:', {
                   fileName: attachment.name,
                   referenceId: contentRef.referenceId,
                   originalSize: attachment.size,
-                  contentType: attachment.type
+                  contentType: attachment.type,
                 });
               } else {
-
                 if (attachment.size < 50000) {
                   if (attachment.type.startsWith('image/')) {
-                    contentReferences.push(`![${attachment.name}](data:${attachment.type};base64,${base64Data})`);
+                    contentReferences.push(
+                      `![${attachment.name}](data:${attachment.type};base64,${base64Data})`
+                    );
                   } else {
-                    contentReferences.push(`[File: ${attachment.name} (${(attachment.size / 1024).toFixed(1)}KB)]\nContent: ${base64Data}`);
+                    contentReferences.push(
+                      `[File: ${attachment.name} (${(
+                        attachment.size / 1024
+                      ).toFixed(1)}KB)]\nContent: ${base64Data}`
+                    );
                   }
                 } else {
-
-                  contentReferences.push(`[File: ${attachment.name} (${(attachment.size / 1024).toFixed(1)}KB) - Content too large to include inline]`);
+                  contentReferences.push(
+                    `[File: ${attachment.name} (${(
+                      attachment.size / 1024
+                    ).toFixed(1)}KB) - Content too large to include inline]`
+                  );
                 }
 
-                this.logger.info('Content not stored as reference (size-based decision):', {
-                  fileName: attachment.name,
-                  size: attachment.size,
-                  includeInline: attachment.size < 50000
-                });
+                this.logger.info(
+                  'Content not stored as reference (size-based decision):',
+                  {
+                    fileName: attachment.name,
+                    size: attachment.size,
+                    includeInline: attachment.size < 50000,
+                  }
+                );
               }
             } catch (error) {
               this.logger.error('Failed to process attachment:', {
                 fileName: attachment.name,
-                error: error instanceof Error ? error.message : 'Unknown error'
+                error: error instanceof Error ? error.message : 'Unknown error',
               });
-              contentReferences.push(`[File: ${attachment.name} - Error processing file: ${error instanceof Error ? error.message : 'Unknown error'}]`);
+              contentReferences.push(
+                `[File: ${attachment.name} - Error processing file: ${
+                  error instanceof Error ? error.message : 'Unknown error'
+                }]`
+              );
             }
           }
 
-
-          const fileList = attachments.map((file) => {
-            const sizeStr = file.size > 1024 * 1024
-              ? `${(file.size / (1024 * 1024)).toFixed(1)}MB`
-              : `${(file.size / 1024).toFixed(1)}KB`;
-            return `📎 ${file.name} (${sizeStr})`;
-          }).join('\n');
+          const fileList = attachments
+            .map((file) => {
+              const sizeStr =
+                file.size > 1024 * 1024
+                  ? `${(file.size / (1024 * 1024)).toFixed(1)}MB`
+                  : `${(file.size / 1024).toFixed(1)}KB`;
+              return `📎 ${file.name} (${sizeStr})`;
+            })
+            .join('\n');
 
           processedContent = content
-            ? `${content}\n\nAttached files:\n${fileList}\n\n${contentReferences.join('\n')}`
+            ? `${content}\n\nAttached files:\n${fileList}\n\n${contentReferences.join(
+                '\n'
+              )}`
             : `Attached files:\n${fileList}\n\n${contentReferences.join('\n')}`;
 
           this.logger.info('Final processed message length:', {
             originalContentLength: content.length,
             processedContentLength: processedContent.length,
-            attachmentsProcessed: contentReferences.length
+            attachmentsProcessed: contentReferences.length,
           });
-
         } else {
-
-          this.logger.warn('Content storage not available, creating simple file references');
+          this.logger.warn(
+            'Content storage not available, creating simple file references'
+          );
 
           const fileReferences = attachments.map((attachment) => {
-            const sizeStr = attachment.size > 1024 * 1024
-              ? `${(attachment.size / (1024 * 1024)).toFixed(1)}MB`
-              : `${(attachment.size / 1024).toFixed(1)}KB`;
+            const sizeStr =
+              attachment.size > 1024 * 1024
+                ? `${(attachment.size / (1024 * 1024)).toFixed(1)}MB`
+                : `${(attachment.size / 1024).toFixed(1)}KB`;
 
             if (attachment.type.startsWith('image/')) {
               return `📎 Image: ${attachment.name} (${sizeStr}, ${attachment.type})`;
@@ -670,25 +779,28 @@ export class AgentService {
             ? `${content}\n\nAttached files:\n${fileReferences.join('\n')}`
             : `Attached files:\n${fileReferences.join('\n')}`;
 
-          this.logger.warn('Created simple file references without content storage');
+          this.logger.warn(
+            'Created simple file references without content storage'
+          );
         }
       }
 
       this.logger.info('Sending processed message to agent:', {
         messageLength: processedContent.length,
-        messagePreview: processedContent.substring(0, 200) + '...'
+        messagePreview: processedContent.substring(0, 200) + '...',
       });
 
-
       return await this.sendMessage(processedContent, chatHistory);
-
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to send message with attachments';
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : 'Failed to send message with attachments';
       this.logger.error('Failed to send message with attachments:', error);
 
       return {
         success: false,
-        error: errorMessage
+        error: errorMessage,
       };
     }
   }
@@ -707,12 +819,13 @@ export class AgentService {
 
       return { success: true };
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to disconnect';
+      const errorMessage =
+        error instanceof Error ? error.message : 'Failed to disconnect';
       this.logger.error('Failed to disconnect agent:', error);
 
       return {
         success: false,
-        error: errorMessage
+        error: errorMessage,
       };
     }
   }
@@ -723,12 +836,12 @@ export class AgentService {
   getStatus(): {
     isInitialized: boolean;
     isInitializing: boolean;
-    sessionId: string | null
+    sessionId: string | null;
   } {
     return {
       isInitialized: this.initialized,
       isInitializing: this.initializing,
-      sessionId: this.sessionId
+      sessionId: this.sessionId,
     };
   }
 
@@ -773,7 +886,7 @@ export class AgentService {
         progress: 0,
         coreReady: false,
         mcpConnectionsReady: false,
-        backgroundTasksComplete: false
+        backgroundTasksComplete: false,
       };
     }
     return this.agentLoader.getLoadingState();
@@ -804,10 +917,12 @@ export class AgentService {
         initialized: this.initialized,
         initializing: this.initializing,
         sessionId: this.sessionId,
-        hasAgent: !!this.agent
+        hasAgent: !!this.agent,
       },
       mcpMetrics: mcpService.getPerformanceMetrics(),
-      progressiveLoading: this.agentLoader ? this.agentLoader.getPerformanceMetrics() : null
+      progressiveLoading: this.agentLoader
+        ? this.agentLoader.getPerformanceMetrics()
+        : null,
     };
   }
 
@@ -821,7 +936,10 @@ export class AgentService {
     if (config) {
       this.agentLoader.updateConfig(config);
     }
-    this.logger.info('Progressive loading enabled for next initialization', config || {});
+    this.logger.info(
+      'Progressive loading enabled for next initialization',
+      config || {}
+    );
   }
 
   /**
@@ -848,18 +966,28 @@ export class AgentService {
   ): void {
     try {
       if (!this.agent) {
-        this.logger.warn('Cannot store entity association: Agent not initialized');
+        this.logger.warn(
+          'Cannot store entity association: Agent not initialized'
+        );
         return;
       }
 
       const safeAgent = this.agent as any;
-      if (safeAgent.memoryManager && typeof safeAgent.memoryManager.storeEntityAssociation === 'function') {
-        safeAgent.memoryManager.storeEntityAssociation(entityId, entityName, entityType, transactionId);
+      if (
+        safeAgent.memoryManager &&
+        typeof safeAgent.memoryManager.storeEntityAssociation === 'function'
+      ) {
+        safeAgent.memoryManager.storeEntityAssociation(
+          entityId,
+          entityName,
+          entityType,
+          transactionId
+        );
         this.logger.info('Stored entity association:', {
           entityName,
           entityType,
           entityId,
-          transactionId
+          transactionId,
         });
       } else {
         this.logger.warn('Memory manager not available for entity storage');
@@ -897,20 +1025,23 @@ export class AgentService {
         mcpConnectionBatchSize: 3,
         mcpConnectionDelayMs: 1000,
         backgroundConnectionsEnabled: true,
-        ...progressiveConfig
-      }
+        ...progressiveConfig,
+      },
     };
 
     const result = await this.initialize(optimizedConfig);
 
     if (result.success && result.coreReadyTimeMs) {
-      const performanceGain = result.coreReadyTimeMs < 5000
-        ? `${Math.round(((5000 - result.coreReadyTimeMs) / 5000) * 100)}% faster`
-        : 'Standard performance';
+      const performanceGain =
+        result.coreReadyTimeMs < 5000
+          ? `${Math.round(
+              ((5000 - result.coreReadyTimeMs) / 5000) * 100
+            )}% faster`
+          : 'Standard performance';
 
       return {
         ...result,
-        performanceGain
+        performanceGain,
       };
     }
 
@@ -957,7 +1088,10 @@ export class AgentService {
 
       return false;
     } catch (error) {
-      this.logger.error(`Failed to check MCP server connection status for ${serverName}:`, error);
+      this.logger.error(
+        `Failed to check MCP server connection status for ${serverName}:`,
+        error
+      );
       return false;
     }
   }
@@ -966,7 +1100,12 @@ export class AgentService {
    * Get summary of MCP connection status
    * @returns {Promise<{total: number, connected: number, pending: number, failed: number}>}
    */
-  async getMCPConnectionSummary(): Promise<{ total: number, connected: number, pending: number, failed: number }> {
+  async getMCPConnectionSummary(): Promise<{
+    total: number;
+    connected: number;
+    pending: number;
+    failed: number;
+  }> {
     const status = await this.getMCPConnectionStatus();
 
     if (!status) {
@@ -991,7 +1130,7 @@ export class AgentService {
       total: status.size,
       connected,
       pending,
-      failed
+      failed,
     };
   }
 }

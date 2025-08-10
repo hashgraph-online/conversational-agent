@@ -1,12 +1,12 @@
-import React, { useState, useEffect } from 'react'
-import { motion } from 'framer-motion'
-import { useNavigate } from 'react-router-dom'
-import Sidebar from './navigation/Sidebar'
-import Typography from './ui/Typography'
-import { FiMoon, FiSun, FiUser } from 'react-icons/fi'
-import { cn } from '../lib/utils'
-import { useConfigStore } from '../stores/configStore'
-import { HCS10Client } from '@hashgraphonline/standards-sdk'
+import React, { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
+import Sidebar from './navigation/Sidebar';
+import Typography from './ui/Typography';
+import { FiMoon, FiSun, FiUser } from 'react-icons/fi';
+import { cn } from '../lib/utils';
+import { useConfigStore } from '../stores/configStore';
+import { HCS10Client } from '@hashgraphonline/standards-sdk';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -171,10 +171,10 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     <div className='flex h-screen bg-gray-50 dark:bg-[#0a0a0a]'>
       <Sidebar />
 
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <header className="h-16 bg-white/80 dark:bg-black/40 backdrop-blur-lg border-b border-gray-200/50 dark:border-white/[0.06] flex items-center justify-end px-6 relative overflow-hidden">
+      <div className='flex-1 flex flex-col overflow-hidden'>
+        <header className='h-16 bg-white/80 dark:bg-black/40 backdrop-blur-lg border-b border-gray-200/50 dark:border-white/[0.06] flex items-center justify-end px-6 relative overflow-hidden'>
           {/* Static gradient line */}
-          <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-[#a679f0] via-[#5599fe] to-[#48df7b]" />
+          <div className='absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-[#a679f0] via-[#5599fe] to-[#48df7b]' />
 
           <div className='flex items-center'>
             <ProfileButton />
@@ -182,9 +182,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto">
-          {children}
-        </main>
+        <main className='flex-1 overflow-y-auto'>{children}</main>
       </div>
     </div>
   );
