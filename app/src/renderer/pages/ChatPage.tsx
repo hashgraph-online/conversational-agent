@@ -172,6 +172,7 @@ const ChatPage: React.FC<ChatPageProps> = () => {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [fileError, setFileError] = useState<string | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
   const [isLoadingProfile, setIsLoadingProfile] = useState(false);
   const messagesEndRef = React.useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -296,6 +297,59 @@ const ChatPage: React.FC<ChatPageProps> = () => {
     fileInputRef.current?.click();
   };
 
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const target = e.currentTarget;
+    const relatedTarget = e.relatedTarget as Node;
+    
+    if (!target.contains(relatedTarget)) {
+      setIsDragging(false);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    const files = e.dataTransfer.files;
+    if (files && files.length > 0) {
+      const newFiles: File[] = [];
+      let errorMessages: string[] = [];
+
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const fileSize = file.size / (1024 * 1024);
+
+        if (fileSize > 10) {
+          errorMessages.push(`${file.name} exceeds 10MB limit`);
+        } else if (selectedFiles.length + newFiles.length >= 5) {
+          errorMessages.push('Maximum 5 files allowed');
+          break;
+        } else {
+          newFiles.push(file);
+        }
+      }
+
+      if (errorMessages.length > 0) {
+        setFileError(errorMessages.join(', '));
+        setTimeout(() => setFileError(null), 3000);
+      }
+
+      if (newFiles.length > 0) {
+        setSelectedFiles((prev) => [...prev, ...newFiles]);
+      }
+    }
+  };
+
   const fileToBase64 = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -321,52 +375,31 @@ const ChatPage: React.FC<ChatPageProps> = () => {
     setIsLoading(true);
 
     try {
-      let messageToSend = message;
+      let attachments: Array<{
+        name: string;
+        data: string;
+        type: string;
+        size: number;
+      }> = [];
 
       if (selectedFiles.length > 0) {
-        const filePromises = selectedFiles.map(async (file) => {
+        // Process files for attachment (no longer embedding in message content)
+        for (const file of selectedFiles) {
           try {
             const base64Content = await fileToBase64(file);
-            const fileType = file.type || 'application/octet-stream';
-
-            if (file.type.startsWith('image/')) {
-              return `\n<!-- FILE_START:${file.name} -->\n[Image: ${file.name}]\n![${file.name}](data:${fileType};base64,${base64Content})\n<!-- FILE_END:${file.name} -->\n`;
-            } else {
-              return `\n<!-- FILE_START:${file.name} -->\n[File: ${
-                file.name
-              } (${(file.size / 1024).toFixed(
-                1
-              )}KB, ${fileType})]\nBase64 content:\n${base64Content}\n<!-- FILE_END:${
-                file.name
-              } -->\n`;
-            }
+            attachments.push({
+              name: file.name,
+              data: base64Content,
+              type: file.type || 'application/octet-stream',
+              size: file.size
+            });
           } catch (error) {
-            return `\n<!-- FILE_ERROR:${file.name} -->\n[File: ${file.name} - Error reading file]\n<!-- FILE_ERROR_END -->\n`;
+            console.error(`Failed to process file ${file.name}:`, error);
           }
-        });
-
-        const fileContents = await Promise.all(filePromises);
-
-        const fileList = selectedFiles
-          .map((file) => {
-            const sizeStr =
-              file.size > 1024 * 1024
-                ? `${(file.size / (1024 * 1024)).toFixed(1)}MB`
-                : `${(file.size / 1024).toFixed(1)}KB`;
-            return `📎 ${file.name} (${sizeStr})`;
-          })
-          .join('\n');
-
-        const userVisiblePart = message
-          ? `${message}\n\nAttached files:\n${fileList}`
-          : `Attached files:\n${fileList}`;
-
-        messageToSend = `${userVisiblePart}\n\n<!-- HIDDEN_FILE_CONTENT -->\n${fileContents.join(
-          ''
-        )}\n<!-- END_HIDDEN_FILE_CONTENT -->`;
+        }
       }
 
-      await sendMessage(messageToSend);
+      await sendMessage(message, attachments);
       setInputValue('');
       setSelectedFiles([]);
     } catch (error) {
@@ -374,7 +407,7 @@ const ChatPage: React.FC<ChatPageProps> = () => {
       setIsSubmitting(false);
       setIsLoading(false);
     }
-  };
+  };;
 
   const handleConnect = async () => {
     try {
@@ -829,7 +862,12 @@ const ChatPage: React.FC<ChatPageProps> = () => {
           )}
           
           <div className="flex gap-4 items-start">
-            <div className="flex-1 relative">
+            <div 
+              className="flex-1 relative"
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+            >
               <textarea
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
@@ -852,7 +890,8 @@ const ChatPage: React.FC<ChatPageProps> = () => {
                   "text-gray-900 dark:text-white text-base",
                   "transition-all duration-300 ease-out",
                   "disabled:opacity-50 disabled:cursor-not-allowed",
-                  "shadow-lg shadow-gray-200/20 dark:shadow-gray-900/20"
+                  "shadow-lg shadow-gray-200/20 dark:shadow-gray-900/20",
+                  isDragging && "ring-2 ring-blue-500/30 border-blue-500/50 bg-blue-50/10 dark:bg-blue-900/10"
                 )}
                 style={{
                   height: 'auto',
@@ -864,6 +903,16 @@ const ChatPage: React.FC<ChatPageProps> = () => {
                   target.style.height = Math.min(target.scrollHeight, 200) + 'px'
                 }}
               />
+              {isDragging && (
+                <div className="absolute inset-0 rounded-2xl bg-blue-500/10 dark:bg-blue-400/10 backdrop-blur-sm flex items-center justify-center pointer-events-none">
+                  <div className="bg-white/90 dark:bg-gray-800/90 rounded-xl px-4 py-3 shadow-lg">
+                    <div className="flex items-center gap-2">
+                      <FiFile className="w-5 h-5 text-blue-500" />
+                      <span className="text-sm font-medium text-gray-700 dark:text-gray-200">Drop files here to attach</span>
+                    </div>
+                  </div>
+                </div>
+              )}
               <Button
                 onClick={handleFileButtonClick}
                 disabled={!isConnected || isSubmitting}

@@ -83,7 +83,7 @@ const IS_ENTITY_ASSOCIATION_FLAG = '"isEntityAssociation":true';
  */
 export class SmartMemoryManager {
   private memoryWindow: MemoryWindow;
-  private contentStorage: ContentStorage;
+  private _contentStorage: ContentStorage;
   private tokenCounter: TokenCounter;
   private config: Required<SmartMemoryConfig>;
 
@@ -97,13 +97,21 @@ export class SmartMemoryManager {
   constructor(config: SmartMemoryConfig = {}) {
     this.config = { ...SmartMemoryManager.DEFAULT_CONFIG, ...config };
 
-    this.tokenCounter = new TokenCounter(this.config.modelName as any);
-    this.contentStorage = new ContentStorage(this.config.storageLimit);
+    this.tokenCounter = new TokenCounter(this.config.modelName);
+    this._contentStorage = new ContentStorage(this.config.storageLimit);
     this.memoryWindow = new MemoryWindow(
       this.config.maxTokens,
       this.config.reserveTokens,
       this.tokenCounter
     );
+  }
+
+  /**
+   * Get the content storage instance for file/content reference operations
+   * @returns ContentStorage instance
+   */
+  get contentStorage(): ContentStorage {
+    return this._contentStorage;
   }
 
   /**
@@ -115,7 +123,7 @@ export class SmartMemoryManager {
     const result = this.memoryWindow.addMessage(message);
 
     if (result.prunedMessages.length > 0) {
-      this.contentStorage.storeMessages(result.prunedMessages);
+      this._contentStorage.storeMessages(result.prunedMessages);
     }
   }
 
@@ -135,7 +143,7 @@ export class SmartMemoryManager {
     this.memoryWindow.clear();
 
     if (clearStorage) {
-      this.contentStorage.clear();
+      this._contentStorage.clear();
     }
   }
 
@@ -162,7 +170,7 @@ export class SmartMemoryManager {
    * @returns Array of matching messages from history
    */
   searchHistory(query: string, options: SearchOptions = {}): BaseMessage[] {
-    return this.contentStorage.searchMessages(query, options);
+    return this._contentStorage.searchMessages(query, options);
   }
 
   /**
@@ -171,7 +179,7 @@ export class SmartMemoryManager {
    * @returns Array of recent messages from storage
    */
   getRecentHistory(count: number): BaseMessage[] {
-    return this.contentStorage.getRecentMessages(count);
+    return this._contentStorage.getRecentMessages(count);
   }
 
   /**
@@ -205,7 +213,7 @@ export class SmartMemoryManager {
    * @returns Storage usage statistics
    */
   getStorageStats(): ReturnType<ContentStorage['getStorageStats']> {
-    return this.contentStorage.getStorageStats();
+    return this._contentStorage.getStorageStats();
   }
 
   /**
@@ -250,7 +258,7 @@ export class SmartMemoryManager {
     }
 
     if (newConfig.storageLimit !== undefined) {
-      this.contentStorage.updateStorageLimit(this.config.storageLimit);
+      this._contentStorage.updateStorageLimit(this.config.storageLimit);
     }
 
   }
@@ -270,7 +278,7 @@ export class SmartMemoryManager {
    * @returns Messages within the specified time range
    */
   getHistoryFromTimeRange(startTime: Date, endTime: Date): BaseMessage[] {
-    return this.contentStorage.getMessagesFromTimeRange(startTime, endTime);
+    return this._contentStorage.getMessagesFromTimeRange(startTime, endTime);
   }
 
   /**
@@ -280,7 +288,7 @@ export class SmartMemoryManager {
    * @returns Messages of the specified type
    */
   getHistoryByType(messageType: string, limit?: number): BaseMessage[] {
-    return this.contentStorage.getMessagesByType(messageType, limit);
+    return this._contentStorage.getMessagesByType(messageType, limit);
   }
 
   /**
@@ -289,7 +297,7 @@ export class SmartMemoryManager {
    * @returns Messages from the last N minutes
    */
   getRecentHistoryByTime(minutes: number): BaseMessage[] {
-    return this.contentStorage.getRecentMessagesByTime(minutes);
+    return this._contentStorage.getRecentMessagesByTime(minutes);
   }
 
   /**
@@ -313,7 +321,7 @@ export class SmartMemoryManager {
       systemPrompt: this.memoryWindow.getSystemPrompt(),
       memoryStats: this.getMemoryStats(),
       storageStats: this.getStorageStats(),
-      storedMessages: this.contentStorage.exportMessages(),
+      storedMessages: this._contentStorage.exportMessages(),
     };
   }
 
@@ -435,7 +443,7 @@ export class SmartMemoryManager {
         }
       };
       
-      this.contentStorage.storeMessages([entityMessage as any]);
+      this._contentStorage.storeMessages([entityMessage as BaseMessage]);
 
     } catch (_error) {
     }
@@ -470,7 +478,7 @@ export class SmartMemoryManager {
 
       const isEntityIdQuery = /^0\.0\.\d+$/.test(sanitizedQuery);
 
-      const searchResults = this.contentStorage.searchMessages(
+      const searchResults = this._contentStorage.searchMessages(
         sanitizedQuery.substring(0, 200),
         {
           caseSensitive: false,
@@ -518,7 +526,7 @@ export class SmartMemoryManager {
         for (const fuzzyQuery of fuzzyQueries) {
           if (fuzzyQuery === query.toLowerCase()) continue;
 
-          const fuzzyResults = this.contentStorage.searchMessages(fuzzyQuery, {
+          const fuzzyResults = this._contentStorage.searchMessages(fuzzyQuery, {
             caseSensitive: false,
             limit: limit,
           });
@@ -581,7 +589,7 @@ export class SmartMemoryManager {
 
       const SEARCH_ANY_ENTITY = 'entityId';
       const searchQuery = sanitizedEntityType || SEARCH_ANY_ENTITY;
-      const searchResults = this.contentStorage.searchMessages(searchQuery, {
+      const searchResults = this._contentStorage.searchMessages(searchQuery, {
         caseSensitive: false,
         limit: 100,
       });
@@ -639,7 +647,7 @@ export class SmartMemoryManager {
    */
   dispose(): void {
     this.memoryWindow.dispose();
-    this.contentStorage.dispose();
+    this._contentStorage.dispose();
     this.tokenCounter.dispose();
   }
 }

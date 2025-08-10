@@ -48,7 +48,7 @@ export interface AgentStore {
 
   connect: () => Promise<void>;
   disconnect: () => Promise<void>;
-  sendMessage: (content: string) => Promise<void>;
+  sendMessage: (content: string, attachments?: Array<{name: string; data: string; type: string; size: number;}>) => Promise<void>;
 
   approveTransaction: (messageId: string) => Promise<void>;
   rejectTransaction: (messageId: string) => Promise<void>;
@@ -226,7 +226,7 @@ export const useAgentStore = create<AgentStore>((set, get) => {
       }
     },
 
-    sendMessage: async (content: string) => {
+    sendMessage: async (content: string, attachments?: Array<{name: string; data: string; type: string; size: number;}>) => {
       const { isConnected, messages } = get();
 
       if (!isConnected) {
@@ -253,6 +253,7 @@ export const useAgentStore = create<AgentStore>((set, get) => {
         const result = await window.electron.sendAgentMessage({
           content,
           chatHistory,
+          attachments,
         });
 
         if (result.success && result.response) {

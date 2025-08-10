@@ -12,6 +12,7 @@ import { createAgent } from './agent-factory';
 import { LangChainProvider } from './providers';
 import type { ChatResponse, ConversationContext } from './base-agent';
 import { ChatOpenAI } from '@langchain/openai';
+import { ChatAnthropic } from '@langchain/anthropic';
 import { HumanMessage, AIMessage } from '@langchain/core/messages';
 import type { AgentOperationalMode, MirrorNodeConfig } from 'hedera-agent-kit';
 import { HCS10Plugin } from './plugins/hcs-10/HCS10Plugin';
@@ -52,6 +53,7 @@ export interface ConversationalAgentOptions {
   network?: NetworkType;
   openAIApiKey: string;
   openAIModelName?: string;
+  llmProvider?: 'openai' | 'anthropic';
   verbose?: boolean;
   operationalMode?: AgentOperationalMode;
   userAccountId?: string;
@@ -90,9 +92,9 @@ export class ConversationalAgent {
   public hbarTransferPlugin: HbarTransferPlugin;
   public stateManager: IStateManager;
   private options: ConversationalAgentOptions;
-  protected logger: Logger;
+  public logger: Logger;
   private contentStoreManager?: ContentStoreManager;
-  private memoryManager?: SmartMemoryManager | undefined;
+  public memoryManager?: SmartMemoryManager | undefined;
   private mcpConnectionStatus: Map<string, MCPConnectionStatus> = new Map();
 
   constructor(options: ConversationalAgentOptions) {
@@ -127,6 +129,7 @@ export class ConversationalAgent {
       network = DEFAULT_NETWORK,
       openAIApiKey,
       openAIModelName = DEFAULT_MODEL_NAME,
+      llmProvider = 'openai',
     } = this.options;
 
     this.validateOptions(accountId, privateKey);
@@ -146,11 +149,20 @@ export class ConversationalAgent {
 
       const allPlugins = this.preparePlugins();
 
-      const llm = new ChatOpenAI({
-        apiKey: openAIApiKey,
-        modelName: openAIModelName,
-        temperature: DEFAULT_TEMPERATURE,
-      });
+      let llm: ChatOpenAI | ChatAnthropic;
+      if (llmProvider === 'anthropic') {
+        llm = new ChatAnthropic({
+          apiKey: openAIApiKey,
+          modelName: openAIModelName || 'claude-3-5-sonnet-20241022',
+          temperature: DEFAULT_TEMPERATURE,
+        });
+      } else {
+        llm = new ChatOpenAI({
+          apiKey: openAIApiKey,
+          modelName: openAIModelName,
+          temperature: DEFAULT_TEMPERATURE,
+        });
+      }
 
       const agentConfig = this.createAgentConfig(serverSigner, llm, allPlugins);
       this.agent = createAgent(agentConfig);
@@ -166,7 +178,7 @@ export class ConversationalAgent {
       }
 
       await this.agent.boot();
-      
+
       this.wrapAirdropToolInAgent();
 
       if (this.options.mcpServers && this.options.mcpServers.length > 0) {
@@ -313,7 +325,7 @@ export class ConversationalAgent {
    */
   private createAgentConfig(
     serverSigner: ServerSigner,
-    llm: ChatOpenAI,
+    llm: ChatOpenAI | ChatAnthropic,
     allPlugins: BasePlugin[]
   ): Parameters<typeof createAgent>[0] {
     const {
@@ -852,8 +864,7 @@ export class ConversationalAgent {
           );
           for (const toolCall of response.tool_calls) {
             this.logger.info(
-              `Tool call ${
-                toolCall.name
+              `Tool call ${toolCall.name
               }: output type ${typeof toolCall.output}`
             );
             if (toolCall.output && typeof toolCall.output === 'string') {
@@ -1230,7 +1241,7 @@ export class ConversationalAgent {
         this.logger.info('Wrapping airdrop tool with decimal conversion capability at ConversationalAgent level');
         const originalTool = tools[airdropToolIndex];
         const wrappedTool = new AirdropToolWrapper(originalTool, baseAgent.agentKit);
-        
+
         tools[airdropToolIndex] = wrappedTool;
         this.logger.info('Successfully wrapped airdrop tool');
       }

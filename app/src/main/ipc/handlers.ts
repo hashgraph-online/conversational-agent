@@ -155,12 +155,29 @@ export function setupAgentHandlers(): void {
     'agent:send-message',
     async (
       event: IpcMainInvokeEvent,
-      data: { content: string; chatHistory: ChatHistory[] }
+      data: { 
+        content: string; 
+        chatHistory: ChatHistory[];
+        attachments?: Array<{
+          name: string;
+          data: string;
+          type: string;
+          size: number;
+        }>;
+      }
     ): Promise<IPCResponse> => {
       try {
-        const result = await agentService.sendMessage(
+        logger.info('IPC agent:send-message received:', {
+          contentLength: data.content?.length || 0,
+          historyLength: data.chatHistory?.length || 0,
+          attachmentsCount: data.attachments?.length || 0,
+          hasAttachments: !!data.attachments && data.attachments.length > 0
+        });
+        
+        const result = await agentService.sendMessageWithAttachments(
           data.content,
-          data.chatHistory
+          data.chatHistory,
+          data.attachments || []
         );
         return result;
       } catch (error) {
