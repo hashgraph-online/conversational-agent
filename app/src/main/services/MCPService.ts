@@ -22,6 +22,7 @@ export interface MCPServerConfig {
   createdAt: Date
   updatedAt: Date
   connectionHealth?: MCPConnectionHealth
+  description?: string
 }
 
 export interface MCPConnectionHealth {

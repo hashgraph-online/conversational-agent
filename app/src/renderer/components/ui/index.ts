@@ -11,4 +11,5 @@ export * from './StatusIndicator';
 export * from './Typography';
 export * from './UpdateNotification';
 export * from './UpdateDialog';
+export type { UpdateInfo as UpdateInfo, UpdateProgress as UpdateProgress } from './UpdateNotification';
 export * from './Progress';

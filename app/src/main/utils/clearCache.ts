@@ -1,5 +1,6 @@
-import { getDatabase } from '../db/connection'
+import { getDatabase, schema } from '../db/connection'
 import { Logger } from '../utils/logger'
+import { sql } from 'drizzle-orm'
 
 /**
  * Clear the MCP registry cache and force a re-sync
@@ -14,13 +15,19 @@ export async function clearMCPCache(): Promise<{ success: boolean; message: stri
       return { success: false, message: 'Database not available' }
     }
     
-    const deleteServers = db.prepare('DELETE FROM mcp_servers').run()
+    const deleteServers = db.delete(schema.mcpServers).run()
     logger.info(`Cleared ${deleteServers.changes} servers from cache`)
     
-    const deleteCache = db.prepare('DELETE FROM search_cache').run()
+    const deleteCache = db.delete(schema.searchCache).run()
     logger.info(`Cleared ${deleteCache.changes} search cache entries`)
     
-    const resetSync = db.prepare(`UPDATE registry_sync SET status = 'pending', last_sync_at = NULL, last_success_at = NULL`).run()
+    const resetSync = db.update(schema.registrySync)
+      .set({ 
+        status: 'pending', 
+        lastSyncAt: null, 
+        lastSuccessAt: null 
+      })
+      .run()
     logger.info(`Reset ${resetSync.changes} registry sync records`)
     
     return {

@@ -131,7 +131,7 @@ export function RegistrationStatusDialog({
               </div>
 
               <div className="space-y-3">
-                {/* Account ID */}
+
                 <div className="p-3 bg-muted/50 rounded-lg">
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1 min-w-0 space-y-1">
@@ -163,7 +163,7 @@ export function RegistrationStatusDialog({
                   </div>
                 </div>
 
-                {/* Transaction Link */}
+
                 {result.transactionId && (
                   <Button
                     variant="outline"

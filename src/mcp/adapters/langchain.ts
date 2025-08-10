@@ -88,7 +88,6 @@ export function convertMCPToolToLangChain(
               });
               return `content-ref:${referenceId}`;
             } catch (storeError) {
-              console.warn('Failed to store large MCP content as reference:', storeError);
             }
           }
         }

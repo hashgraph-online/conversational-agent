@@ -160,9 +160,31 @@ export class HederaService {
         } catch (closeError) {
           this.logger.warn('Error closing Hedera client:', closeError);
         }
+        
+        const errorMessage = receiptError instanceof Error ? receiptError.message : 'Unknown receipt error';
+        let userFriendlyError = errorMessage;
+
+        if (errorMessage.includes('INVALID_TOKEN_ID')) {
+          userFriendlyError = '🪙 Invalid Token ID\n\nThe specified token does not exist or you may not have permission to access it. Please verify the token ID and try again.';
+        } else if (errorMessage.includes('INVALID_ACCOUNT_ID')) {
+          userFriendlyError = 'Invalid account ID. The specified account does not exist.';
+        } else if (errorMessage.includes('INSUFFICIENT_TOKEN_BALANCE')) {
+          userFriendlyError = 'Insufficient token balance for this operation.';
+        } else if (errorMessage.includes('TOKEN_NOT_ASSOCIATED_TO_ACCOUNT')) {
+          userFriendlyError = 'The token is not associated with the target account. The account must associate with the token first.';
+        } else if (errorMessage.includes('INSUFFICIENT_ACCOUNT_BALANCE')) {
+          userFriendlyError = 'Insufficient account balance to pay for transaction fees.';
+        } else if (errorMessage.includes('EXPIRED')) {
+          userFriendlyError = 'Transaction has expired. Please generate a new transaction.';
+        } else if (errorMessage.includes('DUPLICATE')) {
+          userFriendlyError = 'Duplicate transaction detected. This transaction has already been submitted.';
+        } else if (errorMessage.toLowerCase().includes('receipt')) {
+          userFriendlyError = `Transaction was submitted but failed: ${errorMessage}. Please check the transaction status on HashScan.`;
+        }
+
         return {
           success: false,
-          error: 'Transaction was submitted but receipt could not be retrieved. Please check the transaction status manually.',
+          error: userFriendlyError,
         };
       } finally {
         try {

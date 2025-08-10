@@ -1,5 +1,5 @@
-import { MCPContentProcessor } from './ContentProcessor';
-import { ContentStorage } from '../memory/ContentStorage';
+import { MCPContentProcessor } from '../../../src/mcp/ContentProcessor';
+import { ContentStorage } from '../../../src/memory/ContentStorage';
 import { Logger } from '@hashgraphonline/standards-sdk';
 
 describe('MCPContentProcessor', () => {
@@ -13,10 +13,10 @@ describe('MCPContentProcessor', () => {
       enableAutoCleanup: false
     });
     logger = {
-      info: jest.fn(),
-      debug: jest.fn(),
-      warn: jest.fn(),
-      error: jest.fn()
+      info: vi.fn(),
+      debug: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn()
     } as any;
     processor = new MCPContentProcessor(contentStorage, logger);
   });
@@ -186,7 +186,7 @@ describe('MCPContentProcessor', () => {
         ]
       };
 
-      jest.spyOn(contentStorage, 'storeContentIfLarge').mockRejectedValue(new Error('Storage failed'));
+      vi.spyOn(contentStorage, 'storeContentIfLarge').mockRejectedValue(new Error('Storage failed'));
 
       const result = await processor.processResponse(response, 'test-server', 'test-tool');
       

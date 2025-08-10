@@ -9,7 +9,7 @@ const TestApp = () => {
     <div style={{ padding: '20px', background: '#f0f0f0', minHeight: '100vh' }}>
       <h1>React Test App</h1>
       <p>If you can see this, React is working!</p>
-      <p>Window.electronTest: {window.electronTest ? 'Available' : 'Not Available'}</p>
+      <p>Window.electron: {window.electron ? 'Available' : 'Not Available'}</p>
       <button onClick={() => alert('Button clicked!')}>Test Button</button>
     </div>
   )

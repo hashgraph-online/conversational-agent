@@ -125,6 +125,7 @@ export abstract class BaseAgent {
   ): StructuredTool[] {
     let filtered = [...tools];
     const filter = this.config.filtering;
+    
     if (!filter) return filtered;
 
     if (filter.namespaceWhitelist?.length) {
@@ -148,6 +149,7 @@ export abstract class BaseAgent {
     this.logger.debug(`Filtered tools: ${tools.length} → ${filtered.length}`);
     return filtered;
   }
+
 
   protected buildSystemPrompt(): string {
     const parts: string[] = [];

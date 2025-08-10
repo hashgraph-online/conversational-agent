@@ -1,5 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { FiAlertCircle, FiX, FiGrid, FiList, FiPlus, FiInfo, FiTool, FiZap, FiShield, FiDatabase } from 'react-icons/fi';
+import {
+  FiAlertCircle,
+  FiX,
+  FiGrid,
+  FiList,
+  FiPlus,
+  FiInfo,
+  FiTool,
+  FiZap,
+  FiShield,
+  FiDatabase,
+} from 'react-icons/fi';
 import Typography from '../components/ui/Typography';
 import { Button } from '../components/ui/Button';
 import { MCPServerList } from '../components/mcp/MCPServerList';
@@ -54,7 +65,6 @@ const MCPPage: React.FC = () => {
 
   useEffect(() => {
     const interval = setInterval(() => {
-      console.log('[MCPPage] Reloading servers to check for tools updates...');
       reloadServers();
     }, 5000);
 
@@ -75,8 +85,7 @@ const MCPPage: React.FC = () => {
       setIsAddModalOpen(false);
       setEditingServer(null);
       setServerTemplate(null);
-    } catch (error) {
-    }
+    } catch (error) {}
   };
 
   const handleEditServer = (serverId: string) => {
@@ -95,16 +104,14 @@ const MCPPage: React.FC = () => {
     ) {
       try {
         await deleteServer(serverId);
-      } catch (error) {
-      }
+      } catch (error) {}
     }
   };
 
   const handleToggleServer = async (serverId: string, enabled: boolean) => {
     try {
       await toggleServer(serverId, enabled);
-    } catch (error) {
-    }
+    } catch (error) {}
   };
 
   const handleTestConnection = async (serverId: string) => {
@@ -141,10 +148,12 @@ const MCPPage: React.FC = () => {
   return (
     <div className='min-h-screen bg-background'>
       <div className='container mx-auto px-6 py-8 max-w-6xl'>
-        {/* Header */}
         <div className='mb-8'>
           <div className='flex items-center justify-between mb-4'>
-            <Typography variant='h1' className='text-3xl font-bold bg-gradient-to-r from-[#a679f0] via-[#5599fe] to-[#48df7b] bg-clip-text text-transparent'>
+            <Typography
+              variant='h1'
+              className='text-3xl font-bold bg-gradient-to-r from-[#a679f0] via-[#5599fe] to-[#48df7b] bg-clip-text text-transparent'
+            >
               MCP Servers
             </Typography>
 
@@ -187,13 +196,15 @@ const MCPPage: React.FC = () => {
             Extend your agent's capabilities with Model Context Protocol servers
           </Typography>
         </div>
-        {/* Educational Section for New Users */}
+
         {servers.length === 0 && !isLoading && (
           <div className='mb-6 p-3 bg-gradient-to-br from-[#5599fe]/10 to-[#5599fe]/5 rounded-lg border border-[#5599fe]/20'>
             <div className='flex items-center gap-2'>
               <FiInfo className='h-4 w-4 text-[#5599fe]' />
               <Typography variant='body2' className='text-sm'>
-                <span className='font-medium'>Get Started:</span> MCP servers extend your agent with new capabilities like file access, web browsing, and code execution.
+                <span className='font-medium'>Get Started:</span> MCP servers
+                extend your agent with new capabilities like file access, web
+                browsing, and code execution.
               </Typography>
             </div>
           </div>
@@ -202,7 +213,10 @@ const MCPPage: React.FC = () => {
         {error && (
           <div className='mb-6 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg flex items-center gap-2'>
             <FiAlertCircle className='h-4 w-4 text-red-500 flex-shrink-0' />
-            <Typography variant='body2' className='text-sm text-red-700 dark:text-red-300 flex-1'>
+            <Typography
+              variant='body2'
+              className='text-sm text-red-700 dark:text-red-300 flex-1'
+            >
               {error}
             </Typography>
             <button
@@ -224,6 +238,7 @@ const MCPPage: React.FC = () => {
                 onEdit={handleEditServer}
                 onDelete={handleDeleteServer}
                 onTest={handleTestConnection}
+                onAdd={() => setIsAddModalOpen(true)}
               />
             </div>
 
@@ -243,8 +258,15 @@ const MCPPage: React.FC = () => {
 
               <MCPInfoPanel
                 serverCount={servers.length}
-                activeCount={servers.filter((s) => s.status === 'connected' || s.status === 'ready').length}
-                totalTools={servers.reduce((acc, s) => acc + (s.tools?.length || 0), 0)}
+                activeCount={
+                  servers.filter(
+                    (s) => s.status === 'connected' || s.status === 'ready'
+                  ).length
+                }
+                totalTools={servers.reduce(
+                  (acc, s) => acc + (s.tools?.length || 0),
+                  0
+                )}
               />
             </div>
           </div>

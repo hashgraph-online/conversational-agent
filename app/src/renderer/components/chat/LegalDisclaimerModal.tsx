@@ -33,7 +33,7 @@ export const LegalDisclaimerModal: React.FC<LegalDisclaimerModalProps> = ({ chil
         </DialogHeader>
 
         <div className="space-y-6 text-sm">
-          {/* Alpha Software Warning */}
+
           <section>
             <Typography variant="h6" className="font-semibold mb-2 text-red-600 dark:text-red-400">
               ⚠️ ALPHA SOFTWARE WARNING
@@ -45,7 +45,7 @@ export const LegalDisclaimerModal: React.FC<LegalDisclaimerModalProps> = ({ chil
             </Typography>
           </section>
 
-          {/* AI Assistant Disclaimer */}
+
           <section>
             <Typography variant="h6" className="font-semibold mb-2">
               🤖 AI Assistant Limitations
@@ -62,7 +62,7 @@ export const LegalDisclaimerModal: React.FC<LegalDisclaimerModalProps> = ({ chil
             </ul>
           </section>
 
-          {/* Cryptocurrency & Blockchain Risks */}
+
           <section>
             <Typography variant="h6" className="font-semibold mb-2">
               ₿ Cryptocurrency & Blockchain Risks
@@ -80,7 +80,7 @@ export const LegalDisclaimerModal: React.FC<LegalDisclaimerModalProps> = ({ chil
             </ul>
           </section>
 
-          {/* Security & Privacy */}
+
           <section>
             <Typography variant="h6" className="font-semibold mb-2">
               🔒 Security & Privacy
@@ -94,7 +94,7 @@ export const LegalDisclaimerModal: React.FC<LegalDisclaimerModalProps> = ({ chil
             </ul>
           </section>
 
-          {/* No Warranty */}
+
           <section>
             <Typography variant="h6" className="font-semibold mb-2">
               🚫 No Warranty
@@ -107,7 +107,7 @@ export const LegalDisclaimerModal: React.FC<LegalDisclaimerModalProps> = ({ chil
             </Typography>
           </section>
 
-          {/* Limitation of Liability */}
+
           <section>
             <Typography variant="h6" className="font-semibold mb-2">
               ⚖️ Limitation of Liability
@@ -120,7 +120,7 @@ export const LegalDisclaimerModal: React.FC<LegalDisclaimerModalProps> = ({ chil
             </Typography>
           </section>
 
-          {/* Not Financial Advice */}
+
           <section>
             <Typography variant="h6" className="font-semibold mb-2">
               💰 Not Financial Advice
@@ -133,7 +133,7 @@ export const LegalDisclaimerModal: React.FC<LegalDisclaimerModalProps> = ({ chil
             </Typography>
           </section>
 
-          {/* Compliance & Legal */}
+
           <section>
             <Typography variant="h6" className="font-semibold mb-2">
               📋 Legal Compliance
@@ -145,7 +145,7 @@ export const LegalDisclaimerModal: React.FC<LegalDisclaimerModalProps> = ({ chil
             </Typography>
           </section>
 
-          {/* Age Requirement */}
+
           <section>
             <Typography variant="h6" className="font-semibold mb-2">
               🔞 Age Requirement
@@ -156,7 +156,7 @@ export const LegalDisclaimerModal: React.FC<LegalDisclaimerModalProps> = ({ chil
             </Typography>
           </section>
 
-          {/* Updates & Changes */}
+
           <section>
             <Typography variant="h6" className="font-semibold mb-2">
               🔄 Updates & Changes
@@ -168,7 +168,7 @@ export const LegalDisclaimerModal: React.FC<LegalDisclaimerModalProps> = ({ chil
             </Typography>
           </section>
 
-          {/* Contact */}
+
           <section>
             <Typography variant="h6" className="font-semibold mb-2">
               📧 Contact
@@ -179,7 +179,7 @@ export const LegalDisclaimerModal: React.FC<LegalDisclaimerModalProps> = ({ chil
             </Typography>
           </section>
 
-          {/* Final Warning */}
+
           <section className="border-2 border-red-500 bg-red-50 dark:bg-red-950/20 p-4 rounded-lg">
             <Typography variant="h6" className="font-semibold mb-2 text-red-700 dark:text-red-400">
               🚨 FINAL WARNING
@@ -191,7 +191,7 @@ export const LegalDisclaimerModal: React.FC<LegalDisclaimerModalProps> = ({ chil
             </Typography>
           </section>
 
-          {/* Version Info */}
+
           <section className="text-center pt-4 border-t border-gray-200 dark:border-gray-700">
             <Typography variant="caption" className="text-gray-500 dark:text-gray-400">
               Software Version: Alpha • Last Updated: {new Date().toLocaleDateString()} • 

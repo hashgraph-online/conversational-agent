@@ -233,7 +233,7 @@ export class HCS10RegistrationService extends EventEmitter {
       });
       
       const result = await hcs10Client.createAndRegisterAgent(agentBuilder, {
-        existingState,
+        existingState: existingState || undefined,
         progressCallback: (data: RegistrationProgressData) => {
           const now = Date.now();
           

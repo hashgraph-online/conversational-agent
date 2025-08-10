@@ -18,7 +18,6 @@ export class TokenCounter {
     try {
       this.encoding = encoding_for_model(modelName);
     } catch {
-      console.warn(`Model ${modelName} not found, falling back to gpt-4o encoding`);
       this.encoding = encoding_for_model('gpt-4o');
       this.modelName = 'gpt-4o';
     }
@@ -38,7 +37,6 @@ export class TokenCounter {
       const tokens = this.encoding.encode(text);
       return tokens.length;
     } catch (error) {
-      console.warn('Error counting tokens, falling back to word-based estimation:', error);
       return Math.ceil(text.split(/\s+/).length * 1.3);
     }
   }
@@ -142,7 +140,6 @@ export class TokenCounter {
     try {
       this.encoding.free();
     } catch {
-      console.warn('Error disposing encoding');
     }
   }
 }

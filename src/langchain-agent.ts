@@ -55,7 +55,6 @@ export class LangChainAgent extends BaseAgent {
           await this.initializeMCP();
         } else {
           this.logger.info('MCP servers configured but autoConnect=false, skipping synchronous connection');
-          // Initialize MCP manager for later async connections
           this.mcpManager = new MCPClientManager(this.logger);
         }
       }
@@ -432,7 +431,6 @@ export class LangChainAgent extends BaseAgent {
     this.logger.info('Starting async MCP server connections...');
 
     for (const serverConfig of this.config.mcp.servers) {
-      // Connect servers asynchronously without blocking
       this.connectServer(serverConfig).catch(error => {
         this.logger.error(`Connection to MCP server ${serverConfig.name} failed:`, error);
       });
@@ -453,7 +451,6 @@ export class LangChainAgent extends BaseAgent {
           `Connected to MCP server ${status.serverName} with ${status.tools.length} tools`
         );
         
-        // Add tools to the agent
         for (const mcpTool of status.tools) {
           const langchainTool = convertMCPToolToLangChain(
             mcpTool,
@@ -463,7 +460,6 @@ export class LangChainAgent extends BaseAgent {
           this.tools.push(langchainTool);
         }
         
-        // Recreate executor with new tools if already initialized
         if (this.initialized && this.executor) {
           await this.createExecutor();
         }

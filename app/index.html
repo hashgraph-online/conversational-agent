@@ -13,7 +13,7 @@
   <body class="no-transition-on-load">
     <div id="root"></div>
     <script>
-      // Apply saved theme immediately to prevent flash
+      
       (function() {
         try {
           const savedConfig = localStorage.getItem('app-config');
@@ -24,10 +24,10 @@
             }
           }
         } catch (e) {
-          // Ignore errors
+          
         }
         
-        // Remove no-transition class after a brief delay to enable smooth theme switching
+        
         setTimeout(function() {
           document.body.classList.remove('no-transition-on-load');
         }, 100);

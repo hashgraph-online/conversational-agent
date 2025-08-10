@@ -580,6 +580,9 @@ packages:
   '@hashgraphonline/standards-sdk@0.0.170':
     resolution: {integrity: sha512-HM+I7OSk02iHonGbj0azBlL/vhAohYWF+ZZnXtn57RXXm7LFeMGaOly5SsSCtLIEcgwrl4QymKvnhPRuLVlTng==}
 
+  '@hashgraphonline/standards-sdk@0.0.176':
+    resolution: {integrity: sha512-7LvfTXalmfJ0Z6WhERsFzWgO7gdBYzW/ztfpRlln2NHcePn1z4m5HaHlSWCzSWKIMGp7mgyhzKm69loO9lEMcg==}
+
   '@huggingface/jinja@0.1.3':
     resolution: {integrity: sha512-9KsiorsdIK8+7VmlamAT7Uh90zxAhC/SeKaKc80v58JhtPYuwaJpmR/ST7XAUxrHAFqHTCoTH5aJnJDwSL6xIQ==}
     engines: {node: '>=18'}
@@ -7409,7 +7412,7 @@ snapshots:
     dependencies:
       '@hashgraph/sdk': 2.69.0(bn.js@5.2.2)(react-native@0.80.1(@babel/core@7.28.0)(@types/react@18.3.23)(react@18.3.1))
       '@hashgraphonline/standards-agent-kit': 0.2.122(@aws-crypto/sha256-js@5.2.0)(@aws-sdk/credential-provider-node@3.848.0)(@browserbasehq/sdk@2.6.0)(@browserbasehq/stagehand@1.14.0(@playwright/test@1.54.1)(deepmerge@4.3.1)(dotenv@17.2.0)(openai@5.10.2(ws@8.18.2)(zod@3.25.76))(zod@3.25.76))(@ibm-cloud/watsonx-ai@1.6.9)(@smithy/util-utf8@2.3.0)(@types/react@18.3.23)(@walletconnect/qrcode-modal@1.8.0)(@walletconnect/types@2.21.5(ioredis@5.6.1))(@walletconnect/utils@2.21.5(ioredis@5.6.1)(typescript@5.8.3)(zod@3.25.76))(@walletconnect/web3wallet@1.16.1(ioredis@5.6.1)(typescript@5.8.3)(zod@3.25.76))(bn.js@5.2.2)(cohere-ai@7.17.1)(crypto-js@4.2.0)(fast-xml-parser@5.2.5)(ibm-cloud-sdk-core@5.4.1)(ignore@5.3.2)(ioredis@5.6.1)(jsonwebtoken@9.0.2)(lodash@4.17.21)(playwright@1.54.1)(react-native@0.80.1(@babel/core@7.28.0)(@types/react@18.3.23)(react@18.3.1))(react@18.3.1)(weaviate-client@3.8.0)(ws@8.18.2)(zod-to-json-schema@3.24.6(zod@3.25.76))
-      '@hashgraphonline/standards-sdk': 0.0.170(@types/react@18.3.23)(@walletconnect/qrcode-modal@1.8.0)(@walletconnect/types@2.21.5(ioredis@5.6.1))(@walletconnect/utils@2.21.5(ioredis@5.6.1)(typescript@5.8.3)(zod@3.25.76))(@walletconnect/web3wallet@1.16.1(ioredis@5.6.1)(typescript@5.8.3)(zod@3.25.76))(bn.js@5.2.2)(react-native@0.80.1(@babel/core@7.28.0)(@types/react@18.3.23)(react@18.3.1))(react@18.3.1)(typescript@5.8.3)
+      '@hashgraphonline/standards-sdk': 0.0.176(@types/react@18.3.23)(@walletconnect/qrcode-modal@1.8.0)(@walletconnect/types@2.21.5(ioredis@5.6.1))(@walletconnect/utils@2.21.5(ioredis@5.6.1)(typescript@5.8.3)(zod@3.25.76))(@walletconnect/web3wallet@1.16.1(ioredis@5.6.1)(typescript@5.8.3)(zod@3.25.76))(bn.js@5.2.2)(react-native@0.80.1(@babel/core@7.28.0)(@types/react@18.3.23)(react@18.3.1))(react@18.3.1)(typescript@5.8.3)
       '@langchain/core': 0.3.66(openai@5.10.2(ws@8.18.2)(zod@3.25.76))
       '@langchain/openai': 0.6.3(@langchain/core@0.3.66(openai@5.10.2(ws@8.18.2)(zod@3.25.76)))(ws@8.18.2)
       '@modelcontextprotocol/sdk': 1.17.0
@@ -8187,6 +8190,58 @@ snapshots:
       - utf-8-validate
 
   '@hashgraphonline/standards-sdk@0.0.170(@types/react@18.3.23)(@walletconnect/qrcode-modal@1.8.0)(@walletconnect/types@2.21.5(ioredis@5.6.1))(@walletconnect/utils@2.21.5(ioredis@5.6.1)(typescript@5.8.3)(zod@3.25.76))(@walletconnect/web3wallet@1.16.1(ioredis@5.6.1)(typescript@5.8.3)(zod@3.25.76))(bn.js@5.2.2)(react-native@0.80.1(@babel/core@7.28.0)(@types/react@18.3.23)(react@18.3.1))(react@18.3.1)(typescript@5.8.3)':
+    dependencies:
+      '@hashgraph/hedera-wallet-connect': 1.5.1(@hashgraph/sdk@2.69.0(bn.js@5.2.2)(react-native@0.80.1(@babel/core@7.28.0)(@types/react@18.3.23)(react@18.3.1)))(@walletconnect/qrcode-modal@1.8.0)(@walletconnect/types@2.21.5(ioredis@5.6.1))(@walletconnect/utils@2.21.5(ioredis@5.6.1)(typescript@5.8.3)(zod@3.25.76))(@walletconnect/web3wallet@1.16.1(ioredis@5.6.1)(typescript@5.8.3)(zod@3.25.76))
+      '@hashgraph/proto': 2.20.0
+      '@hashgraph/sdk': 2.69.0(bn.js@5.2.2)(react-native@0.80.1(@babel/core@7.28.0)(@types/react@18.3.23)(react@18.3.1))
+      '@hashgraphonline/hashinal-wc': 1.0.102(@types/react@18.3.23)(@walletconnect/types@2.21.5(ioredis@5.6.1))(@walletconnect/web3wallet@1.16.1(ioredis@5.6.1)(typescript@5.8.3)(zod@3.25.76))(bn.js@5.2.2)(ioredis@5.6.1)(react-native@0.80.1(@babel/core@7.28.0)(@types/react@18.3.23)(react@18.3.1))(react@18.3.1)(typescript@5.8.3)(zod@3.25.76)
+      '@kiloscribe/inscription-sdk': 1.0.59(@types/react@18.3.23)(@walletconnect/qrcode-modal@1.8.0)(@walletconnect/types@2.21.5(ioredis@5.6.1))(@walletconnect/utils@2.21.5(ioredis@5.6.1)(typescript@5.8.3)(zod@3.25.76))(@walletconnect/web3wallet@1.16.1(ioredis@5.6.1)(typescript@5.8.3)(zod@3.25.76))(bn.js@5.2.2)(react-native@0.80.1(@babel/core@7.28.0)(@types/react@18.3.23)(react@18.3.1))(react@18.3.1)(typescript@5.8.3)
+      axios: 1.11.0(debug@4.4.1)
+      bignumber.js: 9.3.1
+      buffer: 6.0.3
+      date-fns: 4.1.0
+      dotenv: 16.6.1
+      ethers: 6.15.0
+      file-type: 20.5.0
+      ioredis: 5.6.1
+      mime-types: 2.1.35
+      pino: 9.7.0
+      pino-pretty: 13.0.0
+      zod: 3.25.76
+    transitivePeerDependencies:
+      - '@azure/app-configuration'
+      - '@azure/cosmos'
+      - '@azure/data-tables'
+      - '@azure/identity'
+      - '@azure/keyvault-secrets'
+      - '@azure/storage-blob'
+      - '@capacitor/preferences'
+      - '@deno/kv'
+      - '@netlify/blobs'
+      - '@planetscale/database'
+      - '@react-native-async-storage/async-storage'
+      - '@types/react'
+      - '@upstash/redis'
+      - '@vercel/blob'
+      - '@vercel/kv'
+      - '@walletconnect/qrcode-modal'
+      - '@walletconnect/types'
+      - '@walletconnect/utils'
+      - '@walletconnect/web3wallet'
+      - aws4fetch
+      - bn.js
+      - bufferutil
+      - db0
+      - debug
+      - expo-crypto
+      - react
+      - react-native
+      - supports-color
+      - typescript
+      - uploadthing
+      - utf-8-validate
+
+  '@hashgraphonline/standards-sdk@0.0.176(@types/react@18.3.23)(@walletconnect/qrcode-modal@1.8.0)(@walletconnect/types@2.21.5(ioredis@5.6.1))(@walletconnect/utils@2.21.5(ioredis@5.6.1)(typescript@5.8.3)(zod@3.25.76))(@walletconnect/web3wallet@1.16.1(ioredis@5.6.1)(typescript@5.8.3)(zod@3.25.76))(bn.js@5.2.2)(react-native@0.80.1(@babel/core@7.28.0)(@types/react@18.3.23)(react@18.3.1))(react@18.3.1)(typescript@5.8.3)':
     dependencies:
       '@hashgraph/hedera-wallet-connect': 1.5.1(@hashgraph/sdk@2.69.0(bn.js@5.2.2)(react-native@0.80.1(@babel/core@7.28.0)(@types/react@18.3.23)(react@18.3.1)))(@walletconnect/qrcode-modal@1.8.0)(@walletconnect/types@2.21.5(ioredis@5.6.1))(@walletconnect/utils@2.21.5(ioredis@5.6.1)(typescript@5.8.3)(zod@3.25.76))(@walletconnect/web3wallet@1.16.1(ioredis@5.6.1)(typescript@5.8.3)(zod@3.25.76))
       '@hashgraph/proto': 2.20.0

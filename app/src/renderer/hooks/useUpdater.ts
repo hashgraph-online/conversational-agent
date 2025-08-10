@@ -45,43 +45,41 @@ export const useUpdater = (): UpdaterHookReturn => {
 
   useEffect(() => {
     if (!window.electron) {
-      console.warn('Electron APIs not available - update functionality disabled');
       return;
     }
 
-    window.electron.ipcRenderer.invoke('get-app-version').then((version: string) => {
+    (window.electron as any).ipcRenderer.invoke('get-app-version').then((version: string) => {
       setCurrentVersion(version);
-    }).catch((err) => {
-      console.error('Failed to get app version:', err);
+    }).catch((err: unknown) => {
     });
 
-    const removeCheckingListener = window.electron.ipcRenderer.on('update:checking', () => {
+    const removeCheckingListener = (window.electron as any).ipcRenderer.on('update:checking', () => {
       setUpdateState('checking');
       setError(null);
     });
 
-    const removeAvailableListener = window.electron.ipcRenderer.on('update:available', (info: UpdateInfo) => {
+    const removeAvailableListener = (window.electron as any).ipcRenderer.on('update:available', (info: UpdateInfo) => {
       setUpdateState('available');
       setUpdateInfo(info);
       setError(null);
     });
 
-    const removeNotAvailableListener = window.electron.ipcRenderer.on('update:not-available', () => {
+    const removeNotAvailableListener = (window.electron as any).ipcRenderer.on('update:not-available', () => {
       setUpdateState('not-available');
       setError(null);
     });
 
-    const removeDownloadProgressListener = window.electron.ipcRenderer.on('update:download-progress', (progressInfo: UpdateProgress) => {
+    const removeDownloadProgressListener = (window.electron as any).ipcRenderer.on('update:download-progress', (progressInfo: UpdateProgress) => {
       setUpdateState('downloading');
       setProgress(progressInfo);
     });
 
-    const removeDownloadedListener = window.electron.ipcRenderer.on('update:downloaded', () => {
+    const removeDownloadedListener = (window.electron as any).ipcRenderer.on('update:downloaded', () => {
       setUpdateState('downloaded');
       setProgress(null);
     });
 
-    const removeErrorListener = window.electron.ipcRenderer.on('update:error', (errorInfo: UpdateError) => {
+    const removeErrorListener = (window.electron as any).ipcRenderer.on('update:error', (errorInfo: UpdateError) => {
       setUpdateState('error');
       setError(errorInfo);
       setProgress(null);
@@ -99,16 +97,14 @@ export const useUpdater = (): UpdaterHookReturn => {
 
   const checkForUpdates = useCallback(async () => {
     if (!window.electron) {
-      console.warn('Electron APIs not available');
       return;
     }
 
     try {
       setUpdateState('checking');
       setError(null);
-      await window.electron.ipcRenderer.invoke('check-for-updates');
+      await (window.electron as any).ipcRenderer.invoke('check-for-updates');
     } catch (err) {
-      console.error('Failed to check for updates:', err);
       setError({
         message: err instanceof Error ? err.message : 'Failed to check for updates'
       });
@@ -118,15 +114,13 @@ export const useUpdater = (): UpdaterHookReturn => {
 
   const downloadUpdate = useCallback(async () => {
     if (!window.electron) {
-      console.warn('Electron APIs not available');
       return;
     }
 
     try {
       setProgress(null);
-      await window.electron.ipcRenderer.invoke('download-update');
+      await (window.electron as any).ipcRenderer.invoke('download-update');
     } catch (err) {
-      console.error('Failed to download update:', err);
       setError({
         message: err instanceof Error ? err.message : 'Failed to download update'
       });
@@ -136,14 +130,12 @@ export const useUpdater = (): UpdaterHookReturn => {
 
   const installUpdate = useCallback(async () => {
     if (!window.electron) {
-      console.warn('Electron APIs not available');
       return;
     }
 
     try {
-      await window.electron.ipcRenderer.invoke('install-update');
+      await (window.electron as any).ipcRenderer.invoke('install-update');
     } catch (err) {
-      console.error('Failed to install update:', err);
       setError({
         message: err instanceof Error ? err.message : 'Failed to install update'
       });
@@ -160,12 +152,10 @@ export const useUpdater = (): UpdaterHookReturn => {
 
   const openRepository = useCallback(() => {
     if (!window.electron) {
-      console.warn('Electron APIs not available');
       return;
     }
 
-    window.electron.ipcRenderer.invoke('open-repository-url').catch((err) => {
-      console.error('Failed to open repository:', err);
+    (window.electron as any).ipcRenderer.invoke('open-repository-url').catch((err: unknown) => {
     });
   }, []);
 

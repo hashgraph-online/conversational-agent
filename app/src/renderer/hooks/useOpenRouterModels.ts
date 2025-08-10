@@ -56,7 +56,6 @@ export function useOpenRouterModels(options: UseOpenRouterModelsOptions = {}): U
         }
       }
     } catch (err) {
-      console.error('Error fetching OpenRouter models:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch models');
     } finally {
       setIsLoading(false);

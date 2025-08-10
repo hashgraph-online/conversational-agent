@@ -1,7 +1,7 @@
 /**
  * Minimal Pino stub for Electron builds to avoid worker/transport usage.
  */
-type LevelMethod = (...args: any[]) => void;
+type LevelMethod = (...args: unknown[]) => void;
 
 interface StubLogger {
   info: LevelMethod;
@@ -32,4 +32,7 @@ export default function pino(): StubLogger {
 }
 
 export type { StubLogger };
+
+
+
 

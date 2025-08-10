@@ -238,7 +238,7 @@ export const useConfigStore = create<ConfigStore>((set, get) => ({
     set({ isLoading: true, error: null })
     
     try {
-      await window.electron.saveConfig(config)
+      await window.electron.saveConfig(config as unknown as Record<string, unknown>)
       localStorage.setItem('app-config', JSON.stringify(config))
       set({ isLoading: false })
     } catch (error) {

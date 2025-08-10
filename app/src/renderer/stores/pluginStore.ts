@@ -96,7 +96,7 @@ export const usePluginStore = create<PluginStore>((set, get) => ({
   pluginInitStates: {},
   
   searchPlugins: async (query: string) => {
-    set({ isSearching: true, searchError: null, searchQuery: query })
+    set({ isSearching: true, searchError: undefined, searchQuery: query })
     
     try {
       const result = await window.electron.searchPlugins(query)
@@ -108,7 +108,7 @@ export const usePluginStore = create<PluginStore>((set, get) => ({
       set({ 
         searchResults: result.data || [], 
         isSearching: false,
-        searchError: null
+        searchError: undefined
       })
       
     } catch (error) {
@@ -129,7 +129,7 @@ export const usePluginStore = create<PluginStore>((set, get) => ({
     const pluginId = `plugin_${name}_${Date.now()}`
     set({ 
       isInstalling: true, 
-      installError: null,
+      installError: undefined,
       installProgress: {
         ...get().installProgress,
         [pluginId]: {
@@ -141,7 +141,7 @@ export const usePluginStore = create<PluginStore>((set, get) => ({
     })
     
     try {
-      const result = await window.electron.installPlugin(name, options)
+      const result = await window.electron.installPlugin(name, options as unknown as Record<string, unknown> | undefined)
       
       if (!result.success) {
         throw new Error(result.error || 'Installation failed')
@@ -155,7 +155,7 @@ export const usePluginStore = create<PluginStore>((set, get) => ({
           [newPlugin.id]: newPlugin
         },
         isInstalling: false,
-        installError: null,
+        installError: undefined,
         installProgress: {
           ...state.installProgress,
           [pluginId]: {
@@ -235,7 +235,7 @@ export const usePluginStore = create<PluginStore>((set, get) => ({
   updatePlugin: async (pluginId: string) => {
     set({ 
       isInstalling: true, 
-      installError: null,
+      installError: undefined,
       installProgress: {
         ...get().installProgress,
         [pluginId]: {
@@ -262,7 +262,7 @@ export const usePluginStore = create<PluginStore>((set, get) => ({
           [pluginId]: updatedPlugin
         },
         isInstalling: false,
-        installError: null,
+        installError: undefined,
         installProgress: {
           ...state.installProgress,
           [pluginId]: {
@@ -402,7 +402,7 @@ export const usePluginStore = create<PluginStore>((set, get) => ({
         throw new Error('Plugin not found')
       }
       
-      const result = await window.electron.configurePlugin(pluginId, config)
+      const result = await window.electron.configurePlugin(pluginId, config as unknown as Record<string, unknown>)
       
       if (!result.success) {
         throw new Error(result.error || 'Configuration failed')
@@ -434,7 +434,7 @@ export const usePluginStore = create<PluginStore>((set, get) => ({
     set({ isLoading: true, error: null })
     
     try {
-      const result = await window.electron.grantPluginPermissions(pluginId, permissions)
+      const result = await window.electron.grantPluginPermissions(pluginId, permissions as unknown as Record<string, unknown>)
       
       if (!result.success) {
         throw new Error(result.error || 'Failed to grant permissions')
@@ -469,7 +469,7 @@ export const usePluginStore = create<PluginStore>((set, get) => ({
     set({ isLoading: true, error: null })
     
     try {
-      const result = await window.electron.revokePluginPermissions(pluginId, permissions)
+      const result = await window.electron.revokePluginPermissions(pluginId, permissions as unknown as Record<string, unknown>)
       
       if (!result.success) {
         throw new Error(result.error || 'Failed to revoke permissions')
@@ -544,14 +544,14 @@ export const usePluginStore = create<PluginStore>((set, get) => ({
       const pluginsMap: Record<string, PluginConfig> = {}
       const pluginInitStates: Record<string, { state: 'pending' | 'loading' | 'loaded' | 'failed'; error?: string }> = {}
       
-      plugins.forEach(plugin => {
+      plugins.forEach((plugin: PluginConfig) => {
         pluginsMap[plugin.id] = plugin
         pluginInitStates[plugin.id] = { state: 'pending' }
       })
       
       set({ plugins: pluginsMap, pluginInitStates, isLoading: false, error: null })
       
-      const enabledPlugins = plugins.filter(p => p.enabled)
+      const enabledPlugins = plugins.filter((p: PluginConfig) => p.enabled)
       let loadedCount = 0
       let failedCount = 0
       
@@ -623,7 +623,7 @@ export const usePluginStore = create<PluginStore>((set, get) => ({
       const updates = result.data || []
       const updateInfoMap: Record<string, PluginUpdateInfo> = {}
       
-      updates.forEach(update => {
+      updates.forEach((update: PluginUpdateInfo) => {
         updateInfoMap[update.pluginId] = update
       })
       
@@ -653,7 +653,7 @@ export const usePluginStore = create<PluginStore>((set, get) => ({
     return Object.values(plugins).filter(plugin => plugin.type === type)
   },
   
-  clearError: () => set({ error: null, searchError: null, installError: null }),
+  clearError: () => set({ error: null, searchError: undefined, installError: undefined }),
   
   getInitializationProgress: () => {
     const { pluginInitStates, plugins } = get()

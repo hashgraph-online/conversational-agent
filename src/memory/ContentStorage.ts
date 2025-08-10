@@ -208,7 +208,6 @@ export class ContentStorage implements ContentReferenceStore {
           .filter(stored => regex.test(stored.message.content as string))
           .map(stored => stored.message);
       } catch (error) {
-        console.warn('Invalid regex pattern:', query, error);
         return [];
       }
     } else {
@@ -492,7 +491,6 @@ export class ContentStorage implements ContentReferenceStore {
       const duration = Date.now() - startTime;
       this.recordPerformanceMetric('creation', duration);
       
-      console.error('[ContentStorage] Failed to store content:', error);
       throw new ContentReferenceError(
         `Failed to store content: ${error instanceof Error ? error.message : 'Unknown error'}`,
         'system_error',
@@ -570,7 +568,6 @@ export class ContentStorage implements ContentReferenceStore {
       this.recordPerformanceMetric('resolution', duration);
       
       this.referenceStats.failedResolutions++;
-      console.error(`[ContentStorage] Error resolving reference ${referenceId}:`, error);
       
       return {
         success: false,
@@ -734,7 +731,6 @@ export class ContentStorage implements ContentReferenceStore {
       this.recordPerformanceMetric('cleanup', duration);
       
       const errorMessage = `Cleanup process failed: ${error instanceof Error ? error.message : 'Unknown error'}`;
-      console.error('[ContentStorage]', errorMessage);
       errors.push(errorMessage);
       
       return { cleanedUp, errors };
@@ -885,7 +881,6 @@ export class ContentStorage implements ContentReferenceStore {
       try {
         await this.performCleanup();
       } catch (error) {
-        console.error('Error in scheduled reference cleanup:', error);
       }
     }, this.referenceConfig.cleanupIntervalMs);
   }

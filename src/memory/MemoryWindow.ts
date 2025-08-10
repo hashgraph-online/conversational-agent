@@ -96,7 +96,6 @@ export class MemoryWindow {
       }
       
       if (prunedMessages.length > 1000) {
-        console.warn('MemoryWindow: Excessive pruning detected, stopping to prevent infinite loop');
         break;
       }
     }

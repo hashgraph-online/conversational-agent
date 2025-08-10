@@ -269,7 +269,7 @@ const SidebarContent: React.FC<SidebarProps & { location: any }> = ({
         className
       )}
     >
-      {/* Animated gradient background */}
+
       <div className='absolute inset-0 opacity-[0.03] dark:opacity-[0.02]'>
         <div className='absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-[#a679f0] to-[#5599fe] rounded-full blur-3xl animate-pulse' />
         <div
@@ -278,7 +278,7 @@ const SidebarContent: React.FC<SidebarProps & { location: any }> = ({
         />
       </div>
       <div className='relative p-4 border-b border-gray-200/50 dark:border-white/[0.06]'>
-        {/* Collapse Toggle Button */}
+
         <button
           onClick={() => setIsCollapsed(!isCollapsed)}
           className={cn(

@@ -9,7 +9,7 @@ export class ConfigService {
    */
   async saveConfig(config: AppConfig): Promise<void> {
     try {
-      await window.electron.saveConfig(config)
+      await window.electron.saveConfig(config as unknown as Record<string, unknown>)
     } catch (error) {
       throw new Error(`Failed to save configuration: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }

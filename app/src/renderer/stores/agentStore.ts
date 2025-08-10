@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { useConfigStore } from './configStore';
-import { AutonomousTransactionParser } from '../services/transactionParser';
+import { TransactionParser } from '@hashgraphonline/standards-sdk';
 import { useNotificationStore } from './notificationStore';
 
 export type AgentStatus =
@@ -271,11 +271,10 @@ export const useAgentStore = create<AgentStore>((set, get) => {
             result.response.metadata?.transactionBytes
           ) {
             try {
-              if (
-                AutonomousTransactionParser.validateTransactionBytes(
-                  result.response.metadata.transactionBytes
-                )
-              ) {
+              const validation = TransactionParser.validateTransactionBytes(
+                result.response.metadata.transactionBytes
+              );
+              if (validation.isValid) {
                 assistantMessage.metadata = {
                   ...assistantMessage.metadata,
                   transactionBytes: result.response.metadata.transactionBytes,
@@ -284,13 +283,12 @@ export const useAgentStore = create<AgentStore>((set, get) => {
 
                 try {
                   const parsedTransaction =
-                    await AutonomousTransactionParser.parseTransactionBytes(
+                    await TransactionParser.parseTransactionBytes(
                       result.response.metadata.transactionBytes
                     );
                   assistantMessage.metadata.parsedTransaction =
                     parsedTransaction;
                 } catch (parseError) {
-                  console.warn('Transaction parsing failed:', parseError);
                   assistantMessage.metadata.transactionParsingError =
                     parseError instanceof Error
                       ? parseError.message
@@ -303,7 +301,6 @@ export const useAgentStore = create<AgentStore>((set, get) => {
                 };
               }
             } catch (error) {
-              console.error('Error processing transaction bytes:', error);
             }
           }
 

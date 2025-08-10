@@ -13,8 +13,6 @@ import type {
 } from '../../shared/schemas/hcs10';
 import type { RegistrationProgressData } from '@hashgraphonline/standards-sdk';
 
-
-
 export function HCS10ProfileRegistration() {
   const navigate = useNavigate();
   const { addProfile, profiles } = useHCS10Store();
@@ -40,10 +38,8 @@ export function HCS10ProfileRegistration() {
     message: '',
     percent: 0,
   });
-  const [agentCreationState, setAgentCreationState, clearAgentCreationState] = useLocalStorage<unknown>(
-    'hcs10-agent-creation-state',
-    null
-  );
+  const [agentCreationState, setAgentCreationState, clearAgentCreationState] =
+    useLocalStorage<unknown>('hcs10-agent-creation-state', null);
 
   const [progress, setProgress] = useState<{
     message: string;
@@ -84,8 +80,7 @@ export function HCS10ProfileRegistration() {
       } else {
         setHasExistingProfile(false);
       }
-    } catch (error) {
-    }
+    } catch (error) {}
   }, [profiles]);
 
   /**
@@ -99,7 +94,10 @@ export function HCS10ProfileRegistration() {
    * Clear cancelled/failed state on mount
    */
   useEffect(() => {
-    if (registrationProgress.stage === 'cancelled' || registrationProgress.stage === 'failed') {
+    if (
+      registrationProgress.stage === 'cancelled' ||
+      registrationProgress.stage === 'failed'
+    ) {
       const clearedProgress = {
         message: '',
         percent: 0,
@@ -122,18 +120,21 @@ export function HCS10ProfileRegistration() {
         message: progressData.message || `Stage: ${progressData.stage}`,
         percent: progressData.progressPercent || 0,
         stage: progressData.stage,
-        timestamp: progressData.timestamp
+        timestamp: progressData.timestamp,
       };
-      
+
       setProgress(updatedProgress);
       setRegistrationProgress(updatedProgress);
-      
+
       if (progressData.details?.state) {
         setAgentCreationState(progressData.details.state);
       }
     };
 
-    const unsubscribe = window.electron.on('hcs10:registrationProgress', handleProgressUpdate);
+    const unsubscribe = window.electron.on(
+      'hcs10:registrationProgress',
+      handleProgressUpdate
+    );
 
     return () => {
       unsubscribe();
@@ -144,9 +145,11 @@ export function HCS10ProfileRegistration() {
    * Load existing progress on component mount (only if valid in-progress state)
    */
   useEffect(() => {
-    if (registrationProgress.percent > 0 && 
-        registrationProgress.stage !== 'cancelled' && 
-        registrationProgress.stage !== 'failed') {
+    if (
+      registrationProgress.percent > 0 &&
+      registrationProgress.stage !== 'cancelled' &&
+      registrationProgress.stage !== 'failed'
+    ) {
       setProgress({
         message: registrationProgress.message,
         percent: registrationProgress.percent,
@@ -162,23 +165,28 @@ export function HCS10ProfileRegistration() {
     const checkInProgressRegistration = async () => {
       if (existingProfile?.name) {
         try {
-          const result = await window.electron.invoke('hcs10:isRegistrationInProgress', existingProfile.name);
+          const result = await window.electron.invoke(
+            'hcs10:isRegistrationInProgress',
+            existingProfile.name
+          );
           if (result.success && result.data?.inProgress) {
-            const progressResult = await window.electron.invoke('hcs10:getRegistrationProgress', existingProfile.name);
+            const progressResult = await window.electron.invoke(
+              'hcs10:getRegistrationProgress',
+              existingProfile.name
+            );
             if (progressResult.success && progressResult.data) {
               const state = progressResult.data;
               setProgress({
                 message: `Resuming registration from ${state.currentStage}...`,
                 percent: state.completedPercentage || 0,
-                stage: state.currentStage
+                stage: state.currentStage,
               });
               setAgentCreationState(state);
               setIsRegistering(true);
               setShowStatusDialog(true);
             }
           }
-        } catch (error) {
-        }
+        } catch (error) {}
       }
     };
 
@@ -192,11 +200,11 @@ export function HCS10ProfileRegistration() {
     setIsRegistering(true);
     setRegistrationError(null);
     setShowStatusDialog(true);
-    
-    const initialProgress = { 
-      message: 'Preparing registration...', 
+
+    const initialProgress = {
+      message: 'Preparing registration...',
       percent: 0,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     };
     setProgress(initialProgress);
     setRegistrationProgress(initialProgress);
@@ -206,7 +214,10 @@ export function HCS10ProfileRegistration() {
         ...submittedFormData,
       };
 
-      if (submittedFormData.logo && submittedFormData.logo.startsWith('data:')) {
+      if (
+        submittedFormData.logo &&
+        submittedFormData.logo.startsWith('data:')
+      ) {
         const mimeMatch = submittedFormData.logo.match(/data:([^;]+);/);
         const mimeType = mimeMatch ? mimeMatch[1] : 'image/png';
         const extension = mimeType.split('/')[1] || 'png';
@@ -217,7 +228,10 @@ export function HCS10ProfileRegistration() {
           type: mimeType,
         };
         delete registrationData.logo;
-      } else if (submittedFormData.logo && submittedFormData.logo.startsWith('hcs://')) {
+      } else if (
+        submittedFormData.logo &&
+        submittedFormData.logo.startsWith('hcs://')
+      ) {
         registrationData.profileImage = submittedFormData.logo;
         delete registrationData.logo;
       }
@@ -237,20 +251,21 @@ export function HCS10ProfileRegistration() {
           description: submittedFormData.description,
           capabilities: submittedFormData.capabilities,
           socials: submittedFormData.socials,
-          profileImage: submittedFormData.logo || submittedFormData.profileImage,
+          profileImage:
+            submittedFormData.logo || submittedFormData.profileImage,
           feeConfiguration: submittedFormData.feeConfiguration,
           registeredAt: new Date(),
           lastUpdated: new Date(),
           status: 'active',
         });
-        
+
         clearAgentCreationState();
       } else {
         const failedProgress = {
           message: 'Registration failed',
           percent: 0,
           stage: 'failed',
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         };
         setProgress(failedProgress);
         setRegistrationProgress(failedProgress);
@@ -261,7 +276,7 @@ export function HCS10ProfileRegistration() {
         message: 'Registration failed',
         percent: 0,
         stage: 'failed',
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       };
       setProgress(catchFailedProgress);
       setRegistrationProgress(catchFailedProgress);
@@ -278,29 +293,28 @@ export function HCS10ProfileRegistration() {
    */
   const handleCloseDialog = () => {
     setShowStatusDialog(false);
-    
+
     if (isRegistering) {
       (async () => {
         try {
           await window.electron.invoke('hcs10:cancelRegistration');
-          
+
           clearAgentCreationState();
-          
+
           setIsRegistering(false);
           setRegistrationError(null);
-          
+
           const clearedProgress = {
             message: '',
             percent: 0,
           };
           setProgress(clearedProgress);
           setRegistrationProgress(clearedProgress);
-          
         } catch (error) {
           clearAgentCreationState();
           setIsRegistering(false);
           setRegistrationError(null);
-          
+
           const clearedProgress = {
             message: '',
             percent: 0,
@@ -312,7 +326,7 @@ export function HCS10ProfileRegistration() {
     } else if (registrationResult) {
       navigate('/');
     }
-    
+
     setTimeout(() => {
       setRegistrationResult(null);
       setRegistrationError(null);
@@ -322,7 +336,6 @@ export function HCS10ProfileRegistration() {
   return (
     <div className='min-h-screen bg-background'>
       <div className='container mx-auto px-6 py-8 max-w-6xl'>
-        {/* Header */}
         <div className='mb-8'>
           <Button
             variant='ghost'
@@ -334,7 +347,10 @@ export function HCS10ProfileRegistration() {
             Back to Home
           </Button>
 
-          <Typography variant='h1' className='text-3xl font-bold bg-gradient-to-r from-[#a679f0] via-[#5599fe] to-[#48df7b] bg-clip-text text-transparent'>
+          <Typography
+            variant='h1'
+            className='text-3xl font-bold bg-gradient-to-r from-[#a679f0] via-[#5599fe] to-[#48df7b] bg-clip-text text-transparent'
+          >
             Profile Registration
           </Typography>
 
@@ -344,9 +360,8 @@ export function HCS10ProfileRegistration() {
               : 'Register your profile on the Hedera network to enable discovery and interaction with AI agents'}
           </Typography>
 
-
-          {/* Registration State Reset */}
-          {(registrationProgress.percent > 0 || agentCreationState) && (
+          {(registrationProgress.percent > 0 ||
+            Boolean(agentCreationState)) && (
             <div className='mt-3 p-3 bg-muted/50 rounded-lg'>
               <div className='flex items-center justify-between'>
                 <Typography
@@ -361,7 +376,7 @@ export function HCS10ProfileRegistration() {
                   onClick={async () => {
                     try {
                       await window.electron.invoke('hcs10:clearAllStates');
-                      
+
                       clearAgentCreationState();
                       setRegistrationProgress({
                         message: '',
@@ -374,7 +389,6 @@ export function HCS10ProfileRegistration() {
                       setRegistrationError(null);
                       setRegistrationResult(null);
                     } catch (error) {
-                      console.error('Failed to reset registration state:', error);
                     }
                   }}
                   className='text-xs'
@@ -386,27 +400,29 @@ export function HCS10ProfileRegistration() {
           )}
         </div>
 
-        {/* Registration Form */}
         <div className='bg-card rounded-xl border'>
           <div className='p-8'>
             <ProfileRegistrationForm
               onSubmit={handleSubmit}
               isSubmitting={isRegistering}
               existingData={existingProfile}
-              progress={progress.percent >= 0 && progress.message ? progress : undefined}
+              progress={
+                progress.percent >= 0 && progress.message ? progress : undefined
+              }
               network={'testnet'}
             />
           </div>
         </div>
 
-        {/* Status Dialog */}
         <RegistrationStatusDialog
           isOpen={showStatusDialog}
           onClose={handleCloseDialog}
           isRegistering={isRegistering}
           result={registrationResult}
           error={registrationError}
-          progress={progress.percent >= 0 && progress.message ? progress : undefined}
+          progress={
+            progress.percent >= 0 && progress.message ? progress : undefined
+          }
         />
       </div>
     </div>

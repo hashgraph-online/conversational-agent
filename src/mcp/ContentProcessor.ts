@@ -111,7 +111,7 @@ export class MCPContentProcessor {
           content: record.text,
           type: 'text',
           sizeBytes: Buffer.byteLength(record.text, 'utf8'),
-          mimeType: 'text/plain'
+          mimeType: this.detectMimeType(record.text as string)
         });
         return;
       }
@@ -238,7 +238,7 @@ export class MCPContentProcessor {
     };
   }
 
-  private replaceContentInResponse(obj: unknown, oldContent: unknown, newContent: unknown): void {
+  private replaceContentInResponse(obj: unknown, oldContent: unknown, newContent: any): void {
     if (obj === null || obj === undefined) {
       return;
     }
@@ -256,7 +256,15 @@ export class MCPContentProcessor {
 
     if (typeof obj === 'object') {
       const record = obj as Record<string, unknown>;
-      
+      if (record.type === 'text' && record.text === oldContent) {
+        for (const key of Object.keys(record)) {
+          delete record[key];
+        }
+        for (const key of Object.keys(newContent)) {
+          record[key] = newContent[key];
+        }
+        return;
+      }
       for (const key in record) {
         if (record[key] === oldContent) {
           record[key] = newContent;

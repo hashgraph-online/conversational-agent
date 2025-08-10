@@ -20,11 +20,11 @@ export function ProgressBar({ message, percent, stage }: ProgressBarProps) {
 
   const getStageIcon = () => {
     if (percent === 100) {
-      return <CheckCircle className="h-4 w-4 text-green-600" />;
+      return <CheckCircle className='h-4 w-4 text-green-600' />;
     } else if (stage === 'failed' || stage === 'error') {
-      return <AlertCircle className="h-4 w-4 text-red-600" />;
+      return <AlertCircle className='h-4 w-4 text-red-600' />;
     } else {
-      return <Clock className="h-4 w-4 text-blue-600" />;
+      return <Clock className='h-4 w-4 text-blue-600' />;
     }
   };
 
@@ -35,25 +35,25 @@ export function ProgressBar({ message, percent, stage }: ProgressBarProps) {
   };
 
   return (
-    <div className="space-y-3 p-4 bg-muted/20 rounded-lg border">
-      <div className="flex items-center gap-2">
+    <div className='space-y-3 p-4 bg-muted/20 rounded-lg border'>
+      <div className='flex items-center gap-2'>
         {getStageIcon()}
-        <Typography variant="h3" className="text-sm font-medium">
+        <Typography variant='h3' className='text-sm font-medium'>
           Registration Progress
         </Typography>
       </div>
 
-      <div className="space-y-2">
-        <div className="flex justify-between items-center">
-          <Typography className="text-sm text-muted-foreground">
+      <div className='space-y-2'>
+        <div className='flex justify-between items-center'>
+          <Typography variant='body2' className='text-sm text-muted-foreground'>
             {message}
           </Typography>
-          <Typography className="text-sm font-medium">
+          <Typography variant='body2' className='text-sm font-medium'>
             {percent}%
           </Typography>
         </div>
 
-        <div className="w-full bg-gray-200 rounded-full h-2">
+        <div className='w-full bg-gray-200 rounded-full h-2'>
           <div
             className={cn(
               'h-2 rounded-full transition-all duration-300 ease-in-out',
@@ -64,7 +64,10 @@ export function ProgressBar({ message, percent, stage }: ProgressBarProps) {
         </div>
 
         {stage && (
-          <Typography className="text-xs text-muted-foreground capitalize">
+          <Typography
+            variant='caption'
+            className='text-xs text-muted-foreground capitalize'
+          >
             Stage: {stage.replace('_', ' ')}
           </Typography>
         )}

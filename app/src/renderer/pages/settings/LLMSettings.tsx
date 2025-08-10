@@ -396,3 +396,5 @@ export const LLMSettings: React.FC<LLMSettingsProps> = () => {
     </div>
   )
 }
+
+export const OpenAISettings = LLMSettings

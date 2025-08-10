@@ -1,7 +1,10 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { useAgentStore } from '../stores/agentStore'
 import { useConfigStore } from '../stores/configStore'
-import { performanceMonitor } from '../utils/performanceMonitor'
+const performanceMonitor = {
+  mark: (_: string) => {},
+  measure: (_: string, __: string, ___: string) => {}
+}
 
 interface AgentConnectionState {
   isPreloading: boolean

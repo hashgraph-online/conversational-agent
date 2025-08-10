@@ -59,7 +59,7 @@ const HomePage: React.FC<HomePageProps> = () => {
 
   return (
     <div className='component-group animate-fade-in relative overflow-hidden'>
-      {/* Animated background pattern */}
+
       <div className='absolute inset-0 opacity-[0.02] dark:opacity-[0.05] pointer-events-none'>
         <div
           className='absolute inset-0 animate-gradient'
@@ -70,7 +70,7 @@ const HomePage: React.FC<HomePageProps> = () => {
         />
       </div>
 
-      {/* Floating particles */}
+
       <div className='absolute inset-0 pointer-events-none'>
         {[...Array(3)].map((_, i) => (
           <motion.div
@@ -93,7 +93,7 @@ const HomePage: React.FC<HomePageProps> = () => {
         ))}
       </div>
 
-      {/* Glowing orbs */}
+
       <motion.div
         className='absolute top-10 right-10 w-48 h-48 bg-[#a679f0]/10 rounded-full blur-3xl'
         animate={{
@@ -183,7 +183,7 @@ const HomePage: React.FC<HomePageProps> = () => {
                   : 'border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700 hover:shadow-xl'
               )}
             >
-              {/* Card background gradient */}
+
               <div
                 className={cn(
                   'absolute inset-0 opacity-0 group-hover:opacity-[0.05] transition-opacity duration-500',
@@ -192,7 +192,7 @@ const HomePage: React.FC<HomePageProps> = () => {
                 style={{ opacity: isActive ? 0.05 : undefined }}
               />
 
-              {/* Icon and Title Row */}
+
               <div className='flex items-center gap-3 mb-3'>
                 <div className='relative'>
                   <div

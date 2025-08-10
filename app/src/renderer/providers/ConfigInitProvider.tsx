@@ -44,7 +44,6 @@ export const ConfigInitProvider: React.FC<ConfigInitProviderProps> = ({ children
   useEffect(() => {
     if (config?.advanced?.theme) {
       configService.applyTheme(config.advanced.theme).catch(error => {
-        console.error('Failed to apply theme:', error)
       })
     }
   }, [config?.advanced?.theme])

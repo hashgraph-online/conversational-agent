@@ -12,7 +12,7 @@ if (started) {
 }
 
 let mainWindow: BrowserWindow | null = null
-let logger: any
+let logger: { info: (message: string, ...args: unknown[]) => void; error: (message: string, ...args: unknown[]) => void }
 
 function createWindow() {
   logger.info('Creating main window...')
@@ -22,16 +22,7 @@ function createWindow() {
     ? path.join(__dirname, '../../assets/hol-app-icon-bubble.png')
     : path.join(__dirname, '../../assets/hol-app-icon-bubble.png');
   
-  console.log('=== ICON DEBUG ===');
-  console.log('Icon path:', iconPath);
-  console.log('Icon exists:', require('fs').existsSync(iconPath));
-  console.log('App packaged:', app.isPackaged);
-  console.log('__dirname:', __dirname);
-  
   const icon = nativeImage.createFromPath(iconPath);
-  console.log('Icon loaded:', !icon.isEmpty());
-  console.log('Icon size:', icon.getSize());
-  console.log('=================');
   
   mainWindow = new BrowserWindow({
     width: 1200,

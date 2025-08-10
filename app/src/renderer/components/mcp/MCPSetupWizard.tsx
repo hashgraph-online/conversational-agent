@@ -1,44 +1,66 @@
-import React, { useState } from 'react'
-import { useForm } from 'react-hook-form'
-import { FiServer, FiDatabase, FiGithub, FiHardDrive, FiSettings, FiArrowRight, FiArrowLeft, FiCheck, FiX, FiInfo } from 'react-icons/fi'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../ui/dialog'
-import { Button } from '../ui'
-import { Input } from '../ui'
-import { Label } from '../ui/label'
-import Typography from '../ui/Typography'
-import { cn } from '../../lib/utils'
-import { MCPServerType, MCPServerFormData } from '../../types/mcp'
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip'
+import React, { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import {
+  FiServer,
+  FiDatabase,
+  FiGithub,
+  FiHardDrive,
+  FiSettings,
+  FiArrowRight,
+  FiArrowLeft,
+  FiCheck,
+  FiX,
+  FiInfo,
+} from 'react-icons/fi';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '../ui/dialog';
+import { Button } from '../ui';
+import { Input } from '../ui';
+import { Label } from '../ui/label';
+import Typography from '../ui/Typography';
+import { cn } from '../../lib/utils';
+import { MCPServerType, MCPServerFormData } from '../../types/mcp';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '../ui/tooltip';
 
 interface MCPSetupWizardProps {
-  isOpen: boolean
-  onClose: () => void
-  onSubmit: (data: MCPServerFormData) => Promise<void>
-  editingServer?: any
+  isOpen: boolean;
+  onClose: () => void;
+  onSubmit: (data: MCPServerFormData) => Promise<void>;
+  editingServer?: any;
 }
 
 interface FormData {
-  name: string
-  type: MCPServerType
-  rootPath?: string
-  allowedPaths?: string
-  excludePaths?: string
-  readOnly?: boolean
-  token?: string
-  owner?: string
-  repo?: string
-  branch?: string
-  host?: string
-  port?: number
-  database?: string
-  username?: string
-  password?: string
-  ssl?: boolean
-  path?: string
-  command?: string
-  args?: string
-  env?: string
-  cwd?: string
+  name: string;
+  type: MCPServerType;
+  rootPath?: string;
+  allowedPaths?: string;
+  excludePaths?: string;
+  readOnly?: boolean;
+  token?: string;
+  owner?: string;
+  repo?: string;
+  branch?: string;
+  host?: string;
+  port?: number;
+  database?: string;
+  username?: string;
+  password?: string;
+  ssl?: boolean;
+  path?: string;
+  command?: string;
+  args?: string;
+  env?: string;
+  cwd?: string;
 }
 
 const serverTypes = [
@@ -46,49 +68,49 @@ const serverTypes = [
     type: 'filesystem' as MCPServerType,
     name: 'Filesystem',
     description: 'Access local files and directories',
-    icon: <FiHardDrive className="w-6 h-6" />,
+    icon: <FiHardDrive className='w-6 h-6' />,
     requiredFields: ['rootPath'],
-    optionalFields: ['allowedPaths', 'excludePaths', 'readOnly']
+    optionalFields: ['allowedPaths', 'excludePaths', 'readOnly'],
   },
   {
     type: 'github' as MCPServerType,
     name: 'GitHub',
     description: 'Interact with GitHub repositories',
-    icon: <FiGithub className="w-6 h-6" />,
+    icon: <FiGithub className='w-6 h-6' />,
     requiredFields: ['token', 'owner', 'repo'],
-    optionalFields: ['branch']
+    optionalFields: ['branch'],
   },
   {
     type: 'postgres' as MCPServerType,
     name: 'PostgreSQL',
     description: 'Connect to PostgreSQL databases',
-    icon: <FiDatabase className="w-6 h-6" />,
+    icon: <FiDatabase className='w-6 h-6' />,
     requiredFields: ['host', 'port', 'database', 'username', 'password'],
-    optionalFields: ['ssl']
+    optionalFields: ['ssl'],
   },
   {
     type: 'sqlite' as MCPServerType,
     name: 'SQLite',
     description: 'Access SQLite database files',
-    icon: <FiDatabase className="w-6 h-6" />,
+    icon: <FiDatabase className='w-6 h-6' />,
     requiredFields: ['path'],
-    optionalFields: []
+    optionalFields: [],
   },
   {
     type: 'custom' as MCPServerType,
     name: 'Custom',
     description: 'Run custom MCP server commands',
-    icon: <FiServer className="w-6 h-6" />,
+    icon: <FiServer className='w-6 h-6' />,
     requiredFields: ['command'],
-    optionalFields: ['args', 'env', 'cwd']
-  }
-]
+    optionalFields: ['args', 'env', 'cwd'],
+  },
+];
 
 enum WizardStep {
   SelectType = 0,
   BasicInfo = 1,
   Configuration = 2,
-  Review = 3
+  Review = 3,
 }
 
 /**
@@ -98,12 +120,18 @@ export const MCPSetupWizard: React.FC<MCPSetupWizardProps> = ({
   isOpen,
   onClose,
   onSubmit,
-  editingServer
+  editingServer,
 }) => {
-  const [currentStep, setCurrentStep] = useState<WizardStep>(WizardStep.SelectType)
-  const [selectedType, setSelectedType] = useState<MCPServerType>(editingServer?.type || 'filesystem')
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({})
+  const [currentStep, setCurrentStep] = useState<WizardStep>(
+    WizardStep.SelectType
+  );
+  const [selectedType, setSelectedType] = useState<MCPServerType>(
+    editingServer?.type || 'filesystem'
+  );
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<
+    Record<string, string>
+  >({});
 
   const {
     register,
@@ -113,203 +141,217 @@ export const MCPSetupWizard: React.FC<MCPSetupWizardProps> = ({
     reset,
     getValues,
     trigger,
-    formState: { errors }
+    formState: { errors },
   } = useForm<FormData>({
-    defaultValues: editingServer ? {
-      name: editingServer.name,
-      type: editingServer.type,
-      ...editingServer.config
-    } : {
-      type: 'filesystem'
-    }
-  })
+    defaultValues: editingServer
+      ? {
+          name: editingServer.name,
+          type: editingServer.type,
+          ...editingServer.config,
+        }
+      : {
+          type: 'filesystem',
+        },
+  });
 
-  const selectedServerType = serverTypes.find(st => st.type === selectedType)
+  const selectedServerType = serverTypes.find((st) => st.type === selectedType);
 
   const handleNext = async () => {
-    const isValid = await validateCurrentStep()
-    if (!isValid) return
+    const isValid = await validateCurrentStep();
+    if (!isValid) return;
 
     if (currentStep < WizardStep.Review) {
-      setCurrentStep(currentStep + 1)
+      setCurrentStep(currentStep + 1);
     }
-  }
+  };
 
   const handleBack = () => {
     if (currentStep > WizardStep.SelectType) {
-      setCurrentStep(currentStep - 1)
+      setCurrentStep(currentStep - 1);
     }
-  }
+  };
 
   const validateCurrentStep = async (): Promise<boolean> => {
-    setValidationErrors({})
-    
+    setValidationErrors({});
+
     switch (currentStep) {
       case WizardStep.SelectType:
-        return true
-      
+        return true;
+
       case WizardStep.BasicInfo:
-        const nameValid = await trigger('name')
+        const nameValid = await trigger('name');
         if (!nameValid) {
-          setValidationErrors({ name: 'Server name is required' })
+          setValidationErrors({ name: 'Server name is required' });
         }
-        return nameValid
-      
+        return nameValid;
+
       case WizardStep.Configuration:
-        if (!selectedServerType) return false
-        
-        const errors: Record<string, string> = {}
-        let isValid = true
-        
+        if (!selectedServerType) return false;
+
+        const errors: Record<string, string> = {};
+        let isValid = true;
+
         for (const field of selectedServerType.requiredFields) {
-          const value = getValues(field as keyof FormData)
+          const value = getValues(field as keyof FormData);
           if (!value || (typeof value === 'string' && value.trim() === '')) {
-            errors[field] = `${field} is required`
-            isValid = false
+            errors[field] = `${field} is required`;
+            isValid = false;
           }
         }
-        
+
         if (selectedType === 'postgres') {
-          const port = getValues('port')
-          if (port && (isNaN(Number(port)) || Number(port) < 1 || Number(port) > 65535)) {
-            errors.port = 'Port must be between 1 and 65535'
-            isValid = false
+          const port = getValues('port');
+          if (
+            port &&
+            (isNaN(Number(port)) || Number(port) < 1 || Number(port) > 65535)
+          ) {
+            errors.port = 'Port must be between 1 and 65535';
+            isValid = false;
           }
         }
-        
-        setValidationErrors(errors)
-        return isValid
-      
+
+        setValidationErrors(errors);
+        return isValid;
+
       default:
-        return true
+        return true;
     }
-  }
+  };
 
   const handleFormSubmit = async (data: FormData) => {
-    setIsSubmitting(true)
+    setIsSubmitting(true);
     try {
-      const config: any = {}
-      
+      const config: any = {};
+
       switch (data.type) {
         case 'filesystem':
-          config.rootPath = data.rootPath
-          if (data.allowedPaths) config.allowedPaths = data.allowedPaths.split(',').map(p => p.trim())
-          if (data.excludePaths) config.excludePaths = data.excludePaths.split(',').map(p => p.trim())
-          if (data.readOnly !== undefined) config.readOnly = data.readOnly
-          break
-        
+          config.rootPath = data.rootPath;
+          if (data.allowedPaths)
+            config.allowedPaths = data.allowedPaths
+              .split(',')
+              .map((p) => p.trim());
+          if (data.excludePaths)
+            config.excludePaths = data.excludePaths
+              .split(',')
+              .map((p) => p.trim());
+          if (data.readOnly !== undefined) config.readOnly = data.readOnly;
+          break;
+
         case 'github':
-          config.token = data.token
-          config.owner = data.owner
-          config.repo = data.repo
-          if (data.branch) config.branch = data.branch
-          break
-        
+          config.token = data.token;
+          config.owner = data.owner;
+          config.repo = data.repo;
+          if (data.branch) config.branch = data.branch;
+          break;
+
         case 'postgres':
-          config.host = data.host
-          config.port = Number(data.port)
-          config.database = data.database
-          config.username = data.username
-          config.password = data.password
-          if (data.ssl !== undefined) config.ssl = data.ssl
-          break
-        
+          config.host = data.host;
+          config.port = Number(data.port);
+          config.database = data.database;
+          config.username = data.username;
+          config.password = data.password;
+          if (data.ssl !== undefined) config.ssl = data.ssl;
+          break;
+
         case 'sqlite':
-          config.path = data.path
-          break
-        
+          config.path = data.path;
+          break;
+
         case 'custom':
-          config.command = data.command
-          if (data.args) config.args = data.args.split(' ')
+          config.command = data.command;
+          if (data.args) config.args = data.args.split(' ');
           if (data.env) {
-            config.env = {}
-            data.env.split(',').forEach(envVar => {
-              const [key, value] = envVar.split('=')
-              if (key && value) config.env[key.trim()] = value.trim()
-            })
+            config.env = {};
+            data.env.split(',').forEach((envVar) => {
+              const [key, value] = envVar.split('=');
+              if (key && value) config.env[key.trim()] = value.trim();
+            });
           }
-          if (data.cwd) config.cwd = data.cwd
-          break
+          if (data.cwd) config.cwd = data.cwd;
+          break;
       }
-      
+
       await onSubmit({
         name: data.name,
         type: data.type,
-        config
-      })
-      
-      reset()
-      setCurrentStep(WizardStep.SelectType)
-      onClose()
+        config,
+      });
+
+      reset();
+      setCurrentStep(WizardStep.SelectType);
+      onClose();
     } catch (error) {
     } finally {
-      setIsSubmitting(false)
+      setIsSubmitting(false);
     }
-  }
+  };
 
   const renderStepIndicator = () => (
-    <div className="flex items-center justify-center mb-8">
+    <div className='flex items-center justify-center mb-8'>
       {[0, 1, 2, 3].map((step) => (
         <React.Fragment key={step}>
           <div
             className={cn(
-              "w-10 h-10 rounded-full flex items-center justify-center font-medium transition-all",
+              'w-10 h-10 rounded-full flex items-center justify-center font-medium transition-all',
               currentStep >= step
-                ? "bg-brand-blue text-white"
-                : "bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400"
+                ? 'bg-brand-blue text-white'
+                : 'bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
             )}
           >
-            {currentStep > step ? <FiCheck className="w-5 h-5" /> : step + 1}
+            {currentStep > step ? <FiCheck className='w-5 h-5' /> : step + 1}
           </div>
           {step < 3 && (
             <div
               className={cn(
-                "w-16 h-1 mx-2 transition-all",
+                'w-16 h-1 mx-2 transition-all',
                 currentStep > step
-                  ? "bg-brand-blue"
-                  : "bg-gray-200 dark:bg-gray-700"
+                  ? 'bg-brand-blue'
+                  : 'bg-gray-200 dark:bg-gray-700'
               )}
             />
           )}
         </React.Fragment>
       ))}
     </div>
-  )
+  );
 
   const renderStepContent = () => {
     switch (currentStep) {
       case WizardStep.SelectType:
         return (
-          <div className="space-y-4">
-            <Typography variant="h6" className="mb-4">
+          <div className='space-y-4'>
+            <Typography variant='h6' className='mb-4'>
               Select Server Type
             </Typography>
-            <div className="grid gap-3">
+            <div className='grid gap-3'>
               {serverTypes.map((serverType) => (
                 <button
                   key={serverType.type}
-                  type="button"
+                  type='button'
                   onClick={() => {
-                    setSelectedType(serverType.type)
-                    setValue('type', serverType.type)
+                    setSelectedType(serverType.type);
+                    setValue('type', serverType.type);
                   }}
                   className={cn(
-                    "p-4 rounded-lg border-2 transition-all text-left",
-                    "hover:border-brand-blue hover:bg-brand-blue/5",
+                    'p-4 rounded-lg border-2 transition-all text-left',
+                    'hover:border-brand-blue hover:bg-brand-blue/5',
                     selectedType === serverType.type
-                      ? "border-brand-blue bg-brand-blue/10"
-                      : "border-gray-200 dark:border-gray-700"
+                      ? 'border-brand-blue bg-brand-blue/10'
+                      : 'border-gray-200 dark:border-gray-700'
                   )}
                 >
-                  <div className="flex items-start gap-4">
-                    <div className="p-2 rounded-lg bg-gray-100 dark:bg-gray-800">
+                  <div className='flex items-start gap-4'>
+                    <div className='p-2 rounded-lg bg-gray-100 dark:bg-gray-800'>
                       {serverType.icon}
                     </div>
-                    <div className="flex-1">
-                      <Typography variant="body1" className="font-semibold mb-1">
+                    <div className='flex-1'>
+                      <Typography
+                        variant='body1'
+                        className='font-semibold mb-1'
+                      >
                         {serverType.name}
                       </Typography>
-                      <Typography variant="caption" color="muted">
+                      <Typography variant='caption' color='muted'>
                         {serverType.description}
                       </Typography>
                     </div>
@@ -318,80 +360,84 @@ export const MCPSetupWizard: React.FC<MCPSetupWizardProps> = ({
               ))}
             </div>
           </div>
-        )
-      
+        );
+
       case WizardStep.BasicInfo:
         return (
-          <div className="space-y-4">
-            <Typography variant="h6" className="mb-4">
+          <div className='space-y-4'>
+            <Typography variant='h6' className='mb-4'>
               Basic Information
             </Typography>
             <div>
-              <Label htmlFor="name">
+              <Label htmlFor='name'>
                 Server Name
-                <span className="text-red-500 ml-1">*</span>
+                <span className='text-red-500 ml-1'>*</span>
               </Label>
               <Input
-                id="name"
+                id='name'
                 {...register('name', { required: 'Server name is required' })}
-                placeholder="e.g., My GitHub Server"
+                placeholder='e.g., My GitHub Server'
                 className={cn(
-                  "mt-1",
-                  (errors.name || validationErrors.name) && "border-red-500"
+                  'mt-1',
+                  (errors.name || validationErrors.name) && 'border-red-500'
                 )}
               />
               {(errors.name || validationErrors.name) && (
-                <Typography variant="caption" className="text-red-500 mt-1">
+                <Typography variant='caption' className='text-red-500 mt-1'>
                   {errors.name?.message || validationErrors.name}
                 </Typography>
               )}
-              <Typography variant="caption" color="muted" className="mt-1">
+              <Typography variant='caption' color='muted' className='mt-1'>
                 Choose a descriptive name to identify this server
               </Typography>
             </div>
           </div>
-        )
-      
+        );
+
       case WizardStep.Configuration:
         return (
-          <div className="space-y-4">
-            <Typography variant="h6" className="mb-4">
+          <div className='space-y-4'>
+            <Typography variant='h6' className='mb-4'>
               {selectedServerType?.name} Configuration
             </Typography>
             {renderConfigFields()}
           </div>
-        )
-      
+        );
+
       case WizardStep.Review:
         return (
-          <div className="space-y-4">
-            <Typography variant="h6" className="mb-4">
+          <div className='space-y-4'>
+            <Typography variant='h6' className='mb-4'>
               Review Configuration
             </Typography>
-            <div className="space-y-3 bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
+            <div className='space-y-3 bg-gray-50 dark:bg-gray-800 p-4 rounded-lg'>
               <div>
-                <Typography variant="caption" color="muted">Server Name</Typography>
-                <Typography variant="body1" className="font-medium">
+                <Typography variant='caption' color='muted'>
+                  Server Name
+                </Typography>
+                <Typography variant='body1' className='font-medium'>
                   {watch('name')}
                 </Typography>
               </div>
               <div>
-                <Typography variant="caption" color="muted">Server Type</Typography>
-                <Typography variant="body1" className="font-medium">
+                <Typography variant='caption' color='muted'>
+                  Server Type
+                </Typography>
+                <Typography variant='body1' className='font-medium'>
                   {selectedServerType?.name}
                 </Typography>
               </div>
               <div>
-                <Typography variant="caption" color="muted">Configuration</Typography>
-                <div className="mt-1 space-y-1">
-                  {renderConfigSummary()}
-                </div>
+                <Typography variant='caption' color='muted'>
+                  Configuration
+                </Typography>
+                <div className='mt-1 space-y-1'>{renderConfigSummary()}</div>
               </div>
             </div>
           </div>
-        )
+        );
     }
-  }
+  };
 
   const renderConfigFields = () => {
     switch (selectedType) {
@@ -399,32 +445,32 @@ export const MCPSetupWizard: React.FC<MCPSetupWizardProps> = ({
         return (
           <>
             <div>
-              <Label htmlFor="rootPath">
+              <Label htmlFor='rootPath'>
                 Root Path
-                <span className="text-red-500 ml-1">*</span>
+                <span className='text-red-500 ml-1'>*</span>
               </Label>
               <Input
-                id="rootPath"
+                id='rootPath'
                 {...register('rootPath')}
-                placeholder="/path/to/directory"
+                placeholder='/path/to/directory'
                 className={cn(
-                  "mt-1",
-                  validationErrors.rootPath && "border-red-500"
+                  'mt-1',
+                  validationErrors.rootPath && 'border-red-500'
                 )}
               />
               {validationErrors.rootPath && (
-                <Typography variant="caption" className="text-red-500 mt-1">
+                <Typography variant='caption' className='text-red-500 mt-1'>
                   {validationErrors.rootPath}
                 </Typography>
               )}
             </div>
             <div>
-              <Label htmlFor="allowedPaths">
+              <Label htmlFor='allowedPaths'>
                 Allowed Paths (optional)
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <FiInfo className="inline-block w-4 h-4 ml-1 text-gray-400" />
+                      <FiInfo className='inline-block w-4 h-4 ml-1 text-gray-400' />
                     </TooltipTrigger>
                     <TooltipContent>
                       <p>Comma-separated list of allowed paths</p>
@@ -433,259 +479,256 @@ export const MCPSetupWizard: React.FC<MCPSetupWizardProps> = ({
                 </TooltipProvider>
               </Label>
               <Input
-                id="allowedPaths"
+                id='allowedPaths'
                 {...register('allowedPaths')}
-                placeholder="/allowed/path1, /allowed/path2"
-                className="mt-1"
+                placeholder='/allowed/path1, /allowed/path2'
+                className='mt-1'
               />
             </div>
-            <div className="flex items-center gap-2">
+            <div className='flex items-center gap-2'>
               <input
-                type="checkbox"
-                id="readOnly"
+                type='checkbox'
+                id='readOnly'
                 {...register('readOnly')}
-                className="rounded border-gray-300 dark:border-gray-600"
+                className='rounded border-gray-300 dark:border-gray-600'
               />
-              <Label htmlFor="readOnly" className="cursor-pointer">
+              <Label htmlFor='readOnly' className='cursor-pointer'>
                 Read-only access
               </Label>
             </div>
           </>
-        )
-      
+        );
+
       case 'github':
         return (
           <>
             <div>
-              <Label htmlFor="token">
+              <Label htmlFor='token'>
                 GitHub Token
-                <span className="text-red-500 ml-1">*</span>
+                <span className='text-red-500 ml-1'>*</span>
               </Label>
               <Input
-                id="token"
-                type="password"
+                id='token'
+                type='password'
                 {...register('token')}
-                placeholder="ghp_..."
+                placeholder='ghp_...'
                 className={cn(
-                  "mt-1",
-                  validationErrors.token && "border-red-500"
+                  'mt-1',
+                  validationErrors.token && 'border-red-500'
                 )}
               />
               {validationErrors.token && (
-                <Typography variant="caption" className="text-red-500 mt-1">
+                <Typography variant='caption' className='text-red-500 mt-1'>
                   {validationErrors.token}
                 </Typography>
               )}
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className='grid grid-cols-2 gap-4'>
               <div>
-                <Label htmlFor="owner">
+                <Label htmlFor='owner'>
                   Owner
-                  <span className="text-red-500 ml-1">*</span>
+                  <span className='text-red-500 ml-1'>*</span>
                 </Label>
                 <Input
-                  id="owner"
+                  id='owner'
                   {...register('owner')}
-                  placeholder="username or org"
+                  placeholder='username or org'
                   className={cn(
-                    "mt-1",
-                    validationErrors.owner && "border-red-500"
+                    'mt-1',
+                    validationErrors.owner && 'border-red-500'
                   )}
                 />
               </div>
               <div>
-                <Label htmlFor="repo">
+                <Label htmlFor='repo'>
                   Repository
-                  <span className="text-red-500 ml-1">*</span>
+                  <span className='text-red-500 ml-1'>*</span>
                 </Label>
                 <Input
-                  id="repo"
+                  id='repo'
                   {...register('repo')}
-                  placeholder="repository-name"
+                  placeholder='repository-name'
                   className={cn(
-                    "mt-1",
-                    validationErrors.repo && "border-red-500"
+                    'mt-1',
+                    validationErrors.repo && 'border-red-500'
                   )}
                 />
               </div>
             </div>
             <div>
-              <Label htmlFor="branch">Branch (optional)</Label>
+              <Label htmlFor='branch'>Branch (optional)</Label>
               <Input
-                id="branch"
+                id='branch'
                 {...register('branch')}
-                placeholder="main"
-                className="mt-1"
+                placeholder='main'
+                className='mt-1'
               />
             </div>
           </>
-        )
-      
+        );
+
       case 'postgres':
         return (
           <>
-            <div className="grid grid-cols-2 gap-4">
+            <div className='grid grid-cols-2 gap-4'>
               <div>
-                <Label htmlFor="host">
+                <Label htmlFor='host'>
                   Host
-                  <span className="text-red-500 ml-1">*</span>
+                  <span className='text-red-500 ml-1'>*</span>
                 </Label>
                 <Input
-                  id="host"
+                  id='host'
                   {...register('host')}
-                  placeholder="localhost"
+                  placeholder='localhost'
                   className={cn(
-                    "mt-1",
-                    validationErrors.host && "border-red-500"
+                    'mt-1',
+                    validationErrors.host && 'border-red-500'
                   )}
                 />
               </div>
               <div>
-                <Label htmlFor="port">
+                <Label htmlFor='port'>
                   Port
-                  <span className="text-red-500 ml-1">*</span>
+                  <span className='text-red-500 ml-1'>*</span>
                 </Label>
                 <Input
-                  id="port"
-                  type="number"
+                  id='port'
+                  type='number'
                   {...register('port')}
-                  placeholder="5432"
+                  placeholder='5432'
                   className={cn(
-                    "mt-1",
-                    validationErrors.port && "border-red-500"
+                    'mt-1',
+                    validationErrors.port && 'border-red-500'
                   )}
                 />
                 {validationErrors.port && (
-                  <Typography variant="caption" className="text-red-500 mt-1">
+                  <Typography variant='caption' className='text-red-500 mt-1'>
                     {validationErrors.port}
                   </Typography>
                 )}
               </div>
             </div>
             <div>
-              <Label htmlFor="database">
+              <Label htmlFor='database'>
                 Database
-                <span className="text-red-500 ml-1">*</span>
+                <span className='text-red-500 ml-1'>*</span>
               </Label>
               <Input
-                id="database"
+                id='database'
                 {...register('database')}
-                placeholder="mydb"
+                placeholder='mydb'
                 className={cn(
-                  "mt-1",
-                  validationErrors.database && "border-red-500"
+                  'mt-1',
+                  validationErrors.database && 'border-red-500'
                 )}
               />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className='grid grid-cols-2 gap-4'>
               <div>
-                <Label htmlFor="username">
+                <Label htmlFor='username'>
                   Username
-                  <span className="text-red-500 ml-1">*</span>
+                  <span className='text-red-500 ml-1'>*</span>
                 </Label>
                 <Input
-                  id="username"
+                  id='username'
                   {...register('username')}
-                  placeholder="postgres"
+                  placeholder='postgres'
                   className={cn(
-                    "mt-1",
-                    validationErrors.username && "border-red-500"
+                    'mt-1',
+                    validationErrors.username && 'border-red-500'
                   )}
                 />
               </div>
               <div>
-                <Label htmlFor="password">
+                <Label htmlFor='password'>
                   Password
-                  <span className="text-red-500 ml-1">*</span>
+                  <span className='text-red-500 ml-1'>*</span>
                 </Label>
                 <Input
-                  id="password"
-                  type="password"
+                  id='password'
+                  type='password'
                   {...register('password')}
                   className={cn(
-                    "mt-1",
-                    validationErrors.password && "border-red-500"
+                    'mt-1',
+                    validationErrors.password && 'border-red-500'
                   )}
                 />
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className='flex items-center gap-2'>
               <input
-                type="checkbox"
-                id="ssl"
+                type='checkbox'
+                id='ssl'
                 {...register('ssl')}
-                className="rounded border-gray-300 dark:border-gray-600"
+                className='rounded border-gray-300 dark:border-gray-600'
               />
-              <Label htmlFor="ssl" className="cursor-pointer">
+              <Label htmlFor='ssl' className='cursor-pointer'>
                 Use SSL connection
               </Label>
             </div>
           </>
-        )
-      
+        );
+
       case 'sqlite':
         return (
           <div>
-            <Label htmlFor="path">
+            <Label htmlFor='path'>
               Database Path
-              <span className="text-red-500 ml-1">*</span>
+              <span className='text-red-500 ml-1'>*</span>
             </Label>
             <Input
-              id="path"
+              id='path'
               {...register('path')}
-              placeholder="/path/to/database.db"
-              className={cn(
-                "mt-1",
-                validationErrors.path && "border-red-500"
-              )}
+              placeholder='/path/to/database.db'
+              className={cn('mt-1', validationErrors.path && 'border-red-500')}
             />
             {validationErrors.path && (
-              <Typography variant="caption" className="text-red-500 mt-1">
+              <Typography variant='caption' className='text-red-500 mt-1'>
                 {validationErrors.path}
               </Typography>
             )}
           </div>
-        )
-      
+        );
+
       case 'custom':
         return (
           <>
             <div>
-              <Label htmlFor="command">
+              <Label htmlFor='command'>
                 Command
-                <span className="text-red-500 ml-1">*</span>
+                <span className='text-red-500 ml-1'>*</span>
               </Label>
               <Input
-                id="command"
+                id='command'
                 {...register('command')}
-                placeholder="npx @modelcontextprotocol/server"
+                placeholder='npx @modelcontextprotocol/server'
                 className={cn(
-                  "mt-1",
-                  validationErrors.command && "border-red-500"
+                  'mt-1',
+                  validationErrors.command && 'border-red-500'
                 )}
               />
               {validationErrors.command && (
-                <Typography variant="caption" className="text-red-500 mt-1">
+                <Typography variant='caption' className='text-red-500 mt-1'>
                   {validationErrors.command}
                 </Typography>
               )}
             </div>
             <div>
-              <Label htmlFor="args">Arguments (optional)</Label>
+              <Label htmlFor='args'>Arguments (optional)</Label>
               <Input
-                id="args"
+                id='args'
                 {...register('args')}
-                placeholder="--port 3000 --verbose"
-                className="mt-1"
+                placeholder='--port 3000 --verbose'
+                className='mt-1'
               />
             </div>
             <div>
-              <Label htmlFor="env">
+              <Label htmlFor='env'>
                 Environment Variables (optional)
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <FiInfo className="inline-block w-4 h-4 ml-1 text-gray-400" />
+                      <FiInfo className='inline-block w-4 h-4 ml-1 text-gray-400' />
                     </TooltipTrigger>
                     <TooltipContent>
                       <p>Comma-separated KEY=VALUE pairs</p>
@@ -694,166 +737,174 @@ export const MCPSetupWizard: React.FC<MCPSetupWizardProps> = ({
                 </TooltipProvider>
               </Label>
               <Input
-                id="env"
+                id='env'
                 {...register('env')}
-                placeholder="NODE_ENV=production, API_KEY=secret"
-                className="mt-1"
+                placeholder='NODE_ENV=production, API_KEY=secret'
+                className='mt-1'
               />
             </div>
             <div>
-              <Label htmlFor="cwd">Working Directory (optional)</Label>
+              <Label htmlFor='cwd'>Working Directory (optional)</Label>
               <Input
-                id="cwd"
+                id='cwd'
                 {...register('cwd')}
-                placeholder="/path/to/working/directory"
-                className="mt-1"
+                placeholder='/path/to/working/directory'
+                className='mt-1'
               />
             </div>
           </>
-        )
+        );
     }
-  }
+  };
 
   const renderConfigSummary = () => {
-    const values = getValues()
-    const items: JSX.Element[] = []
-    
+    const values = getValues();
+    const items: React.ReactElement[] = [];
+
     switch (selectedType) {
       case 'filesystem':
         if (values.rootPath) {
           items.push(
-            <div key="rootPath">
-              <Typography variant="caption" className="font-mono">
+            <div key='rootPath'>
+              <Typography variant='caption' className='font-mono'>
                 Root: {values.rootPath}
               </Typography>
             </div>
-          )
+          );
         }
         if (values.readOnly) {
           items.push(
-            <div key="readOnly">
-              <Typography variant="caption" className="text-yellow-600 dark:text-yellow-400">
+            <div key='readOnly'>
+              <Typography
+                variant='caption'
+                className='text-yellow-600 dark:text-yellow-400'
+              >
                 Read-only mode enabled
               </Typography>
             </div>
-          )
+          );
         }
-        break
-      
+        break;
+
       case 'github':
         if (values.owner && values.repo) {
           items.push(
-            <div key="repo">
-              <Typography variant="caption" className="font-mono">
+            <div key='repo'>
+              <Typography variant='caption' className='font-mono'>
                 Repository: {values.owner}/{values.repo}
               </Typography>
             </div>
-          )
+          );
         }
         if (values.branch) {
           items.push(
-            <div key="branch">
-              <Typography variant="caption" className="font-mono">
+            <div key='branch'>
+              <Typography variant='caption' className='font-mono'>
                 Branch: {values.branch}
               </Typography>
             </div>
-          )
+          );
         }
-        break
-      
+        break;
+
       case 'postgres':
         if (values.host && values.database) {
           items.push(
-            <div key="connection">
-              <Typography variant="caption" className="font-mono">
-                {values.username}@{values.host}:{values.port || 5432}/{values.database}
+            <div key='connection'>
+              <Typography variant='caption' className='font-mono'>
+                {values.username}@{values.host}:{values.port || 5432}/
+                {values.database}
               </Typography>
             </div>
-          )
+          );
         }
         if (values.ssl) {
           items.push(
-            <div key="ssl">
-              <Typography variant="caption" className="text-green-600 dark:text-green-400">
+            <div key='ssl'>
+              <Typography
+                variant='caption'
+                className='text-green-600 dark:text-green-400'
+              >
                 SSL enabled
               </Typography>
             </div>
-          )
+          );
         }
-        break
-      
+        break;
+
       case 'sqlite':
         if (values.path) {
           items.push(
-            <div key="path">
-              <Typography variant="caption" className="font-mono">
+            <div key='path'>
+              <Typography variant='caption' className='font-mono'>
                 Path: {values.path}
               </Typography>
             </div>
-          )
+          );
         }
-        break
-      
+        break;
+
       case 'custom':
         if (values.command) {
           items.push(
-            <div key="command">
-              <Typography variant="caption" className="font-mono">
+            <div key='command'>
+              <Typography variant='caption' className='font-mono'>
                 Command: {values.command}
               </Typography>
             </div>
-          )
+          );
         }
-        break
+        break;
     }
-    
-    return items
-  }
+
+    return items;
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className='max-w-2xl'>
         <DialogHeader>
           <DialogTitle>
             {editingServer ? 'Edit MCP Server' : 'Add MCP Server'}
           </DialogTitle>
         </DialogHeader>
-        
+
         <form onSubmit={handleSubmit(handleFormSubmit)}>
-          <div className="py-6">
+          <div className='py-6'>
             {renderStepIndicator()}
-            <div className="min-h-[300px]">
-              {renderStepContent()}
-            </div>
+            <div className='min-h-[300px]'>{renderStepContent()}</div>
           </div>
-          
+
           <DialogFooter>
-            <div className="flex justify-between w-full">
+            <div className='flex justify-between w-full'>
               <Button
-                type="button"
-                variant="outline"
-                onClick={currentStep === WizardStep.SelectType ? onClose : handleBack}
+                type='button'
+                variant='outline'
+                onClick={
+                  currentStep === WizardStep.SelectType ? onClose : handleBack
+                }
                 disabled={isSubmitting}
               >
                 {currentStep === WizardStep.SelectType ? 'Cancel' : 'Back'}
               </Button>
-              
-              <div className="flex gap-2">
+
+              <div className='flex gap-2'>
                 {currentStep < WizardStep.Review ? (
                   <Button
-                    type="button"
+                    type='button'
                     onClick={handleNext}
                     disabled={isSubmitting}
                   >
                     Next
-                    <FiArrowRight className="w-4 h-4 ml-2" />
+                    <FiArrowRight className='w-4 h-4 ml-2' />
                   </Button>
                 ) : (
-                  <Button
-                    type="submit"
-                    disabled={isSubmitting}
-                  >
-                    {isSubmitting ? 'Saving...' : editingServer ? 'Update Server' : 'Add Server'}
+                  <Button type='submit' disabled={isSubmitting}>
+                    {isSubmitting
+                      ? 'Saving...'
+                      : editingServer
+                      ? 'Update Server'
+                      : 'Add Server'}
                   </Button>
                 )}
               </div>
@@ -862,5 +913,5 @@ export const MCPSetupWizard: React.FC<MCPSetupWizardProps> = ({
         </form>
       </DialogContent>
     </Dialog>
-  )
-}
+  );
+};

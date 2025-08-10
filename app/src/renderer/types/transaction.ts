@@ -2,6 +2,17 @@
  * Type definitions for parsed Hedera transactions.
  * Matches the structure returned by TransactionParser from standards-sdk.
  */
+
+export type { 
+  AccountAmount,
+  TokenAmount,
+  ContractCallData,
+  TokenCreationData,
+  ConsensusSubmitMessageData,
+  TokenAirdropData,
+  ParsedTransaction as SDKParsedTransaction
+} from '@hashgraphonline/standards-sdk/dist/es/utils/transaction-parser-types';
+
 export interface ParsedTransaction {
   type: string;
   humanReadableType?: string;
@@ -9,19 +20,21 @@ export interface ParsedTransaction {
   transfers?: Array<{
     accountId: string;
     amount: string | number;
+    isDecimal?: boolean;
   }>;
   tokenTransfers?: Array<{
     tokenId: string;
-    transfers: Array<{
-      accountId: string;
-      amount: number;
-    }>;
+    accountId: string;
+    amount: number;
   }>;
   memo?: string;
   contractCall?: {
     contractId: string;
+    gas?: number;
+    amount?: number;
     functionName?: string;
     parameters?: any;
+    functionParameters?: string;
   };
   tokenCreation?: {
     tokenName?: string;
@@ -35,8 +48,9 @@ export interface ParsedTransaction {
     treasuryAccountId?: string;
   };
   consensusSubmitMessage?: {
-    topicId: string;
-    message: string;
+    topicId?: string;
+    message?: string;
+    messageEncoding?: 'utf8' | 'base64';
   };
   airdrop?: {
     tokenTransfers?: Array<{
@@ -47,4 +61,15 @@ export interface ParsedTransaction {
       }>;
     }>;
   };
+  tokenAirdrop?: {
+    tokenTransfers?: Array<{
+      tokenId: string;
+      transfers: Array<{
+        accountId: string;
+        amount: string;
+      }>;
+    }>;
+  };
 }
+
+export type SDKToLocalTransaction = (sdkTransaction: any) => ParsedTransaction;

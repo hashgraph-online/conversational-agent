@@ -1,55 +1,77 @@
-import { create } from 'zustand'
-import { 
-  MCPServerConfig, 
-  MCPServerFormData, 
-  MCPConnectionTest, 
-  MCPServerType, 
-  MCPServerStatus 
-} from '../types/mcp'
+import { create } from 'zustand';
+import {
+  MCPServerConfig,
+  MCPServerFormData,
+  MCPConnectionTest,
+  MCPServerType,
+  MCPServerStatus,
+} from '../types/mcp';
 
 /**
  * Helper to wait for electron bridge to be available
  */
-const waitForElectronBridge = async (maxRetries = 30, retryDelay = 1000): Promise<boolean> => {
+const waitForElectronBridge = async (
+  maxRetries = 30,
+  retryDelay = 1000
+): Promise<boolean> => {
   for (let i = 0; i < maxRetries; i++) {
-    if (window.electron && typeof window.electron.loadMCPServers === 'function') {
-      return true
+    if (
+      window.electron &&
+      typeof window.electron.loadMCPServers === 'function'
+    ) {
+      return true;
     }
-    await new Promise(resolve => setTimeout(resolve, retryDelay))
+    await new Promise((resolve) => setTimeout(resolve, retryDelay));
   }
-  return false
-}
+  return false;
+};
 
-export type MCPInitializationState = 'pending' | 'initializing' | 'ready' | 'partial' | 'failed'
+export type MCPInitializationState =
+  | 'pending'
+  | 'initializing'
+  | 'ready'
+  | 'partial'
+  | 'failed';
 
 export interface MCPStore {
-  servers: MCPServerConfig[]
-  isLoading: boolean
-  error: string | null
-  connectionTests: Record<string, MCPConnectionTest>
-  initializationState: MCPInitializationState
-  serverInitStates: Record<string, { state: 'pending' | 'connecting' | 'connected' | 'failed'; error?: string }>
-  
-  addServer: (data: MCPServerFormData) => Promise<void>
-  updateServer: (serverId: string, data: Partial<MCPServerConfig>) => Promise<void>
-  deleteServer: (serverId: string) => Promise<void>
-  toggleServer: (serverId: string, enabled: boolean) => Promise<void>
-  
-  testConnection: (serverId: string) => Promise<MCPConnectionTest>
-  connectServer: (serverId: string) => Promise<void>
-  disconnectServer: (serverId: string) => Promise<void>
-  refreshServerTools: (serverId: string) => Promise<void>
-  
-  loadServers: () => Promise<void>
-  reloadServers: () => Promise<void>
-  saveServers: () => Promise<void>
-  
-  getServerById: (serverId: string) => MCPServerConfig | undefined
-  getConnectedServers: () => MCPServerConfig[]
-  getServersByType: (type: MCPServerType) => MCPServerConfig[]
-  clearError: () => void
-  getInitializationProgress: () => { total: number; connected: number; failed: number; pending: number }
-  isInitialized: () => boolean
+  servers: MCPServerConfig[];
+  isLoading: boolean;
+  error: string | null;
+  connectionTests: Record<string, MCPConnectionTest>;
+  initializationState: MCPInitializationState;
+  serverInitStates: Record<
+    string,
+    { state: 'pending' | 'connecting' | 'connected' | 'failed'; error?: string }
+  >;
+
+  addServer: (data: MCPServerFormData) => Promise<void>;
+  updateServer: (
+    serverId: string,
+    data: Partial<MCPServerConfig>
+  ) => Promise<void>;
+  deleteServer: (serverId: string) => Promise<void>;
+  toggleServer: (serverId: string, enabled: boolean) => Promise<void>;
+
+  testConnection: (serverId: string) => Promise<MCPConnectionTest>;
+  connectServer: (serverId: string) => Promise<void>;
+  disconnectServer: (serverId: string) => Promise<void>;
+  refreshServerTools: (serverId: string) => Promise<void>;
+
+  loadServers: () => Promise<void>;
+  reloadServers: () => Promise<void>;
+  saveServers: () => Promise<void>;
+
+  getServerById: (serverId: string) => MCPServerConfig | undefined;
+  getConnectedServers: () => MCPServerConfig[];
+  getServersByType: (type: MCPServerType) => MCPServerConfig[];
+  clearError: () => void;
+  getInitializationProgress: () => {
+    total: number;
+    connected: number;
+    failed: number;
+    pending: number;
+  };
+  isInitialized: () => boolean;
 }
 
 export const useMCPStore = create<MCPStore>((set, get) => ({
@@ -59,10 +81,10 @@ export const useMCPStore = create<MCPStore>((set, get) => ({
   connectionTests: {},
   initializationState: 'pending',
   serverInitStates: {},
-  
+
   addServer: async (data: MCPServerFormData) => {
-    set({ isLoading: true, error: null })
-    
+    set({ isLoading: true, error: null });
+
     try {
       const newServer: MCPServerConfig = {
         id: `mcp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
@@ -73,138 +95,154 @@ export const useMCPStore = create<MCPStore>((set, get) => ({
         config: data.config,
         tools: [],
         createdAt: new Date(),
-        updatedAt: new Date()
-      }
-      
-      const { servers } = get()
-      const updatedServers = [...servers, newServer]
-      
-      set({ servers: updatedServers, isLoading: false })
-      
-      const saveResult = await window.electron.saveMCPServers(updatedServers)
+        updatedAt: new Date(),
+      };
+
+      const { servers } = get();
+      const updatedServers = [...servers, newServer];
+
+      set({ servers: updatedServers, isLoading: false });
+
+      const saveResult = await window.electron.saveMCPServers(
+        updatedServers as unknown as Record<string, unknown>[]
+      );
       if (!saveResult.success) {
-        throw new Error(saveResult.error || 'Failed to save server')
+        throw new Error(saveResult.error || 'Failed to save server');
       }
-      
     } catch (error) {
       set({
         isLoading: false,
-        error: error instanceof Error ? error.message : 'Failed to add MCP server'
-      })
-      throw error
+        error:
+          error instanceof Error ? error.message : 'Failed to add MCP server',
+      });
+      throw error;
     }
   },
-  
+
   updateServer: async (serverId: string, updates: Partial<MCPServerConfig>) => {
-    set({ isLoading: true, error: null })
-    
+    set({ isLoading: true, error: null });
+
     try {
-      const { servers } = get()
-      
-      const diskResult = await window.electron.loadMCPServers()
-      let diskTools: any = undefined
+      const { servers } = get();
+
+      const diskResult = await window.electron.loadMCPServers();
+      let diskTools: any = undefined;
       if (diskResult.success) {
-        const diskServer = diskResult.data?.find((s: any) => s.id === serverId)
+        const diskServer = diskResult.data?.find((s: any) => s.id === serverId);
         if (diskServer && diskServer.tools && diskServer.tools.length > 0) {
-          diskTools = diskServer.tools
-          console.log(`[Frontend] Found ${diskTools.length} tools on disk for ${serverId}`)
+          diskTools = diskServer.tools;
         }
       }
-      
-      const updatedServers = servers.map(server => {
+
+      const updatedServers = servers.map((server) => {
         if (server.id === serverId) {
-          const updatedServer = { ...server, ...updates, updatedAt: new Date() }
+          const updatedServer = {
+            ...server,
+            ...updates,
+            updatedAt: new Date(),
+          };
           if (!updates.hasOwnProperty('tools')) {
-            updatedServer.tools = diskTools || server.tools || []
+            updatedServer.tools = diskTools || server.tools || [];
             if (diskTools) {
-              console.log(`[Frontend] Preserving ${diskTools.length} tools from disk for ${serverId}`)
             }
           }
-          return updatedServer
+          return updatedServer;
         }
-        return server
-      })
-      
-      set({ servers: updatedServers, isLoading: false })
-      
-      await get().saveServers()
-      
+        return server;
+      });
+
+      set({ servers: updatedServers, isLoading: false });
+
+      await get().saveServers();
     } catch (error) {
       set({
         isLoading: false,
-        error: error instanceof Error ? error.message : 'Failed to update MCP server'
-      })
-      throw error
+        error:
+          error instanceof Error
+            ? error.message
+            : 'Failed to update MCP server',
+      });
+      throw error;
     }
   },
-  
+
   deleteServer: async (serverId: string) => {
-    set({ isLoading: true, error: null })
-    
+    set({ isLoading: true, error: null });
+
     try {
-      const { servers } = get()
-      
-      const server = servers.find(s => s.id === serverId)
+      const { servers } = get();
+
+      const server = servers.find((s) => s.id === serverId);
       if (server && server.status === 'connected') {
-        const disconnectResult = await window.electron.disconnectMCPServer(serverId)
+        const disconnectResult = await window.electron.disconnectMCPServer(
+          serverId
+        );
         if (!disconnectResult.success) {
         }
       }
-      
-      const updatedServers = servers.filter(server => server.id !== serverId)
-      set({ servers: updatedServers, isLoading: false })
-      
-      const saveResult = await window.electron.saveMCPServers(updatedServers)
+
+      const updatedServers = servers.filter((server) => server.id !== serverId);
+      set({ servers: updatedServers, isLoading: false });
+
+      const saveResult = await window.electron.saveMCPServers(
+        updatedServers as unknown as Record<string, unknown>[]
+      );
       if (!saveResult.success) {
-        throw new Error(saveResult.error || 'Failed to delete server')
+        throw new Error(saveResult.error || 'Failed to delete server');
       }
-      
     } catch (error) {
       set({
         isLoading: false,
-        error: error instanceof Error ? error.message : 'Failed to delete MCP server'
-      })
-      throw error
+        error:
+          error instanceof Error
+            ? error.message
+            : 'Failed to delete MCP server',
+      });
+      throw error;
     }
   },
-  
+
   toggleServer: async (serverId: string, enabled: boolean) => {
     try {
       if (enabled) {
-        await get().connectServer(serverId)
+        await get().connectServer(serverId);
       } else {
-        await get().disconnectServer(serverId)
+        await get().disconnectServer(serverId);
       }
-      
-      await get().updateServer(serverId, { enabled })
-      
+
+      await get().updateServer(serverId, { enabled });
     } catch (error) {
       set({
-        error: error instanceof Error ? error.message : 'Failed to toggle MCP server'
-      })
-      throw error
+        error:
+          error instanceof Error
+            ? error.message
+            : 'Failed to toggle MCP server',
+      });
+      throw error;
     }
   },
-  
+
   testConnection: async (serverId: string): Promise<MCPConnectionTest> => {
-    const { servers } = get()
-    const server = servers.find(s => s.id === serverId)
-    
+    const { servers } = get();
+    const server = servers.find((s) => s.id === serverId);
+
     if (!server) {
-      throw new Error('Server not found')
+      throw new Error('Server not found');
     }
-    
+
+    const startTime = Date.now();
     try {
-      const startTime = Date.now()
-      const ipcResult = await window.electron.testMCPConnection(server)
-      const latency = Date.now() - startTime
-      
+      const ipcResult = await window.electron.testMCPConnection(
+        server as unknown as Record<string, unknown>
+      );
+      const latency = Date.now() - startTime;
+
       if (!ipcResult.success) {
-        throw new Error(ipcResult.error || 'Connection test failed')
+        throw new Error(ipcResult.error || 'Connection test failed');
       }
-      
-      const result = ipcResult.data!
-      
+
+      const result = ipcResult.data!;
+
       const testResult: MCPConnectionTest = {
         id: `test-${serverId}-${Date.now()}`,
         serverId,
@@ -215,19 +253,18 @@ export const useMCPStore = create<MCPStore>((set, get) => ({
           success: result.success,
           tools: result.tools,
           error: result.error,
-          latency
-        }
-      }
-      
+          latency,
+        },
+      };
+
       set((state) => ({
         connectionTests: {
           ...state.connectionTests,
-          [serverId]: testResult
-        }
-      }))
-      
-      return testResult
-      
+          [serverId]: testResult,
+        },
+      }));
+
+      return testResult;
     } catch (error) {
       const testResult: MCPConnectionTest = {
         id: `test-${serverId}-${Date.now()}`,
@@ -237,372 +274,404 @@ export const useMCPStore = create<MCPStore>((set, get) => ({
         completedAt: new Date(),
         result: {
           success: false,
-          error: error instanceof Error ? error.message : 'Connection test failed'
-        }
-      }
-      
+          error:
+            error instanceof Error ? error.message : 'Connection test failed',
+        },
+      };
+
       set((state) => ({
         connectionTests: {
           ...state.connectionTests,
-          [serverId]: testResult
-        }
-      }))
-      
-      return testResult
+          [serverId]: testResult,
+        },
+      }));
+
+      return testResult;
     }
   },
-  
+
   connectServer: async (serverId: string) => {
-    await get().updateServer(serverId, { status: 'connecting' })
-    
+    await get().updateServer(serverId, { status: 'connecting' });
+
     try {
-      const ipcResult = await window.electron.connectMCPServer(serverId)
-      
+      const ipcResult = await window.electron.connectMCPServer(serverId);
+
       if (!ipcResult.success) {
-        throw new Error(ipcResult.error || 'Connection failed')
+        throw new Error(ipcResult.error || 'Connection failed');
       }
-      
-      const result = ipcResult.data!
-      
+
+      const result = ipcResult.data!;
+
       if (result.success) {
-        await get().updateServer(serverId, { 
+        await get().updateServer(serverId, {
           status: 'connected',
           tools: result.tools,
           lastConnected: new Date(),
-          errorMessage: undefined
-        })
+          errorMessage: undefined,
+        });
       } else {
-        await get().updateServer(serverId, { 
+        await get().updateServer(serverId, {
           status: 'error',
-          errorMessage: result.error
-        })
-        throw new Error(result.error)
+          errorMessage: result.error,
+        });
+        throw new Error(result.error);
       }
-      
     } catch (error) {
-      await get().updateServer(serverId, { 
+      await get().updateServer(serverId, {
         status: 'error',
-        errorMessage: error instanceof Error ? error.message : 'Connection failed'
-      })
-      throw error
+        errorMessage:
+          error instanceof Error ? error.message : 'Connection failed',
+      });
+      throw error;
     }
   },
-  
+
   disconnectServer: async (serverId: string) => {
     try {
-      const disconnectResult = await window.electron.disconnectMCPServer(serverId)
+      const disconnectResult = await window.electron.disconnectMCPServer(
+        serverId
+      );
       if (!disconnectResult.success) {
-        throw new Error(disconnectResult.error || 'Disconnect failed')
+        throw new Error(disconnectResult.error || 'Disconnect failed');
       }
-      
-      await get().updateServer(serverId, { 
+
+      await get().updateServer(serverId, {
         status: 'disconnected',
-        errorMessage: undefined
-      })
-      
+        errorMessage: undefined,
+      });
     } catch (error) {
       set({
-        error: error instanceof Error ? error.message : 'Failed to disconnect MCP server'
-      })
-      throw error
+        error:
+          error instanceof Error
+            ? error.message
+            : 'Failed to disconnect MCP server',
+      });
+      throw error;
     }
   },
-  
+
   refreshServerTools: async (serverId: string) => {
-    const { servers } = get()
-    const server = servers.find(s => s.id === serverId)
-    
-    if (!server || (server.status !== 'connected' && server.status !== 'ready')) {
-      return
+    const { servers } = get();
+    const server = servers.find((s) => s.id === serverId);
+
+    if (
+      !server ||
+      (server.status !== 'connected' && server.status !== 'ready')
+    ) {
+      return;
     }
-    
+
     try {
-      const toolsResult = await window.electron.refreshMCPServerTools(serverId)
+      const toolsResult = await window.electron.refreshMCPServerTools(serverId);
       if (!toolsResult.success) {
-        throw new Error(toolsResult.error || 'Failed to refresh tools')
+        throw new Error(toolsResult.error || 'Failed to refresh tools');
       }
-      
-      await get().updateServer(serverId, { 
+
+      await get().updateServer(serverId, {
         tools: toolsResult.data,
-        status: 'ready'
-      })
-      
+        status: 'ready',
+      });
+
       setTimeout(async () => {
-        await get().reloadServers()
-      }, 1000)
-      
+        await get().reloadServers();
+      }, 1000);
     } catch (error) {
       set({
-        error: error instanceof Error ? error.message : 'Failed to refresh server tools'
-      })
+        error:
+          error instanceof Error
+            ? error.message
+            : 'Failed to refresh server tools',
+      });
     }
   },
-  
+
   loadServers: async () => {
-    set({ isLoading: true, error: null, initializationState: 'initializing' })
-    
+    set({ isLoading: true, error: null, initializationState: 'initializing' });
+
     try {
-      const isAvailable = await waitForElectronBridge()
-      
+      const isAvailable = await waitForElectronBridge();
+
       if (!isAvailable) {
-        set({ 
-          servers: [], 
+        set({
+          servers: [],
           isLoading: false,
           error: 'MCP services not available - running in degraded mode',
-          initializationState: 'failed'
-        })
-        return
+          initializationState: 'failed',
+        });
+        return;
       }
-      
-      
-      const result = await window.electron.loadMCPServers()
+
+      const result = await window.electron.loadMCPServers();
       if (!result.success) {
-        set({ 
-          servers: [], 
+        set({
+          servers: [],
           isLoading: false,
-          error: `Failed to load MCP servers: ${result.error || 'Unknown error'}`,
-          initializationState: 'failed'
-        })
-        return
+          error: `Failed to load MCP servers: ${
+            result.error || 'Unknown error'
+          }`,
+          initializationState: 'failed',
+        });
+        return;
       }
-      
-      const loadedServers = result.data || []
-      
-      const { servers: currentServers } = get()
-      const mergedServers = loadedServers.map(loadedServer => {
-        const currentServer = currentServers.find(s => s.id === loadedServer.id)
-        console.log(`[MCPStore] Loading server ${loadedServer.id}: ${loadedServer.tools?.length || 0} tools from JSON`)
-        if (currentServer) {
-          console.log(`[MCPStore] Current server ${currentServer.id} has ${currentServer.tools?.length || 0} tools in memory`)
-          return {
-            ...loadedServer,
-            status: currentServer.status,
-            tools: loadedServer.tools || []
+
+      const loadedServers = result.data || [];
+
+      const { servers: currentServers } = get();
+      const mergedServers = loadedServers.map(
+        (loadedServer: MCPServerConfig) => {
+          const currentServer = currentServers.find(
+            (s) => s.id === loadedServer.id
+          );
+          if (currentServer) {
+            return {
+              ...loadedServer,
+              status: currentServer.status,
+              tools: loadedServer.tools || [],
+            };
           }
+          return loadedServer;
         }
-        return loadedServer
-      })
-      
-      set({ servers: mergedServers, isLoading: false, error: null })
-      
-      const serverInitStates: Record<string, { state: 'pending' | 'connecting' | 'connected' | 'failed'; error?: string }> = {}
-      mergedServers.forEach(server => {
-        serverInitStates[server.id] = { state: 'pending' }
-      })
-      set({ serverInitStates })
-      
-      const enabledServers = mergedServers.filter(s => s.enabled)
-      
+      );
+
+      set({ servers: mergedServers, isLoading: false, error: null });
+
+      const serverInitStates: Record<
+        string,
+        {
+          state: 'pending' | 'connecting' | 'connected' | 'failed';
+          error?: string;
+        }
+      > = {};
+      mergedServers.forEach((server: MCPServerConfig) => {
+        serverInitStates[server.id] = { state: 'pending' };
+      });
+      set({ serverInitStates });
+
+      const enabledServers = mergedServers.filter(
+        (s: MCPServerConfig) => s.enabled
+      );
+
       if (enabledServers.length === 0) {
-        set({ initializationState: 'ready', error: null })
-        return
+        set({ initializationState: 'ready', error: null });
+        return;
       }
-      
-      let connectedCount = 0
-      let failedCount = 0
-      
+
+      let connectedCount = 0;
+      let failedCount = 0;
+
       for (const server of enabledServers) {
         try {
-          set(state => ({
+          set((state) => ({
             serverInitStates: {
               ...state.serverInitStates,
-              [server.id]: { state: 'connecting' }
-            }
-          }))
-          
-          await get().connectServer(server.id)
-          connectedCount++
-          
-          set(state => ({
+              [server.id]: { state: 'connecting' },
+            },
+          }));
+
+          await get().connectServer(server.id);
+          connectedCount++;
+
+          set((state) => ({
             serverInitStates: {
               ...state.serverInitStates,
-              [server.id]: { state: 'connected' }
-            }
-          }))
-          
+              [server.id]: { state: 'connected' },
+            },
+          }));
+
           setTimeout(async () => {
-            console.log(`[MCPStore] Reloading servers after connection for ${server.id} to fetch tools...`)
-            await get().reloadServers()
-          }, 3000)
-          
+            await get().reloadServers();
+          }, 3000);
         } catch (connectError) {
-          failedCount++
-          
-          set(state => ({
+          failedCount++;
+
+          set((state) => ({
             serverInitStates: {
               ...state.serverInitStates,
-              [server.id]: { 
-                state: 'failed', 
-                error: connectError instanceof Error ? connectError.message : 'Connection failed' 
-              }
-            }
-          }))
+              [server.id]: {
+                state: 'failed',
+                error:
+                  connectError instanceof Error
+                    ? connectError.message
+                    : 'Connection failed',
+              },
+            },
+          }));
         }
       }
-      
-      let finalState: MCPInitializationState = 'ready'
+
+      let finalState: MCPInitializationState = 'ready';
       if (connectedCount === 0 && failedCount > 0) {
-        finalState = 'failed'
+        finalState = 'failed';
       } else if (connectedCount > 0 && failedCount > 0) {
-        finalState = 'partial'
+        finalState = 'partial';
       } else if (connectedCount > 0 && failedCount === 0) {
-        finalState = 'ready'
+        finalState = 'ready';
       }
-      
-      set({ initializationState: finalState, error: null })
-      
+
+      set({ initializationState: finalState, error: null });
     } catch (error) {
       set({
         isLoading: false,
-        error: error instanceof Error ? error.message : 'Failed to load MCP servers',
-        initializationState: 'failed'
-      })
+        error:
+          error instanceof Error ? error.message : 'Failed to load MCP servers',
+        initializationState: 'failed',
+      });
     }
   },
-  
+
   reloadServers: async () => {
     try {
-      const result = await window.electron.loadMCPServers()
+      const result = await window.electron.loadMCPServers();
       if (!result.success) {
         set({
-          error: `Failed to reload servers: ${result.error || 'Unknown error'}`
-        })
-        return
+          error: `Failed to reload servers: ${result.error || 'Unknown error'}`,
+        });
+        return;
       }
-      
-      const loadedServers = result.data || []
-      
-      const { servers: currentServers } = get()
-      const mergedServers = loadedServers.map(loadedServer => {
-        const currentServer = currentServers.find(s => s.id === loadedServer.id)
-        console.log(`[MCPStore reload] Server ${loadedServer.id}: ${loadedServer.tools?.length || 0} tools from JSON`)
-        if (currentServer) {
-          console.log(`[MCPStore reload] Current ${currentServer.id}: ${currentServer.tools?.length || 0} tools in memory`)
-          return {
-            ...loadedServer,
-            status: currentServer.status,
-            tools: loadedServer.tools || []
+
+      const loadedServers = result.data || [];
+
+      const { servers: currentServers } = get();
+      const mergedServers = loadedServers.map(
+        (loadedServer: MCPServerConfig) => {
+          const currentServer = currentServers.find(
+            (s) => s.id === loadedServer.id
+          );
+          if (currentServer) {
+            return {
+              ...loadedServer,
+              status: currentServer.status,
+              tools: loadedServer.tools || [],
+            };
           }
+          return loadedServer;
         }
-        return loadedServer
-      })
-      
-      set({ servers: mergedServers })
-      
+      );
+
+      set({ servers: mergedServers });
     } catch (error) {
       set({
-        error: error instanceof Error ? error.message : 'Failed to reload servers'
-      })
+        error:
+          error instanceof Error ? error.message : 'Failed to reload servers',
+      });
     }
   },
-  
+
   saveServers: async () => {
-    const { servers } = get()
-    
-    console.log('[Frontend] saveServers called with servers:', servers.map(s => ({id: s.id, tools: s.tools?.length || 0})))
-    
+    const { servers } = get();
+
+
     try {
-      const currentResult = await window.electron.loadMCPServers()
+      const currentResult = await window.electron.loadMCPServers();
       if (currentResult.success) {
-        const currentServers = currentResult.data || []
-        console.log('[Frontend] Loaded from backend:', currentServers.map(s => ({id: s.id, tools: s.tools?.length || 0})))
-        
-        const mergedServers = servers.map(frontendServer => {
-          const backendServer = currentServers.find(s => s.id === frontendServer.id)
-          if (backendServer && backendServer.tools && backendServer.tools.length > 0) {
+        const currentServers = currentResult.data || [];
+
+        const mergedServers = servers.map((frontendServer) => {
+          const backendServer = currentServers.find(
+            (s: MCPServerConfig) => s.id === frontendServer.id
+          );
+          if (
+            backendServer &&
+            backendServer.tools &&
+            backendServer.tools.length > 0
+          ) {
             const merged = {
               ...frontendServer,
-              tools: backendServer.tools
-            }
-            console.log(`[Frontend] Preserving ${backendServer.tools.length} tools from backend for ${frontendServer.id}`)
-            return merged
+              tools: backendServer.tools,
+            };
+            return merged;
           } else if (frontendServer.tools && frontendServer.tools.length > 0) {
-            console.log(`[Frontend] Keeping ${frontendServer.tools.length} tools from frontend for ${frontendServer.id}`)
-            return frontendServer
+            return frontendServer;
           } else {
-            console.log(`[Frontend] No tools for ${frontendServer.id} in either frontend or backend`)
-            return frontendServer
+            return frontendServer;
           }
-        })
-        
-        console.log('[Frontend] About to save merged servers:', mergedServers.map(s => ({id: s.id, tools: s.tools?.length || 0})))
-        
-        const result = await window.electron.saveMCPServers(mergedServers)
+        });
+
+
+        const result = await window.electron.saveMCPServers(
+          mergedServers as unknown as Record<string, unknown>[]
+        );
         if (!result.success) {
-          throw new Error(result.error || 'Failed to save servers')
+          throw new Error(result.error || 'Failed to save servers');
         }
       } else {
-        console.log('[Frontend] Fallback: saving servers directly')
-        const result = await window.electron.saveMCPServers(servers)
+        const result = await window.electron.saveMCPServers(
+          servers as unknown as Record<string, unknown>[]
+        );
         if (!result.success) {
-          throw new Error(result.error || 'Failed to save servers')
+          throw new Error(result.error || 'Failed to save servers');
         }
       }
-      
     } catch (error) {
-      console.error('[Frontend] saveServers error:', error)
       set({
-        error: error instanceof Error ? error.message : 'Failed to save MCP servers'
-      })
-      throw error
+        error:
+          error instanceof Error ? error.message : 'Failed to save MCP servers',
+      });
+      throw error;
     }
   },
-  
+
   getServerById: (serverId: string) => {
-    const { servers } = get()
-    return servers.find(server => server.id === serverId)
+    const { servers } = get();
+    return servers.find((server) => server.id === serverId);
   },
-  
+
   getConnectedServers: () => {
-    const { servers } = get()
-    return servers.filter(server => server.status === 'connected' && server.enabled)
+    const { servers } = get();
+    return servers.filter(
+      (server) => server.status === 'connected' && server.enabled
+    );
   },
-  
+
   getServersByType: (type: MCPServerType) => {
-    const { servers } = get()
-    return servers.filter(server => server.type === type)
+    const { servers } = get();
+    return servers.filter((server) => server.type === type);
   },
-  
+
   clearError: () => set({ error: null }),
-  
+
   getInitializationProgress: () => {
-    const { serverInitStates, servers } = get()
-    const enabledServers = servers.filter(s => s.enabled)
-    
-    let connected = 0
-    let failed = 0
-    let pending = 0
-    
-    enabledServers.forEach(server => {
-      const state = serverInitStates[server.id]
+    const { serverInitStates, servers } = get();
+    const enabledServers = servers.filter((s) => s.enabled);
+
+    let connected = 0;
+    let failed = 0;
+    let pending = 0;
+
+    enabledServers.forEach((server) => {
+      const state = serverInitStates[server.id];
       if (!state) {
-        pending++
+        pending++;
       } else {
         switch (state.state) {
           case 'connected':
-            connected++
-            break
+            connected++;
+            break;
           case 'failed':
-            failed++
-            break
+            failed++;
+            break;
           case 'pending':
           case 'connecting':
-            pending++
-            break
+            pending++;
+            break;
         }
       }
-    })
-    
+    });
+
     return {
       total: enabledServers.length,
       connected,
       failed,
-      pending
-    }
+      pending,
+    };
   },
-  
+
   isInitialized: () => {
-    const { initializationState } = get()
-    return initializationState === 'ready' || initializationState === 'partial' || initializationState === 'failed'
-  }
-}))
+    const { initializationState } = get();
+    return (
+      initializationState === 'ready' ||
+      initializationState === 'partial' ||
+      initializationState === 'failed'
+    );
+  },
+}));

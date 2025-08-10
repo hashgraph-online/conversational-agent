@@ -35,11 +35,11 @@ describe('Config Persistence E2E Tests', () => {
     },
     openai: {
       apiKey: 'sk-proj-VeryLongRealAPIKeyWith48CharactersOrMore123456',
-      model: 'gpt-4o-mini' as any
+      model: 'gpt-4o-mini' as const
     },
     anthropic: {
       apiKey: 'sk-ant-api03-VeryLongAnthropicKeyWith48CharsOrMore1234',
-      model: 'claude-3-5-sonnet-20241022'
+      model: 'claude-3-5-sonnet-20241022' as const
     },
     advanced: {
       theme: 'dark' as const,
@@ -92,12 +92,11 @@ describe('Config Persistence E2E Tests', () => {
       return plaintext
     })
     
-    ;(ConfigService as any).instance = undefined
+    ;(ConfigService as unknown as { instance: ConfigService | undefined }).instance = undefined
   })
 
   describe('Full Application Lifecycle', () => {
     it('should persist config through full app lifecycle', async () => {
-      console.log('=== Step 1: First app launch - saving config ===')
       const firstLaunchService = ConfigService.getInstance()
       await firstLaunchService.save(realWorldConfig)
       
@@ -105,12 +104,6 @@ describe('Config Persistence E2E Tests', () => {
       const savedContent = fs.readFileSync(configPath, 'utf8')
       const savedData = JSON.parse(savedContent)
       
-      console.log('Saved config structure:', {
-        hasHedera: !!savedData.hedera,
-        hasOpenAI: !!savedData.openai,
-        hasAnthropic: !!savedData.anthropic,
-        privateKeyIsEncrypted: /^[A-Za-z0-9+/]+=*$/.test(savedData.hedera?.privateKey || '')
-      })
       
       expect(savedData.hedera.privateKey).toMatch(/^[A-Za-z0-9+/]+=*$/)
       expect(savedData.openai.apiKey).toMatch(/^[A-Za-z0-9+/]+=*$/)
@@ -119,22 +112,14 @@ describe('Config Persistence E2E Tests', () => {
       expect(savedData.hedera.accountId).toBe(realWorldConfig.hedera.accountId)
       expect(savedData.advanced.theme).toBe('dark')
       
-      console.log('=== Step 2: App restart - loading config ===')
-      ;(ConfigService as any).instance = undefined
+      ;(ConfigService as unknown as { instance: ConfigService | undefined }).instance = undefined
       const secondLaunchService = ConfigService.getInstance()
       
       const loadedConfig = await secondLaunchService.load()
       
-      console.log('Loaded config check:', {
-        accountId: loadedConfig.hedera.accountId,
-        privateKeyLength: loadedConfig.hedera.privateKey.length,
-        privateKeyMatches: loadedConfig.hedera.privateKey === realWorldConfig.hedera.privateKey,
-        theme: loadedConfig.advanced.theme
-      })
       
       expect(loadedConfig).toEqual(realWorldConfig)
       
-      console.log('=== Step 3: Updating config ===')
       const updatedConfig = {
         ...loadedConfig,
         hedera: {
@@ -149,8 +134,7 @@ describe('Config Persistence E2E Tests', () => {
       
       await secondLaunchService.save(updatedConfig)
       
-      console.log('=== Step 4: Final restart - verify updates ===')
-      ;(ConfigService as any).instance = undefined
+      ;(ConfigService as unknown as { instance: ConfigService | undefined }).instance = undefined
       const thirdLaunchService = ConfigService.getInstance()
       
       const finalConfig = await thirdLaunchService.load()
@@ -254,7 +238,7 @@ describe('Config Persistence E2E Tests', () => {
         loadConfig: jest.fn().mockResolvedValue(realWorldConfig)
       }
       
-      ;(global as any).window = { electron: mockElectron }
+      ;(global as unknown as { window: { electron: typeof mockElectron } }).window = { electron: mockElectron }
       
       await rendererConfigService.saveConfig(realWorldConfig)
       expect(mockElectron.saveConfig).toHaveBeenCalledWith(realWorldConfig)

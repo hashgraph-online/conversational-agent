@@ -319,7 +319,6 @@ export class AgentService {
       hasCodeBlocks: messageContent.includes('```')
     });
     
-    // Look for base64 transaction bytes in code blocks
     const codeBlockRegex = /```[a-z]*\n([A-Za-z0-9+/]{50,}={0,2})\n```/g;
     const matches = [...messageContent.matchAll(codeBlockRegex)];
     
@@ -332,10 +331,8 @@ export class AgentService {
         preview: potentialBytes?.substring(0, 50) + '...'
       });
       
-      // Basic validation - should be base64 and reasonably long for a transaction
       if (potentialBytes && potentialBytes.length > 50) {
         try {
-          // Test if it's valid base64
           Buffer.from(potentialBytes, 'base64');
           this.logger.info('Valid base64 transaction bytes found in code block');
           return potentialBytes;
@@ -346,7 +343,6 @@ export class AgentService {
       }
     }
     
-    // Also look for inline base64 without code blocks
     const inlineRegex = /([A-Za-z0-9+/]{100,}={0,2})/g;
     const inlineMatches = [...messageContent.matchAll(inlineRegex)];
     
@@ -398,7 +394,7 @@ export class AgentService {
       
       const response = await this.agent.processMessage(content, chatHistory);
       
-      this.logger.info('Agent response:', {
+      this.logger.info('[AgentService] Full agent response structure:', JSON.stringify({
         hasMessage: !!response.message,
         hasOutput: !!response.output,
         hasTransactionBytes: !!response.transactionBytes,
@@ -406,13 +402,39 @@ export class AgentService {
         hasMetadata: !!response.metadata,
         hasIntermediateSteps: !!response.intermediateSteps,
         hasRawToolOutput: !!response.rawToolOutput,
-        messagePreview: response.message?.substring(0, 100),
-        outputPreview: response.output?.substring(0, 100),
+        transactionBytesValue: response.transactionBytes,
+        metadataTransactionBytes: response.metadata?.transactionBytes,
+        messageLength: response.message?.length,
+        outputLength: response.output?.length,
         directScheduleId: response.scheduleId,
         directSuccess: response.success,
         directOp: response.op,
-        fullResponse: response
-      });
+        hasError: !!response.error,
+        errorMessage: response.error
+      }, null, 2));
+      
+      if (response.error) {
+        this.logger.warn('[AgentService] Agent returned error:', response.error);
+      }
+      
+      if (Array.isArray(response.intermediateSteps)) {
+        for (const step of response.intermediateSteps) {
+          if (step.observation && typeof step.observation === 'string' && 
+              step.observation.toLowerCase().includes('error')) {
+            this.logger.warn('[AgentService] Tool execution error detected:', step.observation);
+          }
+          if (step.observation && typeof step.observation === 'object' && step.observation.error) {
+            this.logger.warn('[AgentService] Tool execution error in step:', step.observation.error);
+          }
+        }
+      }
+      
+      if (response.message) {
+        this.logger.info('[AgentService] Message content (first 500 chars):', response.message.substring(0, 500));
+      }
+      if (response.output) {
+        this.logger.info('[AgentService] Output content (first 500 chars):', response.output.substring(0, 500));
+      }
       
       const scheduleId = response.scheduleId;
       const description = response.description;
@@ -423,16 +445,25 @@ export class AgentService {
         this.logger.warn('No schedule ID found on response. Check the agent configuration.');
       }
       
-      // Extract transaction bytes from message content if not provided directly
       let transactionBytes = response.transactionBytes || response.metadata?.transactionBytes;
+      this.logger.info('[AgentService] Initial transaction bytes check:', {
+        fromResponse: !!response.transactionBytes,
+        fromMetadata: !!response.metadata?.transactionBytes,
+        value: transactionBytes ? transactionBytes.substring(0, 50) + '...' : 'none'
+      });
+      
       if (!transactionBytes) {
         const messageContent = response.message || response.output || '';
+        this.logger.info('[AgentService] No direct transaction bytes, attempting extraction from message content');
         const extractedBytes = this.extractTransactionBytesFromMessage(messageContent);
         if (extractedBytes) {
           transactionBytes = extractedBytes;
-          this.logger.info('Extracted transaction bytes from message content:', {
-            bytesLength: extractedBytes.length
+          this.logger.info('[AgentService] Successfully extracted transaction bytes from message:', {
+            bytesLength: extractedBytes.length,
+            preview: extractedBytes.substring(0, 50) + '...'
           });
+        } else {
+          this.logger.warn('[AgentService] Failed to extract transaction bytes from message content');
         }
       }
       
@@ -711,7 +742,6 @@ export class AgentService {
     }
 
     try {
-      // Check if the agent has MCP status methods
       if (typeof (this.agent as any).getMCPConnectionStatus === 'function') {
         return (this.agent as any).getMCPConnectionStatus();
       }
@@ -735,7 +765,6 @@ export class AgentService {
     }
 
     try {
-      // Check if the agent has MCP status methods
       if (typeof (this.agent as any).isMCPServerConnected === 'function') {
         return (this.agent as any).isMCPServerConnected(serverName);
       }

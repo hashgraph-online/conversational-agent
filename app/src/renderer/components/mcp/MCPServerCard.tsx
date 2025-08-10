@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { format } from 'date-fns';
 import {
   FiServer,
   FiDatabase,
@@ -68,8 +69,7 @@ export const MCPServerCard: React.FC<MCPServerCardProps> = ({
   const handleToggle = async () => {
     try {
       await onToggle(server.id, !server.enabled);
-    } catch (error) {
-    }
+    } catch (error) {}
   };
 
   const handleTest = async () => {
@@ -82,9 +82,13 @@ export const MCPServerCard: React.FC<MCPServerCardProps> = ({
     }
   };
 
-  const formatDate = (date: Date | undefined) => {
+  const formatLastConnected = (date: Date | undefined) => {
     if (!date) return 'Never';
-    return new Date(date).toLocaleString();
+    try {
+      return format(new Date(date), 'PPpp');
+    } catch {
+      return new Date(date).toLocaleString();
+    }
   };
 
   const getConfigSummary = () => {
@@ -108,24 +112,26 @@ export const MCPServerCard: React.FC<MCPServerCardProps> = ({
     }
   };
 
-  const isConnected = server.status === 'connected' || server.status === 'ready';
+  const isConnected =
+    server.status === 'connected' || server.status === 'ready';
 
   return (
-    <Card className={cn(
-      'p-4 border transition-all',
-      server.enabled && isConnected && 'border-[#5599fe]/30 bg-gradient-to-br from-[#5599fe]/5 to-transparent'
-    )}>
+    <Card
+      className={cn(
+        'p-4 border transition-all',
+        server.enabled &&
+          isConnected &&
+          'border-[#5599fe]/30 bg-gradient-to-br from-[#5599fe]/5 to-transparent'
+      )}
+    >
       <div className='flex items-start justify-between mb-3'>
         <div>
-          <Typography disableMargin variant='body2' className='font-medium mb-0.5'>
+          <Typography noMargin variant='body2' className='font-medium mb-0.5'>
             {server.name}
           </Typography>
           <div className='flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400'>
             <div className='flex items-center gap-1'>
-              <StatusIndicator
-                status={statusColors[server.status]}
-                size='sm'
-              />
+              <StatusIndicator status={statusColors[server.status]} size='sm' />
               <span className='leading-none'>
                 {server.status === 'handshaking'
                   ? 'Handshaking'
@@ -165,19 +171,19 @@ export const MCPServerCard: React.FC<MCPServerCardProps> = ({
               size='sm'
               onClick={async () => {
                 try {
-                  console.log(`[MCPServerCard] Refreshing tools for ${server.id}...`);
-                  const { refreshServerTools, reloadServers } = useMCPStore.getState();
+                  const { refreshServerTools, reloadServers } =
+                    useMCPStore.getState();
                   await refreshServerTools(server.id);
                   setTimeout(async () => {
                     await reloadServers();
                   }, 1000);
                 } catch (error) {
-                  console.error('Failed to refresh tools:', error);
                 }
               }}
               className={cn(
                 'text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200',
-                (!server.tools || server.tools.length === 0) && 'text-amber-600 dark:text-amber-400 animate-pulse'
+                (!server.tools || server.tools.length === 0) &&
+                  'text-amber-600 dark:text-amber-400 animate-pulse'
               )}
               title='Refresh tools'
             >
@@ -207,7 +213,7 @@ export const MCPServerCard: React.FC<MCPServerCardProps> = ({
         {server.description && (
           <div>
             <Typography
-              disableMargin
+              noMargin
               variant='caption'
               className='text-gray-600 dark:text-gray-400'
             >
@@ -215,10 +221,10 @@ export const MCPServerCard: React.FC<MCPServerCardProps> = ({
             </Typography>
           </div>
         )}
-        
+
         <div className='bg-muted/50 rounded p-2'>
           <Typography
-            disableMargin
+            noMargin
             variant='caption'
             color='muted'
             className='text-xs mb-0.5'
@@ -226,7 +232,7 @@ export const MCPServerCard: React.FC<MCPServerCardProps> = ({
             Configuration
           </Typography>
           <Typography
-            disableMargin
+            noMargin
             variant='caption'
             className='font-mono text-xs text-gray-700 dark:text-gray-300'
           >
@@ -238,7 +244,7 @@ export const MCPServerCard: React.FC<MCPServerCardProps> = ({
           <div className='bg-[#5599fe]/10 rounded p-2 border border-[#5599fe]/20'>
             <div className='flex items-center justify-between mb-1.5'>
               <Typography
-                disableMargin
+                noMargin
                 variant='caption'
                 className='text-xs font-medium text-blue-700 dark:text-blue-300'
               >
@@ -268,11 +274,11 @@ export const MCPServerCard: React.FC<MCPServerCardProps> = ({
               )}
             </div>
           </div>
-        ) : (server.status === 'connected' || server.status === 'ready') ? (
+        ) : server.status === 'connected' || server.status === 'ready' ? (
           <div className='bg-amber-50 dark:bg-amber-900/10 rounded-md p-2'>
             <div className='flex items-center justify-between'>
               <Typography
-                disableMargin
+                noMargin
                 variant='caption'
                 className='text-xs text-amber-700 dark:text-amber-300'
               >
@@ -281,11 +287,11 @@ export const MCPServerCard: React.FC<MCPServerCardProps> = ({
               <button
                 onClick={async () => {
                   try {
-                    const { refreshServerTools, reloadServers } = useMCPStore.getState();
+                    const { refreshServerTools, reloadServers } =
+                      useMCPStore.getState();
                     await refreshServerTools(server.id);
                     await reloadServers();
                   } catch (error) {
-                    console.error('Failed to refresh tools:', error);
                   }
                 }}
                 className='text-xs text-amber-600 hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300'
@@ -299,7 +305,7 @@ export const MCPServerCard: React.FC<MCPServerCardProps> = ({
         {server.errorMessage && (
           <div className='p-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md'>
             <Typography
-              disableMargin
+              noMargin
               variant='caption'
               className='text-xs text-red-600 dark:text-red-400'
             >
@@ -311,7 +317,7 @@ export const MCPServerCard: React.FC<MCPServerCardProps> = ({
         {server.status === 'connecting' && (
           <div className='p-2 bg-amber-50 border border-amber-200 dark:bg-amber-900/20 dark:border-amber-800 rounded-md'>
             <Typography
-              disableMargin
+              noMargin
               variant='caption'
               className='text-xs text-amber-700 dark:text-amber-300'
             >
@@ -323,7 +329,7 @@ export const MCPServerCard: React.FC<MCPServerCardProps> = ({
         {server.status === 'handshaking' && (
           <div className='p-2 bg-amber-50 border border-amber-200 dark:bg-amber-900/20 dark:border-amber-800 rounded-md'>
             <Typography
-              disableMargin
+              noMargin
               variant='caption'
               className='text-xs text-amber-700 dark:text-amber-300'
             >
@@ -334,7 +340,7 @@ export const MCPServerCard: React.FC<MCPServerCardProps> = ({
 
         <div className='flex items-center justify-between pt-2 mt-2 border-t border-gray-200 dark:border-gray-700'>
           <div className='text-xs text-gray-500 dark:text-gray-400'>
-            <span>{formatDate(server.lastConnected)}</span>
+            <span>{formatLastConnected(server.lastConnected)}</span>
           </div>
 
           <div className='flex items-center gap-2'>
@@ -354,7 +360,6 @@ export const MCPServerCard: React.FC<MCPServerCardProps> = ({
         </div>
       </div>
 
-      {/* Tools Modal */}
       <MCPToolsModal
         isOpen={isToolsModalOpen}
         onClose={() => setIsToolsModalOpen(false)}

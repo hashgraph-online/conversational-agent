@@ -25,7 +25,7 @@ export const MCPInfoPanel: React.FC<MCPInfoPanelProps> = ({
   return (
     <>
       <div className="space-y-4">
-        {/* Stats Card */}
+
         <div className="border border-border rounded-lg overflow-hidden">
           <div className="h-0.5 bg-[#5599fe]" />
           <div className="p-4">
@@ -61,7 +61,7 @@ export const MCPInfoPanel: React.FC<MCPInfoPanelProps> = ({
           </div>
         </div>
 
-        {/* Quick Actions */}
+
         <div className="border border-border rounded-lg p-4">
           <Typography variant="h6" className="font-medium text-sm mb-3">
             Quick Actions
@@ -80,7 +80,7 @@ export const MCPInfoPanel: React.FC<MCPInfoPanelProps> = ({
         </div>
       </div>
 
-      {/* Detailed Information Dialog */}
+
       <Dialog open={showDetailedInfo} onOpenChange={setShowDetailedInfo}>
         <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>

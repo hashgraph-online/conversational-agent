@@ -115,7 +115,7 @@ const DashboardPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 relative overflow-hidden">
-      {/* Animated gradient orbs */}
+
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <motion.div
           className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-[#a679f0]/10 to-[#5599fe]/10 rounded-full blur-3xl"
@@ -157,7 +157,7 @@ const DashboardPage: React.FC = () => {
         />
       </div>
 
-      {/* Subtle grid pattern */}
+
       <div className="absolute inset-0 opacity-[0.02] dark:opacity-[0.015] pointer-events-none">
         <motion.div
           className="absolute inset-0"
@@ -179,7 +179,7 @@ const DashboardPage: React.FC = () => {
         />
       </div>
 
-      {/* Floating particles */}
+
       <div className="absolute inset-0 pointer-events-none">
         {[...Array(6)].map((_, i) => (
           <motion.div
@@ -223,7 +223,7 @@ const DashboardPage: React.FC = () => {
                 ease: 'easeInOut',
               }}
             >
-              {/* Animated gradient glow behind logo */}
+
               <motion.div 
                 className="absolute inset-0 rounded-2xl blur-xl"
                 animate={{
@@ -241,7 +241,7 @@ const DashboardPage: React.FC = () => {
                 }}
               />
               
-              {/* Logo without overlay */}
+
               <Logo size="lg" showText={false} className="relative z-10" />
             </motion.div>
           </div>

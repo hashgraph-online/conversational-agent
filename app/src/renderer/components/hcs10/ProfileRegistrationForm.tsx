@@ -120,7 +120,6 @@ export function ProfileRegistrationForm({
       await onSubmit(data);
       clearPersistedData();
     } catch (error) {
-      console.error('Form submission failed:', error);
       throw error;
     }
   }, [onSubmit, clearPersistedData]);
@@ -205,7 +204,7 @@ export function ProfileRegistrationForm({
 
   return (
     <form onSubmit={handleSubmit(handleFormSubmit)} className='space-y-6'>
-      {/* Progress Bar */}
+
       {progress && (
         <ProgressBar
           message={progress.message}
@@ -214,7 +213,7 @@ export function ProfileRegistrationForm({
         />
       )}
 
-      {/* Step Indicator */}
+
       <div className='flex items-center justify-between mb-8'>
         {[1, 2, 3].map((step) => (
           <div
@@ -248,7 +247,7 @@ export function ProfileRegistrationForm({
         ))}
       </div>
 
-      {/* Step 1: Basic Information */}
+
       {currentStep === 1 && (
         <div className='space-y-6 animate-in fade-in-0 slide-in-from-right-10 duration-300'>
           <div className='text-center mb-6'>
@@ -260,7 +259,7 @@ export function ProfileRegistrationForm({
             </Typography>
           </div>
 
-          {/* Profile Type Selection */}
+
           <div className='grid grid-cols-2 gap-4'>
             <button
               type='button'
@@ -307,7 +306,7 @@ export function ProfileRegistrationForm({
             </button>
           </div>
 
-          {/* Basic Fields */}
+
           <div className='space-y-4'>
             <div>
               <Label htmlFor='name' className='text-sm font-medium'>
@@ -393,7 +392,7 @@ export function ProfileRegistrationForm({
         </div>
       )}
 
-      {/* Step 2: Profile Details */}
+
       {currentStep === 2 && (
         <div className='space-y-6 animate-in fade-in-0 slide-in-from-right-10 duration-300'>
           <div className='text-center mb-6'>
@@ -405,7 +404,7 @@ export function ProfileRegistrationForm({
             </Typography>
           </div>
 
-          {/* Profile Image */}
+
           <div className='space-y-3'>
             <Label className='text-sm font-medium'>
               Profile Picture <span className='text-muted-foreground'>(optional)</span>
@@ -419,7 +418,7 @@ export function ProfileRegistrationForm({
             </div>
           </div>
 
-          {/* AI Agent Specific Fields */}
+
           {profileType === 'aiAgent' && (
             <>
               <div>
@@ -482,7 +481,7 @@ export function ProfileRegistrationForm({
         </div>
       )}
 
-      {/* Step 3: Social Links */}
+
       {currentStep === 3 && (
         <div className='space-y-6 animate-in fade-in-0 slide-in-from-right-10 duration-300'>
           <div className='text-center mb-6'>
@@ -541,7 +540,7 @@ export function ProfileRegistrationForm({
             </div>
           </div>
 
-          {/* Summary Card */}
+
           <div className='mt-8 p-4 bg-gradient-to-br from-[#5599fe]/5 via-[#48df7b]/5 to-[#a679f0]/5 rounded-lg border border-[#48df7b]/20'>
             <Typography variant='h4' className='text-sm font-medium mb-3'>
               Profile Summary
@@ -572,7 +571,7 @@ export function ProfileRegistrationForm({
         </div>
       )}
 
-      {/* Navigation Buttons */}
+
       <div className='flex justify-between pt-6 border-t'>
         {currentStep > 1 ? (
           <Button
@@ -615,7 +614,7 @@ export function ProfileRegistrationForm({
         )}
       </div>
 
-      {/* Hidden fields for compatibility */}
+
       <Controller
         name='capabilities'
         control={control}

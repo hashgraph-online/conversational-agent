@@ -222,7 +222,7 @@ const AcknowledgementsPage: React.FC = () => {
 
   return (
     <div className='flex flex-col h-full bg-gray-50 dark:bg-gray-950 relative overflow-hidden'>
-      {/* Animated background */}
+
       <div className='absolute inset-0 opacity-[0.01] dark:opacity-[0.02] pointer-events-none'>
         <motion.div
           className='absolute inset-0'
@@ -243,7 +243,7 @@ const AcknowledgementsPage: React.FC = () => {
 
       <div className='min-h-screen bg-background'>
         <div className='container mx-auto px-6 py-8 max-w-6xl'>
-          {/* Header */}
+
           <div className='mb-8'>
             <Typography
               variant='h1'
@@ -262,7 +262,7 @@ const AcknowledgementsPage: React.FC = () => {
             </Typography>
           </div>
 
-          {/* Core Acknowledgements */}
+
           <motion.section
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -320,7 +320,7 @@ const AcknowledgementsPage: React.FC = () => {
             </div>
           </motion.section>
 
-          {/* HCS Standards */}
+
           <motion.section
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -359,7 +359,7 @@ const AcknowledgementsPage: React.FC = () => {
             </div>
           </motion.section>
 
-          {/* Technologies */}
+
           <motion.section
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -394,7 +394,7 @@ const AcknowledgementsPage: React.FC = () => {
             </div>
           </motion.section>
 
-          {/* DAO Members */}
+
           <motion.section
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -463,7 +463,7 @@ const AcknowledgementsPage: React.FC = () => {
             </div>
           </motion.section>
 
-          {/* Community */}
+
           <motion.section
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -519,7 +519,7 @@ const AcknowledgementsPage: React.FC = () => {
             </div>
           </motion.section>
 
-          {/* License */}
+
           <motion.section
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -568,7 +568,7 @@ const AcknowledgementsPage: React.FC = () => {
             </Card>
           </motion.section>
 
-          {/* Footer */}
+
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}

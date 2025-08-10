@@ -379,10 +379,6 @@ export class SmartMemoryManager {
         typeof entityId !== 'string' ||
         entityId.trim().length === 0
       ) {
-        console.warn(
-          '[SmartMemoryManager] Invalid entityId provided:',
-          entityId
-        );
         return;
       }
 
@@ -391,10 +387,6 @@ export class SmartMemoryManager {
         typeof entityName !== 'string' ||
         entityName.trim().length === 0
       ) {
-        console.warn(
-          '[SmartMemoryManager] Invalid entityName provided:',
-          entityName
-        );
         return;
       }
 
@@ -403,10 +395,6 @@ export class SmartMemoryManager {
         typeof entityType !== 'string' ||
         entityType.trim().length === 0
       ) {
-        console.warn(
-          '[SmartMemoryManager] Invalid entityType provided:',
-          entityType
-        );
         return;
       }
 
@@ -414,11 +402,12 @@ export class SmartMemoryManager {
       const sanitizedEntityName = entityName.trim().substring(0, 100);
       const sanitizedEntityType = entityType.trim().toLowerCase();
 
-      const association: EntityAssociation = {
+      const association: EntityAssociation & { isEntityAssociation: boolean } = {
         entityId: sanitizedEntityId,
         entityName: sanitizedEntityName,
         entityType: sanitizedEntityType,
         createdAt: new Date(),
+        isEntityAssociation: true,
         ...(transactionId !== undefined && transactionId !== null && transactionId.trim() !== ''
           ? { transactionId: transactionId.trim() }
           : {})
@@ -448,14 +437,7 @@ export class SmartMemoryManager {
       
       this.contentStorage.storeMessages([entityMessage as any]);
 
-      console.debug(
-        `[SmartMemoryManager] Stored entity association: ${sanitizedEntityName} (${sanitizedEntityType}) -> ${sanitizedEntityId}`
-      );
     } catch (_error) {
-      console.error(
-        '[SmartMemoryManager] Failed to store entity association:',
-        _error
-      );
     }
   }
 
@@ -471,10 +453,6 @@ export class SmartMemoryManager {
   ): EntityAssociation[] {
     try {
       if (!query || typeof query !== 'string') {
-        console.warn(
-          '[SmartMemoryManager] Invalid query provided for entity resolution:',
-          query
-        );
         return [];
       }
 
@@ -484,15 +462,13 @@ export class SmartMemoryManager {
       }
 
       if (sanitizedQuery.length > 200) {
-        console.warn(
-          '[SmartMemoryManager] Query too long, truncating:',
-          sanitizedQuery.length
-        );
       }
 
       const { entityType, limit = 10, fuzzyMatch = true } = options;
 
       const safeLimit = Math.max(1, Math.min(limit || 10, 100));
+
+      const isEntityIdQuery = /^0\.0\.\d+$/.test(sanitizedQuery);
 
       const searchResults = this.contentStorage.searchMessages(
         sanitizedQuery.substring(0, 200),
@@ -516,6 +492,12 @@ export class SmartMemoryManager {
               if (entityType && parsed.entityType !== entityType) {
                 continue;
               }
+              
+              if (isEntityIdQuery) {
+                if (parsed.entityId !== sanitizedQuery) {
+                  continue;
+                }
+              }
 
               associations.push(parsed as EntityAssociation);
             }
@@ -525,7 +507,7 @@ export class SmartMemoryManager {
         }
       }
 
-      if (fuzzyMatch && associations.length === 0) {
+      if (fuzzyMatch && associations.length === 0 && !isEntityIdQuery) {
         const fuzzyQueries = [
           query.toLowerCase(),
           `token`,
@@ -572,19 +554,9 @@ export class SmartMemoryManager {
 
       const results = uniqueAssociations.slice(0, safeLimit);
 
-      if (results.length > 1) {
-        console.debug(
-          `[SmartMemoryManager] Multiple entities found for "${sanitizedQuery}":`,
-          results.map((r) => `${r.entityName} (${r.entityType})`).join(', ')
-        );
-      }
 
       return results;
     } catch (_error) {
-      console.error(
-        '[SmartMemoryManager] Failed to resolve entity reference:',
-        _error
-      );
       return [];
     }
   }
@@ -604,10 +576,6 @@ export class SmartMemoryManager {
         entityType &&
         (!sanitizedEntityType || sanitizedEntityType.length === 0)
       ) {
-        console.warn(
-          '[SmartMemoryManager] Invalid entityType filter provided:',
-          entityType
-        );
         return [];
       }
 
@@ -642,10 +610,6 @@ export class SmartMemoryManager {
             }
           }
         } catch (_parseError) {
-          console.debug(
-            '[SmartMemoryManager] Skipped malformed association data:',
-            _parseError
-          );
           continue;
         }
       }
@@ -663,18 +627,9 @@ export class SmartMemoryManager {
           return bTime - aTime;
         });
 
-      console.debug(
-        `[SmartMemoryManager] Retrieved ${results.length} entity associations${
-          sanitizedEntityType ? ` of type '${sanitizedEntityType}'` : ''
-        }`
-      );
 
       return results;
     } catch (_error) {
-      console.error(
-        '[SmartMemoryManager] Failed to get entity associations:',
-        _error
-      );
       return [];
     }
   }

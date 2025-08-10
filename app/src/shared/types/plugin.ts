@@ -67,9 +67,9 @@ export interface PluginConfigSchema {
   properties: Record<string, {
     type: 'string' | 'number' | 'boolean' | 'array' | 'object'
     description?: string
-    default?: any
+    default?: unknown
     required?: boolean
-    enum?: any[]
+    enum?: unknown[]
     pattern?: string
     minLength?: number
     maxLength?: number
@@ -93,7 +93,7 @@ export interface NPMPluginConfig {
   installedVersion?: string
   availableVersion?: string
   metadata: PluginMetadata
-  config?: Record<string, any>
+  config?: Record<string, unknown>
   configSchema?: PluginConfigSchema
   permissions?: PluginPermissions
   grantedPermissions?: PluginPermissions
@@ -203,7 +203,7 @@ export interface PluginRuntimeContext {
   pluginId: string
   isEnabled: boolean
   isLoaded: boolean
-  instance?: any
+  instance?: unknown
   tools?: Array<{
     name: string
     description: string

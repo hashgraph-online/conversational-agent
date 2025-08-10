@@ -10,6 +10,17 @@ import { useAgentStore } from '../../stores/agentStore';
 import { useConfigStore } from '../../stores/configStore';
 import { CodeBlock } from '../ui/CodeBlock';
 
+const getProfileImageUrl = (profileImage: string, network?: string): string => {
+  if (profileImage.startsWith('hcs://')) {
+    const baseUrl = profileImage.replace('hcs://1/', 'https://kiloscribe.com/api/inscription-cdn/');
+    return `${baseUrl}?network=${network || 'testnet'}`;
+  }
+  if (profileImage.startsWith('ipfs://')) {
+    return profileImage.replace('ipfs://', 'https://gateway.pinata.cloud/ipfs/');
+  }
+  return profileImage;
+};
+
 interface UserProfile {
   display_name?: string;
   alias?: string;
@@ -185,12 +196,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, userProfile }) =
         <div className="flex-shrink-0">
           {isUser && userProfile?.profileImage ? (
             <img 
-              src={userProfile.profileImage.startsWith('hcs://') 
-                ? `${userProfile.profileImage.replace('hcs://1/', 'https://kiloscribe.com/api/inscription-cdn/')}?network=${config?.hedera?.network || 'testnet'}`
-                : userProfile.profileImage.startsWith('ipfs://') 
-                ? userProfile.profileImage.replace('ipfs://', 'https://gateway.pinata.cloud/ipfs/')
-                : userProfile.profileImage
-              }
+              src={getProfileImageUrl(userProfile.profileImage, config?.hedera?.network)}
               alt={userProfile.display_name || userProfile.alias || 'User'}
               className="w-8 h-8 rounded-full object-cover border-2 border-blue-500/20"
               onError={(e) => {
@@ -376,8 +382,6 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, userProfile }) =
             )}
 
           {(() => {
-            // Show transaction details for autonomous mode when we have transaction bytes
-            // This includes both successful transactions (pendingApproval) and failed ones (for debugging)
             return operationalMode === 'autonomous' &&
               message.metadata?.transactionBytes &&
               !isUser && (

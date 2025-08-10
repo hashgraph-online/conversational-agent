@@ -94,13 +94,13 @@ export class MCPCacheManager {
     try {
       const cachedResult = await this.getCachedSearch(queryHash)
       if (cachedResult) {
-        const servers = await this.getServersByIds(cachedResult.resultIds)
+        const servers = await this.getServersByIds(Array.isArray(cachedResult.resultIds) ? cachedResult.resultIds : [cachedResult.resultIds])
         this.recordMetric('search', Date.now() - startTime, true, servers.length)
         
         return {
           servers,
           total: cachedResult.totalCount,
-          hasMore: cachedResult.hasMore,
+          hasMore: cachedResult.hasMore || false,
           fromCache: true,
           queryTime: Date.now() - startTime
         }
@@ -537,7 +537,7 @@ export class MCPCacheManager {
 
       if (cached) {
         await this.db!.update(schema.searchCache)
-          .set({ hitCount: cached.hitCount + 1 })
+          .set({ hitCount: (cached.hitCount || 0) + 1 })
           .where(eq(schema.searchCache.id, cached.id))
           .run()
 
@@ -583,9 +583,6 @@ export class MCPCacheManager {
     const limit = options.limit || 50
     const offset = options.offset || 0
 
-    let query = this.db!.select().from(schema.mcpServers)
-      .where(eq(schema.mcpServers.isActive, true))
-
     const conditions = [eq(schema.mcpServers.isActive, true)]
 
     if (options.query) {
@@ -603,10 +600,6 @@ export class MCPCacheManager {
       conditions.push(sql`lower(${schema.mcpServers.author}) LIKE ${'%' + options.author.toLowerCase() + '%'}`)
     }
 
-    if (conditions.length > 1) {
-      query = query.where(and(...conditions))
-    }
-
     const sortBy = options.sortBy || 'installCount'
     const sortOrder = options.sortOrder || 'desc'
     
@@ -617,11 +610,13 @@ export class MCPCacheManager {
       updatedAt: schema.mcpServers.updatedAt
     }[sortBy] || schema.mcpServers.installCount
 
-    query = query.orderBy(sortOrder === 'desc' ? desc(sortColumn) : asc(sortColumn))
+    const query = this.db!.select().from(schema.mcpServers)
+      .where(conditions.length === 1 ? conditions[0] : and(...conditions))
+      .orderBy(sortOrder === 'desc' ? desc(sortColumn) : asc(sortColumn))
 
     const totalQuery = this.db!.select({ count: sql<number>`count(*)` })
       .from(schema.mcpServers)
-      .where(conditions.length > 1 ? and(...conditions) : conditions[0])
+      .where(conditions.length === 1 ? conditions[0] : and(...conditions))
 
     const [servers, totalResult] = await Promise.all([
       query.limit(limit).offset(offset).all(),

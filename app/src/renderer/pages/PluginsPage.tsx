@@ -310,7 +310,7 @@ const PluginsPage: React.FC<PluginsPageProps> = () => {
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-6 py-8 max-w-6xl">
-        {/* Header */}
+
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
             <Typography variant="h1" className="text-3xl font-bold bg-gradient-to-r from-[#a679f0] via-[#5599fe] to-[#48df7b] bg-clip-text text-transparent">
@@ -352,7 +352,7 @@ const PluginsPage: React.FC<PluginsPageProps> = () => {
             }
           </Typography>
           
-          {/* Coming Soon Notice */}
+
           <div className="p-3 bg-gradient-to-br from-[#5599fe]/10 to-[#5599fe]/5 rounded-lg border border-[#5599fe]/20">
             <div className="flex items-center gap-2">
               <Sparkles className="h-4 w-4 text-[#5599fe]" />
@@ -363,7 +363,7 @@ const PluginsPage: React.FC<PluginsPageProps> = () => {
           </div>
         </div>
 
-        {/* Error Message */}
+
         {(error || searchError || installError) && (
           <div className="mb-6 p-4 bg-destructive/10 border border-destructive/20 rounded-lg flex items-start gap-3">
             <AlertCircle className="h-5 w-5 text-destructive mt-0.5 flex-shrink-0" />
@@ -386,7 +386,7 @@ const PluginsPage: React.FC<PluginsPageProps> = () => {
           </div>
         )}
 
-        {/* Search Bar */}
+
         <div className="mb-6">
           <div className="relative max-w-sm">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -400,7 +400,7 @@ const PluginsPage: React.FC<PluginsPageProps> = () => {
           </div>
         </div>
 
-        {/* Main Content */}
+
         <div className="grid gap-6 lg:grid-cols-3">
           <div className="lg:col-span-2">
             {viewMode === 'installed' ? (
@@ -480,9 +480,9 @@ const PluginsPage: React.FC<PluginsPageProps> = () => {
             )}
           </div>
 
-          {/* Sidebar */}
+
           <div className="space-y-4">
-            {/* Statistics Card */}
+
             <Card className="overflow-hidden">
               <div className="h-0.5 bg-[#5599fe]" />
               <CardContent className="p-4">
@@ -518,7 +518,7 @@ const PluginsPage: React.FC<PluginsPageProps> = () => {
               </CardContent>
             </Card>
 
-            {/* Quick Actions */}
+
             <Card>
               <CardContent className="p-4">
                 <Typography variant="h6" className="font-medium text-sm mb-3">
@@ -548,7 +548,7 @@ const PluginsPage: React.FC<PluginsPageProps> = () => {
               </CardContent>
             </Card>
 
-            {/* Coming Soon Features */}
+
             <Card className="bg-gradient-to-br from-[#5599fe]/10 to-[#5599fe]/5 border-[#5599fe]/20">
               <CardContent className="p-4">
                 <div className="flex items-center gap-2 mb-3">

@@ -25,6 +25,7 @@ import { getSystemMessage } from './config/system-message';
 import type { MCPServerConfig, MCPConnectionStatus } from './mcp/types';
 import { ContentStoreManager } from './services/ContentStoreManager';
 import { SmartMemoryManager, type SmartMemoryConfig } from './memory';
+import { AirdropToolWrapper } from './utils/AirdropToolWrapper';
 
 export type ToolDescriptor = {
   name: string;
@@ -64,10 +65,10 @@ export interface ConversationalAgentOptions {
   enabledPlugins?: string[];
   toolFilter?: (tool: { name: string; namespace?: string }) => boolean;
   mcpServers?: MCPServerConfig[];
-  
+
   /** Enable automatic entity memory functionality (default: true) */
   entityMemoryEnabled?: boolean;
-  
+
   /** Configuration for entity memory system */
   entityMemoryConfig?: SmartMemoryConfig;
 }
@@ -105,9 +106,11 @@ export class ConversationalAgent {
       module: 'ConversationalAgent',
       silent: options.disableLogging || false,
     });
-    
+
     if (this.options.entityMemoryEnabled !== false) {
-      this.memoryManager = new SmartMemoryManager(this.options.entityMemoryConfig);
+      this.memoryManager = new SmartMemoryManager(
+        this.options.entityMemoryConfig
+      );
       this.logger.info('Entity memory initialized');
     }
   }
@@ -157,12 +160,15 @@ export class ConversationalAgent {
       if (this.options.mcpServers && this.options.mcpServers.length > 0) {
         this.contentStoreManager = new ContentStoreManager();
         await this.contentStoreManager.initialize();
-        this.logger.info('ContentStoreManager initialized for MCP content reference support');
+        this.logger.info(
+          'ContentStoreManager initialized for MCP content reference support'
+        );
       }
 
       await this.agent.boot();
+      
+      this.wrapAirdropToolInAgent();
 
-      // Start MCP connections asynchronously after agent is booted
       if (this.options.mcpServers && this.options.mcpServers.length > 0) {
         this.connectMCP();
       }
@@ -225,7 +231,7 @@ export class ConversationalAgent {
     }
 
     try {
-      const resolvedMessage = this.memoryManager 
+      const resolvedMessage = this.memoryManager
         ? await this.resolveEntitiesInMessage(message)
         : message;
 
@@ -242,13 +248,13 @@ export class ConversationalAgent {
       };
 
       const response = await this.agent.chat(resolvedMessage, context);
-      
+
       if (this.memoryManager) {
         await this.extractAndStoreEntities(response, message);
       }
-      
+
       this.logger.info('Message processed successfully');
-      
+
       return response;
     } catch (error) {
       this.logger.error('Error processing message:', error);
@@ -258,7 +264,7 @@ export class ConversationalAgent {
 
   /**
    * Validates initialization options and throws if required fields are missing.
-   * 
+   *
    * @param accountId - The Hedera account ID
    * @param privateKey - The private key for the account
    * @throws {Error} If required fields are missing
@@ -271,21 +277,21 @@ export class ConversationalAgent {
 
   /**
    * Prepares the list of plugins to use based on configuration.
-   * 
+   *
    * @returns Array of plugins to initialize with the agent
    */
   private preparePlugins(): BasePlugin[] {
     const { additionalPlugins = [], enabledPlugins } = this.options;
-    
+
     const standardPlugins = [
       this.hcs10Plugin,
       this.hcs2Plugin,
       this.inscribePlugin,
       this.hbarTransferPlugin,
     ];
-    
+
     const corePlugins: BasePlugin[] = getAllHederaCorePlugins();
-    
+
     if (enabledPlugins) {
       const enabledSet = new Set(enabledPlugins);
       const filteredPlugins = [...standardPlugins, ...corePlugins].filter(
@@ -293,13 +299,13 @@ export class ConversationalAgent {
       );
       return [...filteredPlugins, ...additionalPlugins];
     }
-    
+
     return [...standardPlugins, ...corePlugins, ...additionalPlugins];
   }
 
   /**
    * Creates the agent configuration object.
-   * 
+   *
    * @param serverSigner - The server signer instance
    * @param llm - The language model instance
    * @param allPlugins - Array of plugins to use
@@ -330,7 +336,9 @@ export class ConversationalAgent {
         operationalMode: operationalMode,
         ...(userAccountId && { userAccountId }),
         ...(scheduleUserTransactionsInBytesMode !== undefined && {
-          scheduleUserTransactionsInBytesMode: scheduleUserTransactionsInBytesMode,
+          scheduleUserTransactionsInBytesMode:
+            scheduleUserTransactionsInBytesMode,
+          scheduleUserTransactions: scheduleUserTransactionsInBytesMode,
         }),
       },
       ai: {
@@ -349,7 +357,9 @@ export class ConversationalAgent {
       messaging: {
         systemPreamble:
           customSystemMessagePreamble || getSystemMessage(accountId),
-        ...(customSystemMessagePostamble && { systemPostamble: customSystemMessagePostamble }),
+        ...(customSystemMessagePostamble && {
+          systemPostamble: customSystemMessagePostamble,
+        }),
         conciseMode: true,
       },
       extensions: {
@@ -373,13 +383,15 @@ export class ConversationalAgent {
 
   /**
    * Configures the HCS-10 plugin with the state manager.
-   * 
+   *
    * @param allPlugins - Array of all plugins
    */
   private configureHCS10Plugin(allPlugins: BasePlugin[]): void {
     const hcs10 = allPlugins.find((p) => p.id === 'hcs-10');
     if (hcs10) {
-      (hcs10 as BasePlugin & { appConfig?: Record<string, unknown> }).appConfig = {
+      (
+        hcs10 as BasePlugin & { appConfig?: Record<string, unknown> }
+      ).appConfig = {
         stateManager: this.stateManager,
       };
     }
@@ -526,8 +538,13 @@ export class ConversationalAgent {
     }
 
     try {
-      this.logger.info(`Starting entity resolution for message: "${content.substring(0, 100)}..."`);
-      
+      this.logger.info(
+        `Starting entity resolution for message: "${content.substring(
+          0,
+          100
+        )}..."`
+      );
+
       if (!content || typeof content !== 'string') {
         this.logger.warn('Invalid content provided for entity resolution');
         return content || '';
@@ -544,7 +561,11 @@ export class ConversationalAgent {
         /\b(my|the|our)\s+(token|account|topic|schedule)\b/gi,
         /'([^']+)'/g,
         /"([^"]+)"/g,
-        /\b([A-Z][A-Za-z0-9_-]{2,})\b/g
+        /\b([A-Z][A-Z0-9_]{2,})\b/g,
+        /airdrop\s+[0-9]+\s+([A-Za-z0-9_-]+)\s+token/gi,
+        /airdrop\s+([A-Za-z0-9_-]+)\s+to/gi,
+        /(?:use|with|token)\s+([A-Za-z0-9_-]{3,})\b/gi,
+        /\bairdrop\s+[0-9]+(?:\s+tokens?)?\s+to\s+0\.0\.\d+/gi,
       ];
 
       for (const pattern of patterns) {
@@ -555,34 +576,104 @@ export class ConversationalAgent {
             matches.push(match);
             if (!pattern.global) break;
           }
-          
+
           for (const match of matches) {
             try {
               const originalRef = match[0];
               const entityName = match[1] || match[0];
-              
-              if (entityName.length > 50) {
-                this.logger.debug(`Skipping overly long entity name: ${entityName.substring(0, 20)}...`);
+
+              if (originalRef.toLowerCase().includes('airdrop') && !match[1]) {
+                this.logger.info(
+                  'Detected implicit token reference in airdrop context, looking for most recent token'
+                );
+
+                const allTokens =
+                  this.memoryManager.getEntityAssociations('token');
+                this.logger.info(`Found ${allTokens.length} tokens in memory`);
+
+                if (allTokens.length > 0) {
+                  const recentToken = allTokens[0];
+                  this.logger.info(
+                    `Found implicit token for airdrop: ${recentToken.entityName} (${recentToken.entityId})`
+                  );
+
+                  const enhancedRef = originalRef.replace(
+                    /(airdrop\s+[0-9]+(?:\s+tokens?)?\s+)(to)/i,
+                    `$1${recentToken.entityId} $2`
+                  );
+                  resolvedContent = resolvedContent.replace(
+                    originalRef,
+                    enhancedRef
+                  );
+                  this.logger.info(
+                    `Enhanced airdrop reference: "${originalRef}" -> "${enhancedRef}"`
+                  );
+                } else {
+                  this.logger.warn(
+                    'No tokens found in memory for implicit airdrop reference'
+                  );
+                }
                 continue;
               }
-              
-              const commonWords = ['the', 'my', 'our', 'this', 'that', 'it', 'is', 'are', 'was', 'will'];
+
+              if (entityName.length > 50) {
+                this.logger.debug(
+                  `Skipping overly long entity name: ${entityName.substring(
+                    0,
+                    20
+                  )}...`
+                );
+                continue;
+              }
+
+              const commonWords = [
+                'the',
+                'my',
+                'our',
+                'this',
+                'that',
+                'it',
+                'is',
+                'are',
+                'was',
+                'will',
+              ];
               if (commonWords.includes(entityName.toLowerCase())) {
                 continue;
               }
-              
+
               let entityAssociations: any[] = [];
-              
-              if (match[1] && ['token', 'account', 'topic', 'schedule'].includes(match[1].toLowerCase())) {
+
+              if (
+                match[1] &&
+                ['token', 'account', 'topic', 'schedule'].includes(
+                  match[1].toLowerCase()
+                )
+              ) {
                 const entityType = match[1].toLowerCase();
                 entityAssociations = this.memoryManager.resolveEntityReference(
-                  entityName, 
-                  { entityType, limit: 1, fuzzyMatch: true }
+                  entityName,
+                  { entityType, limit: 3, fuzzyMatch: true }
+                );
+                this.logger.info(
+                  `Looking for ${entityType} with name "${entityName}": found ${entityAssociations.length} matches`
                 );
               } else {
                 entityAssociations = this.memoryManager.resolveEntityReference(
                   entityName,
-                  { limit: 1, fuzzyMatch: false }
+                  { entityType: 'token', limit: 3, fuzzyMatch: false }
+                );
+
+                if (entityAssociations.length === 0) {
+                  entityAssociations =
+                    this.memoryManager.resolveEntityReference(entityName, {
+                      limit: 3,
+                      fuzzyMatch: true,
+                    });
+                }
+
+                this.logger.info(
+                  `Looking for entity "${entityName}": found ${entityAssociations.length} matches`
                 );
               }
 
@@ -590,11 +681,18 @@ export class ConversationalAgent {
                 const entity = entityAssociations[0];
                 if (entity.entityId && entity.entityId.trim().length > 0) {
                   if (entityAssociations.length > 1) {
-                    this.logger.info(`Multiple entities found for "${originalRef}", using most recent: ${entity.entityName}`);
+                    this.logger.info(
+                      `Multiple entities found for "${originalRef}", using most recent: ${entity.entityName}`
+                    );
                   }
-                  
-                  resolvedContent = resolvedContent.replace(originalRef, entity.entityId);
-                  this.logger.info(`Resolved entity reference: "${originalRef}" -> ${entity.entityId}`);
+
+                  resolvedContent = resolvedContent.replace(
+                    originalRef,
+                    entity.entityId
+                  );
+                  this.logger.info(
+                    `Resolved entity reference: "${originalRef}" -> ${entity.entityId}`
+                  );
                 }
               }
             } catch (matchError) {
@@ -609,14 +707,19 @@ export class ConversationalAgent {
       }
 
       if (resolvedContent !== content) {
-        this.logger.info(`Entity resolution completed. Original: "${content}" -> Resolved: "${resolvedContent}"`);
+        this.logger.info(
+          `Entity resolution completed. Original: "${content}" -> Resolved: "${resolvedContent}"`
+        );
       } else {
         this.logger.info('No entity references resolved in message');
       }
-      
+
       return resolvedContent;
     } catch (error) {
-      this.logger.warn('Entity resolution failed, using original message:', error);
+      this.logger.warn(
+        'Entity resolution failed, using original message:',
+        error
+      );
       return content;
     }
   }
@@ -626,59 +729,338 @@ export class ConversationalAgent {
    * @param response - Agent response containing potential entity information
    * @param originalMessage - Original user message for context
    */
-  private async extractAndStoreEntities(response: any, originalMessage: string): Promise<void> {
+  private async extractAndStoreEntities(
+    response: any,
+    originalMessage: string
+  ): Promise<void> {
     if (!this.memoryManager) {
       return;
     }
 
     try {
       this.logger.info('Starting entity extraction from response');
-      
-      const entityPatterns = {
-        token: /(?:token|Token)\s*(?:ID\s*[:"*\s]*)?([0-9]+\.[0-9]+\.[0-9]+)/g,
-        account: /(?:account|Account)\s*(?:ID\s*[:"*\s]*)?([0-9]+\.[0-9]+\.[0-9]+)/g,
-        topic: /(?:topic|Topic)\s*(?:ID\s*[:"*\s]*)?([0-9]+\.[0-9]+\.[0-9]+)/g,
-        schedule: /(?:schedule|Schedule)\s*(?:ID\s*[:"*\s]*)?([0-9]+\.[0-9]+\.[0-9]+)/g
-      };
 
-      const responseText = typeof response === 'string' ? response : JSON.stringify(response);
-      this.logger.info(`Searching response text: ${responseText.substring(0, 200)}...`);
-      
-      for (const [entityType, pattern] of Object.entries(entityPatterns)) {
-        let match;
-        while ((match = pattern.exec(responseText)) !== null) {
-          const entityId = match[1];
-          
-          let entityName = `${entityType}-${entityId}`;
-          
-          const namePatterns = [
-            new RegExp(`(?:called|named)\\s+([\\w\\d_-]+)`, 'i'),
-            new RegExp(`(?:token|account|topic|schedule)\\s+([\\w\\d_-]+)`, 'i'),
-            new RegExp(`([\\w\\d_-]+)\\s+${entityType}`, 'i')
-          ];
-          
-          for (const namePattern of namePatterns) {
-            const nameMatch = originalMessage.match(namePattern);
-            if (nameMatch && nameMatch[1]) {
-              entityName = nameMatch[1].trim();
-              break;
+      const responseText =
+        typeof response === 'string' ? response : JSON.stringify(response);
+      this.logger.info(
+        `Searching response text: ${responseText.substring(0, 500)}...`
+      );
+
+      let extractedEntities: {
+        id: string;
+        type: string;
+        transactionId?: string;
+      }[] = [];
+
+      if (typeof response === 'object' && response !== null) {
+        this.logger.info(
+          `Examining response structure for entities. Keys: ${Object.keys(
+            response
+          ).join(', ')}`
+        );
+
+        if (response.entityId && response.entityType) {
+          this.logger.info(
+            `Found structured entity data: ${response.entityType} ${response.entityId}`
+          );
+          extractedEntities.push({
+            id: response.entityId,
+            type: response.entityType,
+            transactionId: response.transactionId,
+          });
+        }
+
+        if (
+          response.rawToolOutput &&
+          typeof response.rawToolOutput === 'object'
+        ) {
+          const toolOutput = response.rawToolOutput;
+          this.logger.info(
+            `Checking rawToolOutput for entities. Keys: ${Object.keys(
+              toolOutput
+            ).join(', ')}`
+          );
+          if (toolOutput.entityId && toolOutput.entityType) {
+            this.logger.info(
+              `Found tool output entity data: ${toolOutput.entityType} ${toolOutput.entityId}`
+            );
+            extractedEntities.push({
+              id: toolOutput.entityId,
+              type: toolOutput.entityType,
+              transactionId: toolOutput.transactionId || response.transactionId,
+            });
+          }
+        }
+
+        if (Array.isArray(response.intermediateSteps)) {
+          this.logger.info(
+            `Checking ${response.intermediateSteps.length} intermediate steps for entities`
+          );
+          for (const step of response.intermediateSteps) {
+            if (step.observation && typeof step.observation === 'object') {
+              this.logger.info(
+                `Step observation keys: ${Object.keys(step.observation).join(
+                  ', '
+                )}`
+              );
+              if (step.observation.entityId && step.observation.entityType) {
+                this.logger.info(
+                  `Found step entity data: ${step.observation.entityType} ${step.observation.entityId}`
+                );
+                extractedEntities.push({
+                  id: step.observation.entityId,
+                  type: step.observation.entityType,
+                  transactionId:
+                    step.observation.transactionId || response.transactionId,
+                });
+              }
             }
           }
-          
-          this.logger.info(`Extracting entity: ${entityName} (${entityType}) -> ${entityId}`);
-          
-          this.memoryManager.storeEntityAssociation(
-            entityId,
-            entityName,
-            entityType,
-            this.extractTransactionId(response)
+        }
+
+        if (response.content && typeof response.content === 'string') {
+          this.logger.info(
+            `Checking response content for entities: ${response.content.substring(
+              0,
+              200
+            )}...`
           );
-          
-          this.logger.info(`Stored entity association: ${entityName} (${entityId})`);
+        }
+
+        if (response.output && typeof response.output === 'object') {
+          this.logger.info(
+            `Checking response.output for entities. Keys: ${Object.keys(
+              response.output
+            ).join(', ')}`
+          );
+          if (response.output.entityId && response.output.entityType) {
+            this.logger.info(
+              `Found output entity data: ${response.output.entityType} ${response.output.entityId}`
+            );
+            extractedEntities.push({
+              id: response.output.entityId,
+              type: response.output.entityType,
+              transactionId:
+                response.output.transactionId || response.transactionId,
+            });
+          }
+        }
+
+        if (Array.isArray(response.tool_calls)) {
+          this.logger.info(
+            `Checking ${response.tool_calls.length} tool calls for entities`
+          );
+          for (const toolCall of response.tool_calls) {
+            this.logger.info(
+              `Tool call ${
+                toolCall.name
+              }: output type ${typeof toolCall.output}`
+            );
+            if (toolCall.output && typeof toolCall.output === 'string') {
+              try {
+                const output = JSON.parse(toolCall.output);
+                this.logger.info(
+                  `Parsed tool output keys: ${Object.keys(output).join(', ')}`
+                );
+
+                if (
+                  toolCall.name?.includes('token') ||
+                  toolCall.name?.includes('hts')
+                ) {
+                  const tokenId =
+                    output.tokenId ||
+                    output.receipt?.tokenId ||
+                    output.entityId;
+                  if (tokenId) {
+                    this.logger.info(
+                      `Found token creation in tool call: ${tokenId}`
+                    );
+                    extractedEntities.push({
+                      id: tokenId,
+                      type: 'token',
+                      transactionId:
+                        output.transactionId || output.receipt?.transactionId,
+                    });
+                  }
+                }
+
+                if (
+                  toolCall.name?.includes('topic') ||
+                  toolCall.name?.includes('consensus')
+                ) {
+                  const topicId =
+                    output.topicId ||
+                    output.receipt?.topicId ||
+                    output.entityId;
+                  if (topicId) {
+                    this.logger.info(
+                      `Found topic creation in tool call: ${topicId}`
+                    );
+                    extractedEntities.push({
+                      id: topicId,
+                      type: 'topic',
+                      transactionId:
+                        output.transactionId || output.receipt?.transactionId,
+                    });
+                  }
+                }
+
+                if (
+                  toolCall.name?.includes('account') ||
+                  toolCall.name?.includes('crypto')
+                ) {
+                  const accountId =
+                    output.accountId ||
+                    output.receipt?.accountId ||
+                    output.entityId;
+                  if (accountId && toolCall.name?.includes('create')) {
+                    this.logger.info(
+                      `Found account creation in tool call: ${accountId}`
+                    );
+                    extractedEntities.push({
+                      id: accountId,
+                      type: 'account',
+                      transactionId:
+                        output.transactionId || output.receipt?.transactionId,
+                    });
+                  }
+                }
+              } catch (e) {
+                this.logger.debug(
+                  `Could not parse tool output as JSON: ${toolCall.output?.substring(
+                    0,
+                    100
+                  )}`
+                );
+              }
+            }
+          }
         }
       }
-      
-      this.logger.info('Entity extraction completed');
+
+      if (extractedEntities.length === 0) {
+        this.logger.info(
+          'No structured entity data found, trying pattern matching on response text'
+        );
+
+        const entityPatterns = {
+          token: [
+            /(?:token|Token)\s*(?:ID\s*[:\-*\s]*)?([0-9]+\.[0-9]+\.[0-9]+)/g,
+            /([0-9]+\.[0-9]+\.[0-9]+)\s*(?:token|Token)/g,
+            /\*\*Token\s*ID:\*\*\s*([0-9]+\.[0-9]+\.[0-9]+)/g,
+            /-\s*\*\*Token\s*ID:\*\*\s*([0-9]+\.[0-9]+\.[0-9]+)/g,
+            /Token\s*Details:[\s\S]*?Token\s*ID:\s*([0-9]+\.[0-9]+\.[0-9]+)/g,
+          ],
+          account: [
+            /(?:account|Account)\s*(?:ID\s*[:\-*\s]*)?([0-9]+\.[0-9]+\.[0-9]+)/g,
+            /([0-9]+\.[0-9]+\.[0-9]+)\s*(?:account|Account)/g,
+          ],
+          topic: [
+            /(?:topic|Topic)\s*(?:ID\s*[:\-*\s]*)?([0-9]+\.[0-9]+\.[0-9]+)/g,
+            /([0-9]+\.[0-9]+\.[0-9]+)\s*(?:topic|Topic)/g,
+          ],
+          schedule: [
+            /(?:schedule|Schedule)\s*(?:ID\s*[:\-*\s]*)?([0-9]+\.[0-9]+\.[0-9]+)/g,
+            /([0-9]+\.[0-9]+\.[0-9]+)\s*(?:schedule|Schedule)/g,
+          ],
+        };
+
+        for (const [entityType, patterns] of Object.entries(entityPatterns)) {
+          for (const pattern of patterns) {
+            let match;
+            while ((match = pattern.exec(responseText)) !== null) {
+              const entityId = match[1];
+              this.logger.info(
+                `Found ${entityType} ID via pattern matching: ${entityId} (pattern: ${pattern.source})`
+              );
+              const transactionId = this.extractTransactionId(response);
+              extractedEntities.push({
+                id: entityId,
+                type: entityType,
+                ...(transactionId && { transactionId }),
+              });
+            }
+          }
+        }
+      }
+
+      for (const entity of extractedEntities) {
+        let entityName = `${entity.type}-${entity.id}`;
+
+        const namePatterns = [
+          new RegExp(`(?:called|named)\\s+['""]?([\\w\\d_-]+)['""]?`, 'i'),
+          new RegExp(
+            `(?:create|make)\\s+(?:a\\s+)?(?:token|account|topic|schedule)\\s+['""]?([\\w\\d_-]+)['""]?`,
+            'i'
+          ),
+          new RegExp(`['""]([\\w\\d_-]+)['""]\\s+${entity.type}`, 'i'),
+          new RegExp(`${entity.type}\\s+['""]?([\\w\\d_-]+)['""]?`, 'i'),
+          new RegExp(
+            `(?:token|account|topic|schedule)\\s+called\\s+([\\w\\d_-]+)`,
+            'i'
+          ),
+          new RegExp(`(?:name|symbol)\\s*[:\\-]?\\s*([\\w\\d_-]+)`, 'i'),
+        ];
+
+        let nameFromResponse: string | null = null;
+        if (
+          responseText.includes('THE_TOKEN') ||
+          responseText.includes('THETO')
+        ) {
+          const tokenNameMatch = responseText.match(
+            /(?:token|Token)[\s\S]*?(?:called|named|symbol|name)[\s\S]*?([A-Z_]+)/i
+          );
+          if (tokenNameMatch && tokenNameMatch[1]) {
+            nameFromResponse = tokenNameMatch[1];
+            this.logger.info(
+              `Extracted token name from response: "${nameFromResponse}"`
+            );
+          }
+        }
+
+        for (const namePattern of namePatterns) {
+          const nameMatch = originalMessage.match(namePattern);
+          if (nameMatch && nameMatch[1] && nameMatch[1].length > 1) {
+            entityName = nameMatch[1].trim();
+            this.logger.info(
+              `Extracted entity name from message: "${entityName}" for ${entity.type}`
+            );
+            break;
+          }
+        }
+
+        if (entityName === `${entity.type}-${entity.id}` && nameFromResponse) {
+          entityName = nameFromResponse;
+          this.logger.info(
+            `Using entity name from response: "${entityName}" for ${entity.type}`
+          );
+        }
+
+        this.logger.info(
+          `Storing entity association: ${entityName} (${entity.type}) -> ${entity.id}`
+        );
+
+        this.memoryManager.storeEntityAssociation(
+          entity.id,
+          entityName,
+          entity.type,
+          entity.transactionId
+        );
+
+        this.logger.info(
+          `Successfully stored entity association: ${entityName} (${entity.id})`
+        );
+      }
+
+      if (extractedEntities.length === 0) {
+        this.logger.warn(
+          'No entities extracted from response. Response may not contain entity creation data.'
+        );
+      } else {
+        this.logger.info(
+          `Entity extraction completed. Stored ${extractedEntities.length} entities.`
+        );
+      }
     } catch (error) {
       this.logger.warn('Entity extraction failed:', error);
     }
@@ -695,7 +1077,9 @@ export class ConversationalAgent {
         return response.transactionId;
       }
       if (typeof response === 'string') {
-        const match = response.match(/transaction[\s\w]*ID[\s:"]*([0-9a-fA-F@\.\-]+)/i);
+        const match = response.match(
+          /transaction[\s\w]*ID[\s:"]*([0-9a-fA-F@\.\-]+)/i
+        );
         return match ? match[1] : undefined;
       }
       return undefined;
@@ -713,22 +1097,19 @@ export class ConversationalAgent {
       return;
     }
 
-    // Initialize connection status for all servers
-    this.options.mcpServers.forEach(server => {
+    this.options.mcpServers.forEach((server) => {
       this.mcpConnectionStatus.set(server.name, {
         serverName: server.name,
         connected: false,
-        tools: []
+        tools: [],
       });
     });
 
-    // Call the agent's MCP connection method if available
     if (typeof (this.agent as any).connectMCPServers === 'function') {
       (this.agent as any).connectMCPServers().catch((error: any) => {
         this.logger.error('Failed to connect MCP servers:', error);
       });
     } else {
-      // Fallback for agents that don't support async MCP connections
       this.startConnections();
     }
   }
@@ -744,7 +1125,7 @@ export class ConversationalAgent {
 
     try {
       this.logger.info('Starting MCP server connections asynchronously...');
-      
+
       for (const server of this.options.mcpServers) {
         this.connectServer(server);
       }
@@ -761,21 +1142,20 @@ export class ConversationalAgent {
   private async connectServer(server: MCPServerConfig): Promise<void> {
     try {
       this.logger.info(`Connecting to MCP server: ${server.name}`);
-      
-      // TODO: Implement actual MCP connection logic
-      // For now, we'll simulate the connection process
+
       const status = this.mcpConnectionStatus.get(server.name);
       if (status) {
-        // Simulate connection success after a delay
         setTimeout(() => {
           status.connected = true;
           this.logger.info(`MCP server ${server.name} connected successfully`);
-        }, Math.random() * 2000 + 1000); // 1-3 second delay
+        }, Math.random() * 2000 + 1000);
       }
-      
     } catch (error) {
-      this.logger.error(`Failed to connect to MCP server ${server.name}:`, error);
-      
+      this.logger.error(
+        `Failed to connect to MCP server ${server.name}:`,
+        error
+      );
+
       const status = this.mcpConnectionStatus.get(server.name);
       if (status) {
         status.connected = false;
@@ -808,7 +1188,7 @@ export class ConversationalAgent {
   async cleanup(): Promise<void> {
     try {
       this.logger.info('Cleaning up ConversationalAgent...');
-      
+
       if (this.memoryManager) {
         try {
           this.memoryManager.dispose();
@@ -818,15 +1198,44 @@ export class ConversationalAgent {
         }
         this.memoryManager = undefined as any;
       }
-      
+
       if (this.contentStoreManager) {
         await this.contentStoreManager.dispose();
         this.logger.info('ContentStoreManager cleaned up');
       }
-      
+
       this.logger.info('ConversationalAgent cleanup completed');
     } catch (error) {
       this.logger.error('Error during cleanup:', error);
+    }
+  }
+
+  private wrapAirdropToolInAgent(): void {
+    if (!this.agent) {
+      return;
+    }
+
+    const baseAgent = this.agent as any;
+    if (!baseAgent.tools || !baseAgent.agentKit) {
+      return;
+    }
+
+    try {
+      const tools = baseAgent.tools;
+      const airdropToolIndex = tools.findIndex(
+        (tool: any) => tool.name === 'hedera-hts-airdrop-token'
+      );
+
+      if (airdropToolIndex !== -1) {
+        this.logger.info('Wrapping airdrop tool with decimal conversion capability at ConversationalAgent level');
+        const originalTool = tools[airdropToolIndex];
+        const wrappedTool = new AirdropToolWrapper(originalTool, baseAgent.agentKit);
+        
+        tools[airdropToolIndex] = wrappedTool;
+        this.logger.info('Successfully wrapped airdrop tool');
+      }
+    } catch (error) {
+      this.logger.warn('Failed to wrap airdrop tool:', error);
     }
   }
 }

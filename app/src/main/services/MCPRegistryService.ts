@@ -54,7 +54,7 @@ export interface MCPRegistrySearchOptions {
 export class MCPRegistryService {
   private static instance: MCPRegistryService
   private logger: Logger
-  private cacheManager: MCPCacheManager
+  private cacheManager!: MCPCacheManager
   private backgroundSyncActive = false
   private readonly REGISTRY_SYNC_INTERVAL = 60 * 60 * 1000;
   private readonly BACKGROUND_BATCH_SIZE = 50;
@@ -271,14 +271,14 @@ export class MCPRegistryService {
       
       this.logger.info(`PulseMCP API response: offset=${options.offset}, count=${serversCount}, total=${totalServers}, hasNext=${hasNext}, next=${data.next}`)
       
-      const normalizedServers = (data.servers || []).map(server => {
+      const normalizedServers = (data.servers || []).map((server: any) => {
         try {
           return this.normalizePulseMCPServer(server)
         } catch (error) {
           this.logger.warn(`Failed to normalize server:`, error, server)
           return null
         }
-      }).filter(Boolean).filter(server => {
+      }).filter(Boolean).filter((server: any) => {
         const installable = this.isServerInstallable(server)
         if (!installable) {
           this.logger.debug(`Filtering out non-installable server: ${server.name}`)

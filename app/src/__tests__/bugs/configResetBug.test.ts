@@ -55,7 +55,7 @@ describe('Config Reset Bug - Reproduction Tests', () => {
     
     ;(app.getPath as jest.Mock).mockReturnValue(tempDir)
     
-    ;(ConfigService as any).instance = undefined
+    ;(ConfigService as unknown as { instance: ConfigService | undefined }).instance = undefined
     
     ;(safeStorage.isEncryptionAvailable as jest.Mock).mockReturnValue(true)
     
@@ -100,7 +100,7 @@ describe('Config Reset Bug - Reproduction Tests', () => {
       const savedData = JSON.parse(rawContent)
       expect(savedData.hedera.accountId).toBe(validConfig.hedera.accountId)
       
-      ;(ConfigService as any).instance = undefined
+      ;(ConfigService as unknown as { instance: ConfigService | undefined }).instance = undefined
       const secondInstance = ConfigService.getInstance()
       
       const loadedConfig = await secondInstance.load()
@@ -119,13 +119,8 @@ describe('Config Reset Bug - Reproduction Tests', () => {
       const savedContent = fs.readFileSync(configPath, 'utf8')
       const savedData = JSON.parse(savedContent)
       
-      console.log('Saved privateKey format:', {
-        length: savedData.hedera.privateKey.length,
-        isBase64: /^[A-Za-z0-9+/]+=*$/.test(savedData.hedera.privateKey),
-        sample: savedData.hedera.privateKey.substring(0, 50) + '...'
-      })
       
-      ;(ConfigService as any).instance = undefined
+      ;(ConfigService as unknown as { instance: ConfigService | undefined }).instance = undefined
       const newConfigService = ConfigService.getInstance()
       const loaded = await newConfigService.load()
       

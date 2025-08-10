@@ -80,7 +80,7 @@ export const MCPToolsModal: React.FC<MCPToolsModalProps> = ({
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-5xl max-h-[90vh] overflow-hidden flex flex-col" showCloseButton={false}>
-        {/* Header */}
+
         <DialogHeader className="flex-shrink-0 pb-4">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
@@ -106,7 +106,7 @@ export const MCPToolsModal: React.FC<MCPToolsModalProps> = ({
             </Button>
           </div>
 
-          {/* Search */}
+
           <div className="relative">
             <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
             <input
@@ -119,7 +119,7 @@ export const MCPToolsModal: React.FC<MCPToolsModalProps> = ({
           </div>
         </DialogHeader>
 
-        {/* Tools List */}
+
         <div className="flex-1 overflow-y-auto space-y-3">
           {filteredTools.map((tool, index) => {
             const parameters = parseJsonSchema(tool.inputSchema);
@@ -129,7 +129,7 @@ export const MCPToolsModal: React.FC<MCPToolsModalProps> = ({
 
             return (
               <div key={index} className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
-                {/* Tool Header - Always Visible */}
+
                 <div 
                   className="p-4 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-750 cursor-pointer transition-colors"
                   onClick={() => toggleToolExpansion(index)}
@@ -165,12 +165,12 @@ export const MCPToolsModal: React.FC<MCPToolsModalProps> = ({
                   </div>
                 </div>
 
-                {/* Tool Details - Expandable */}
+
                 {isExpanded && (
                   <div className="border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
                     {parameters.length > 0 ? (
                       <div className="p-4 space-y-4">
-                        {/* Required Parameters */}
+
                         {requiredParams.length > 0 && (
                           <div>
                             <div className="flex items-center gap-2 mb-3">
@@ -210,7 +210,7 @@ export const MCPToolsModal: React.FC<MCPToolsModalProps> = ({
                           </div>
                         )}
 
-                        {/* Optional Parameters */}
+
                         {optionalParams.length > 0 && (
                           <div>
                             <div className="flex items-center gap-2 mb-3">
@@ -279,7 +279,7 @@ export const MCPToolsModal: React.FC<MCPToolsModalProps> = ({
           )}
         </div>
 
-        {/* Footer */}
+
         <div className="flex-shrink-0 mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
           <div className="flex justify-between items-center">
             <Typography variant="caption" color="muted">

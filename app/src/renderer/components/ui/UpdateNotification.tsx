@@ -152,7 +152,7 @@ export const UpdateNotification: React.FC<UpdateNotificationProps> = ({
               )}
             </div>
 
-            {/* Progress bar for downloading state */}
+
             {updateState === 'downloading' && progress && (
               <div className="mt-3">
                 <div className="bg-gray-200 dark:bg-gray-700 rounded-full h-2 overflow-hidden">
@@ -166,7 +166,7 @@ export const UpdateNotification: React.FC<UpdateNotificationProps> = ({
               </div>
             )}
 
-            {/* Release notes toggle */}
+
             {updateInfo?.releaseNotes && updateState === 'available' && (
               <div className="mt-3">
                 <Button
@@ -195,7 +195,7 @@ export const UpdateNotification: React.FC<UpdateNotificationProps> = ({
               </div>
             )}
 
-            {/* Action buttons */}
+
             <div className="flex items-center justify-end space-x-2 mt-4">
               {onViewReleases && (
                 <Button

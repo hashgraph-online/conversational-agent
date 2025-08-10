@@ -66,6 +66,7 @@
     "@vitejs/plugin-react": "^4.7.0",
     "buffer": "^6.0.3",
     "cross-env": "^10.0.0",
+    "date-fns": "^3.6.0",
     "drizzle-kit": "^0.29.0",
     "electron": "^37",
     "electron-builder": "^25.1.8",
@@ -83,7 +84,7 @@
   "dependencies": {
     "@hashgraphonline/conversational-agent": "file:..",
     "@hashgraphonline/standards-agent-kit": "0.2.122",
-    "@hashgraphonline/standards-sdk": "0.0.168",
+    "@hashgraphonline/standards-sdk": "0.0.176",
     "@hookform/resolvers": "^5.2.0",
     "@langchain/anthropic": "^0.3.25",
     "@noble/hashes": "1.8.0",

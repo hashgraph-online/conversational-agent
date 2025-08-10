@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react'
+import { format } from 'date-fns'
 import { FiSearch, FiDownload, FiExternalLink, FiStar, FiCalendar, FiUser, FiTag, FiRefreshCw, FiDatabase, FiClock, FiActivity, FiCheck, FiX } from 'react-icons/fi'
 import Typography from '../ui/Typography'
 import { Button } from '../ui/Button'
@@ -117,15 +118,6 @@ export const MCPRegistry: React.FC<MCPRegistryProps> = ({
       const searchTime = Date.now() - searchStartTime
       setLastSearchTime(searchTime)
       
-      console.log('Search result:', {
-        pageNum,
-        offset: pageNum * pageSize,
-        serversReturned: result.data?.servers?.length,
-        total: result.data?.total,
-        hasMore: result.data?.hasMore,
-        currentServersCount: servers.length,
-        searchTime: `${searchTime}ms`
-      })
 
       if (result.success && result.data) {
         if (append) {
@@ -174,7 +166,6 @@ export const MCPRegistry: React.FC<MCPRegistryProps> = ({
         setInstalledServers(serverNames)
       }
     } catch (error) {
-      console.error('Failed to load installed servers:', error)
     }
   }
 
@@ -606,14 +597,10 @@ interface ServerCardProps {
 }
 
 const ServerCard: React.FC<ServerCardProps> = ({ server, onInstall, isInstalling, isInstalled }) => {
-  const formatDate = (dateString?: string) => {
+  const formatUpdatedAt = (dateString?: string) => {
     if (!dateString) return null
     try {
-      return new Intl.DateTimeFormat('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric'
-      }).format(new Date(dateString))
+      return format(new Date(dateString), 'PP')
     } catch {
       return null
     }
@@ -629,7 +616,7 @@ const ServerCard: React.FC<ServerCardProps> = ({ server, onInstall, isInstalling
       "p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:shadow-md transition-shadow bg-white dark:bg-gray-800 relative",
       !isInstallable && "opacity-75"
     )}>
-      {/* Install button in upper right corner */}
+
       <div className="absolute top-3 right-3">
         {isInstalled ? (
           <div className="h-8 w-8 rounded-lg bg-[#5599fe]/10 flex items-center justify-center">
@@ -693,10 +680,10 @@ const ServerCard: React.FC<ServerCardProps> = ({ server, onInstall, isInstalling
               <span>{server.installCount.toLocaleString()} installs</span>
             </div>
           )}
-          {formatDate(server.updatedAt) && (
+          {formatUpdatedAt(server.updatedAt) && (
             <div className="flex items-center gap-1">
               <FiCalendar className="w-3 h-3" />
-              <span>{formatDate(server.updatedAt)}</span>
+              <span>{formatUpdatedAt(server.updatedAt)}</span>
             </div>
           )}
         </div>

@@ -135,4 +135,4 @@ export function useFormState<T extends Record<string, any>>(
 /**
  * Type definition for the return value of useFormState hook.
  */
-export type UseFormStateReturn<T> = ReturnType<typeof useFormState<T>>;
+export type UseFormStateReturn<T extends Record<string, any>> = ReturnType<typeof useFormState<T>>;

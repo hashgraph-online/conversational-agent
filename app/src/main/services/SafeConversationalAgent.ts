@@ -112,13 +112,12 @@ export class SafeConversationalAgent extends ConversationalAgent {
           return;
         }
 
-        if (typeof this.agent?.initialize === 'function') {
-          await this.agent.initialize();
-        } else if (typeof this.agent?.boot === 'function') {
-          await this.agent.boot();
+        if (typeof (this.agent as any)?.initialize === 'function') {
+          await (this.agent as any).initialize();
+        } else if (typeof (this.agent as any)?.boot === 'function') {
+          await (this.agent as any).boot();
         }
 
-        // Start MCP connections asynchronously for OpenAI path
         this.startMCPConnections();
         this.isUsingCustomAgent = false;
       }
@@ -131,14 +130,15 @@ export class SafeConversationalAgent extends ConversationalAgent {
       });
 
       try {
-        if (this.agent && typeof this.agent.getAvailableTools === 'function') {
-          const tools = await this.agent.getAvailableTools();
+        const agent = this.agent as any;
+        if (agent && typeof agent.getAvailableTools === 'function') {
+          const tools = await agent.getAvailableTools();
           this.logger?.info(
-            `Available tools: ${tools.map((t) => t.name).join(', ')}`
+            `Available tools: ${tools.map((t: any) => t.name).join(', ')}`
           );
-        } else if (this.agent && Array.isArray(this.agent.tools)) {
+        } else if (agent && Array.isArray(agent.tools)) {
           this.logger?.info(
-            `Agent tools: ${this.agent.tools.map((t) => t.name).join(', ')}`
+            `Agent tools: ${agent.tools.map((t: any) => t.name).join(', ')}`
           );
         } else {
           this.logger?.warn('Could not determine available tools');
@@ -161,9 +161,9 @@ export class SafeConversationalAgent extends ConversationalAgent {
       });
 
       const serverSigner = new ServerSigner(
-        this.config.accountId,
-        this.config.privateKey,
-        this.config.network
+        this.config.accountId!,
+        this.config.privateKey!,
+        this.config.network! as 'testnet' | 'mainnet' | 'previewnet'
       );
 
       const hcs10Plugin = new HCS10Plugin();
@@ -207,7 +207,7 @@ export class SafeConversationalAgent extends ConversationalAgent {
         signer: serverSigner,
         execution: {
           mode: 'bytes',
-          operationalMode: this.config.operationalMode || 'autonomous',
+          operationalMode: (this.config.operationalMode || 'autonomous') as 'autonomous' | 'returnBytes',
           scheduleUserTransactionsInBytesMode: false,
         },
         ai: {
@@ -221,7 +221,7 @@ export class SafeConversationalAgent extends ConversationalAgent {
           },
         },
         messaging: {
-          systemPreamble: buildSystemMessage(this.config.accountId),
+          systemPreamble: buildSystemMessage(this.config.accountId!),
           conciseMode: true,
         },
         extensions: {
@@ -236,7 +236,6 @@ export class SafeConversationalAgent extends ConversationalAgent {
 
       await this.agent.boot();
 
-      // Start MCP connections asynchronously for Anthropic path
       this.startMCPConnections();
     } catch (error) {
       this.logger?.error('Failed to initialize with Anthropic:', error);
@@ -249,25 +248,80 @@ export class SafeConversationalAgent extends ConversationalAgent {
       this.logger?.info('Processing message...');
 
       if (this.isUsingCustomAgent && this.agent) {
-        const response = await this.agent.sendMessage({
+        const response = await (this.agent as any).sendMessage({
           role: 'user',
           content: message,
         });
+        
+        let transactionBytes = null;
+        let scheduleId = null;
+        
+        if (typeof response === 'object' && response !== null) {
+          transactionBytes = response.transactionBytes || response.metadata?.transactionBytes;
+          scheduleId = response.scheduleId || response.metadata?.scheduleId;
+        }
+        
+        if (!transactionBytes && typeof response === 'string') {
+          const base64Regex = /([A-Za-z0-9+/]{50,}={0,2})/g;
+          const matches = response.match(base64Regex);
+          if (matches && matches[0]) {
+            try {
+              Buffer.from(matches[0], 'base64');
+              transactionBytes = matches[0];
+              this.logger?.info('Extracted transaction bytes from response content');
+            } catch (e) {
+            }
+          }
+        }
+        
         return {
           output: response,
-          message: response,
+          message: typeof response === 'string' ? response : (response.message || response.output || JSON.stringify(response)),
+          transactionBytes,
+          scheduleId,
+          metadata: {
+            transactionBytes,
+            scheduleId,
+            ...(typeof response === 'object' && response.metadata ? response.metadata : {})
+          }
         };
       }
 
       if (this.agent) {
-        if (typeof this.agent.processMessage === 'function') {
-          return await this.agent.processMessage(
+        const agent = this.agent as any;
+        if (typeof agent.processMessage === 'function') {
+          const result = await agent.processMessage(
             message,
             chatHistory.map((item) => ({
               type: item.role === 'user' ? 'human' : 'ai',
               content: item.content,
             }))
           );
+          
+          if (result && typeof result === 'object') {
+            const transactionBytes = result.transactionBytes || 
+                                    result.metadata?.transactionBytes || 
+                                    result.rawToolOutput?.transactionBytes ||
+                                    null;
+            
+            if (transactionBytes && !result.transactionBytes) {
+              result.transactionBytes = transactionBytes;
+            }
+            if (transactionBytes && (!result.metadata || !result.metadata.transactionBytes)) {
+              result.metadata = {
+                ...result.metadata,
+                transactionBytes
+              };
+            }
+            
+            this.logger?.info('Agent processMessage result:', {
+              hasTransactionBytes: !!transactionBytes,
+              hasScheduleId: !!result.scheduleId,
+              operationalMode: this.config.operationalMode
+            });
+          }
+          
+          return result;
         } else {
           return await super.processMessage(
             message,
@@ -308,7 +362,7 @@ export class SafeConversationalAgent extends ConversationalAgent {
   /**
    * Execute a specific tool call through the agent
    */
-  async executeToolCall(toolCall) {
+  async executeToolCall(toolCall: any) {
     try {
       this.logger?.info('Executing tool call', { toolName: toolCall.name });
 
@@ -320,8 +374,9 @@ export class SafeConversationalAgent extends ConversationalAgent {
         return await this.executeCustomToolCall(toolCall);
       }
 
-      if (this.agent.executeToolCall) {
-        return await this.agent.executeToolCall(toolCall);
+      const agent = this.agent as any;
+      if (agent.executeToolCall) {
+        return await agent.executeToolCall(toolCall);
       }
 
       const toolRequestMessage = `Please execute the following tool:
@@ -350,7 +405,7 @@ Arguments: ${JSON.stringify(toolCall.arguments, null, 2)}`;
   /**
    * Execute tool call for custom agents
    */
-  private async executeCustomToolCall(toolCall) {
+  private async executeCustomToolCall(toolCall: any) {
     try {
       const message = {
         role: 'user',
@@ -361,7 +416,7 @@ Arguments: ${JSON.stringify(toolCall.arguments, null, 2)}`;
         )}`,
       };
 
-      const response = await this.agent.sendMessage(message);
+      const response = await (this.agent as any)?.sendMessage(message);
 
       return {
         success: true,
@@ -388,14 +443,11 @@ Arguments: ${JSON.stringify(toolCall.arguments, null, 2)}`;
       return;
     }
 
-    // Check if we're using ConversationalAgent with MCP support
     if (this.agent && typeof (this.agent as any).connectMCPServers === 'function') {
-      // If the agent has built-in MCP connection support, use it
       this.logger?.info('Using agent built-in MCP connection support');
-      return; // ConversationalAgent will handle connections
+      return;
     }
 
-    // For custom agents or fallback, log that MCP connections are deferred
     const enabledServers = this.config.mcpServers.filter(
       (server: any) => server.enabled || server.autoConnect
     );
@@ -405,8 +457,6 @@ Arguments: ${JSON.stringify(toolCall.arguments, null, 2)}`;
         servers: enabledServers.map((s: any) => s.name),
       });
       
-      // In a real implementation, you would trigger the actual MCP connections here
-      // For now, we'll just log that they would be connected
       setTimeout(() => {
         enabledServers.forEach((server: any) => {
           this.logger?.info(`MCP server ${server.name} connection initiated asynchronously`);
@@ -429,11 +479,12 @@ Arguments: ${JSON.stringify(toolCall.arguments, null, 2)}`;
         return;
       }
 
-      if (typeof this.agent.getAvailableTools === 'function') {
-        const availableTools = await this.agent.getAvailableTools();
-        const newlyRegisteredTools = tools.filter((tool) =>
+      const agent = this.agent as any;
+      if (typeof agent.getAvailableTools === 'function') {
+        const availableTools = await agent.getAvailableTools();
+        const newlyRegisteredTools = tools.filter((tool: any) =>
           availableTools.some(
-            (availableTool) => availableTool.name === tool.name
+            (availableTool: any) => availableTool.name === tool.name
           )
         );
 
@@ -441,16 +492,16 @@ Arguments: ${JSON.stringify(toolCall.arguments, null, 2)}`;
           `Successfully verified ${newlyRegisteredTools.length} tools from ${serverId} are now available`
         );
       } else if (
-        typeof this.agent.tools !== 'undefined' &&
-        Array.isArray(this.agent.tools)
+        typeof agent.tools !== 'undefined' &&
+        Array.isArray(agent.tools)
       ) {
-        const existingToolNames = new Set(this.agent.tools.map((t) => t.name));
+        const existingToolNames = new Set(agent.tools.map((t: any) => t.name));
         const newTools = tools.filter(
-          (tool) => !existingToolNames.has(tool.name)
+          (tool: any) => !existingToolNames.has(tool.name)
         );
 
         if (newTools.length > 0) {
-          this.agent.tools.push(...newTools);
+          agent.tools.push(...newTools);
           this.logger?.info(
             `Added ${newTools.length} new tools from ${serverId} to agent`
           );

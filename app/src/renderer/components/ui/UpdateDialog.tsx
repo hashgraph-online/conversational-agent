@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { format } from 'date-fns';
 import { motion } from 'framer-motion';
 import { FiDownload, FiRefreshCw, FiCheckCircle, FiAlertCircle, FiExternalLink, FiClock, FiTag } from 'react-icons/fi';
 import {
@@ -71,13 +72,9 @@ export const UpdateDialog: React.FC<UpdateDialogProps> = ({
     return formatBytes(bytesPerSecond) + '/s';
   };
 
-  const formatDate = (dateString: string): string => {
+  const formatReleaseDate = (dateString: string): string => {
     try {
-      return new Date(dateString).toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-      });
+      return format(new Date(dateString), 'PPP');
     } catch {
       return dateString;
     }
@@ -159,7 +156,7 @@ export const UpdateDialog: React.FC<UpdateDialogProps> = ({
         </DialogHeader>
 
         <div className="space-y-4">
-          {/* Version Information */}
+
           <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
             <div className="flex items-center space-x-3">
               <FiTag className="w-4 h-4 text-gray-500" />
@@ -179,13 +176,13 @@ export const UpdateDialog: React.FC<UpdateDialogProps> = ({
             )}
           </div>
 
-          {/* Release Information */}
+
           {updateInfo && updateState === 'available' && (
             <div className="p-3 border rounded-lg">
               <div className="flex items-center space-x-2 mb-2">
                 <FiClock className="w-4 h-4 text-gray-500" />
                 <Typography variant="body2" className="font-medium">
-                  Released on {formatDate(updateInfo.releaseDate)}
+                  Released on {formatReleaseDate(updateInfo.releaseDate)}
                 </Typography>
               </div>
               
@@ -217,7 +214,7 @@ export const UpdateDialog: React.FC<UpdateDialogProps> = ({
             </div>
           )}
 
-          {/* Download Progress */}
+
           {updateState === 'downloading' && progress && (
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
@@ -239,7 +236,7 @@ export const UpdateDialog: React.FC<UpdateDialogProps> = ({
             </div>
           )}
 
-          {/* Error Details */}
+
           {updateState === 'error' && error && (
             <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
               <Typography variant="body2" className="font-medium text-red-800 dark:text-red-200 mb-1">

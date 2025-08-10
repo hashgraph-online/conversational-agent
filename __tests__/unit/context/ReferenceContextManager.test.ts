@@ -1,6 +1,6 @@
-import { ReferenceContextManager } from './ReferenceContextManager';
-import { ContentStorage } from '../memory/ContentStorage';
-import type { ContentReference } from '../types/content-reference';
+import { ReferenceContextManager } from '../../../src/context/ReferenceContextManager';
+import { ContentStorage } from '../../../src/memory/ContentStorage';
+import type { ContentReference } from '../../../src/types/content-reference';
 import { Logger } from '@hashgraphonline/standards-sdk';
 
 describe('ReferenceContextManager', () => {
@@ -30,10 +30,10 @@ describe('ReferenceContextManager', () => {
     });
     
     logger = {
-      info: jest.fn(),
-      debug: jest.fn(),
-      warn: jest.fn(),
-      error: jest.fn()
+      info: vi.fn(),
+      debug: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn()
     } as any;
     
     manager = new ReferenceContextManager(contentStorage, logger);
@@ -67,12 +67,13 @@ describe('ReferenceContextManager', () => {
     });
 
     it('should get most recent reference for inscribe commands', () => {
+      vi.useFakeTimers();
       const reference1 = { ...mockReference, referenceId: 'ref1' + 'a'.repeat(39) };
       const reference2 = { ...mockReference, referenceId: 'ref2' + 'b'.repeat(39) };
       
       manager.addReference(reference1);
       
-      jest.advanceTimersByTime(100);
+      vi.advanceTimersByTime(100);
       
       manager.addReference(reference2);
       
@@ -95,6 +96,7 @@ describe('ReferenceContextManager', () => {
 
   describe('Reference Display', () => {
     beforeEach(async () => {
+      vi.useFakeTimers();
       const buffer = Buffer.from('Test content for display', 'utf8');
       await contentStorage.storeContent(buffer, {
         contentType: 'text',
@@ -104,7 +106,7 @@ describe('ReferenceContextManager', () => {
         fileName: 'test.txt'
       });
       
-      jest.spyOn(contentStorage, 'hasReference').mockResolvedValue(true);
+      vi.spyOn(contentStorage, 'hasReference').mockResolvedValue(true);
     });
 
     it('should display reference in card format', async () => {
@@ -139,7 +141,7 @@ describe('ReferenceContextManager', () => {
     });
 
     it('should handle invalid references', async () => {
-      jest.spyOn(contentStorage, 'hasReference').mockResolvedValue(false);
+      vi.spyOn(contentStorage, 'hasReference').mockResolvedValue(false);
       
       const result = await manager.displayReference(mockReference);
       
@@ -149,7 +151,7 @@ describe('ReferenceContextManager', () => {
     });
 
     it('should handle display errors', async () => {
-      jest.spyOn(contentStorage, 'hasReference').mockRejectedValue(new Error('Storage error'));
+      vi.spyOn(contentStorage, 'hasReference').mockRejectedValue(new Error('Storage error'));
       
       const result = await manager.displayReference(mockReference);
       
@@ -177,7 +179,7 @@ describe('ReferenceContextManager', () => {
     it('should validate active references', async () => {
       manager.addReference(mockReference);
       
-      jest.spyOn(contentStorage, 'hasReference').mockResolvedValue(true);
+      vi.spyOn(contentStorage, 'hasReference').mockResolvedValue(true);
       
       const result = await manager.validateReferences();
       
@@ -189,7 +191,7 @@ describe('ReferenceContextManager', () => {
     it('should remove invalid references', async () => {
       manager.addReference(mockReference);
       
-      jest.spyOn(contentStorage, 'hasReference').mockResolvedValue(false);
+      vi.spyOn(contentStorage, 'hasReference').mockResolvedValue(false);
       
       const result = await manager.validateReferences();
       
@@ -205,7 +207,7 @@ describe('ReferenceContextManager', () => {
     it('should handle validation errors', async () => {
       manager.addReference(mockReference);
       
-      jest.spyOn(contentStorage, 'hasReference').mockRejectedValue(new Error('Validation error'));
+      vi.spyOn(contentStorage, 'hasReference').mockRejectedValue(new Error('Validation error'));
       
       const result = await manager.validateReferences();
       
@@ -217,11 +219,11 @@ describe('ReferenceContextManager', () => {
 
   describe('Reference Cleanup', () => {
     beforeEach(() => {
-      jest.useFakeTimers();
+      vi.useFakeTimers();
     });
 
     afterEach(() => {
-      jest.useRealTimers();
+      vi.useRealTimers();
     });
 
     it('should cleanup old references based on age', () => {
@@ -230,11 +232,11 @@ describe('ReferenceContextManager', () => {
       
       manager.addReference(reference1);
       
-      jest.advanceTimersByTime(20 * 60 * 1000);
+      vi.advanceTimersByTime(20 * 60 * 1000);
       
       manager.addReference(reference2);
       
-      jest.advanceTimersByTime(15 * 60 * 1000);
+      vi.advanceTimersByTime(15 * 60 * 1000);
       
       const cleanedUp = manager.cleanupOldReferences(30 * 60 * 1000);
       expect(cleanedUp).toBe(1);
@@ -256,7 +258,7 @@ describe('ReferenceContextManager', () => {
     it('should update access time when getting references', () => {
       const contextId = manager.addReference(mockReference);
       
-      jest.advanceTimersByTime(10 * 60 * 1000);
+      vi.advanceTimersByTime(10 * 60 * 1000);
       
       manager.getReferenceByContextId(contextId);
       
