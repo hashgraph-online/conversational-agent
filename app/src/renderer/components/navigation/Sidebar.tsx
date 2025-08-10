@@ -47,9 +47,8 @@ const primaryNavItems: NavItem[] = [
     label: 'Agent Chat',
     icon: HiChatBubbleBottomCenterText,
     description: 'Interact with AI agents',
-    gradient: 'from-[#a679f0] to-[#5599fe]',
-    iconBg:
-      'from-purple-500/30 to-blue-500/30 dark:from-purple-400/40 dark:to-blue-400/40',
+    gradient: 'from-[#c89fff] to-[#a679f0]',
+    iconBg: 'from-[#c89fff] to-[#a679f0]',
   },
   {
     id: 'mcp',
@@ -57,9 +56,8 @@ const primaryNavItems: NavItem[] = [
     label: 'MCP Servers',
     icon: HiServerStack,
     description: 'Manage MCP connections',
-    gradient: 'from-[#48df7b] to-[#5599fe]',
-    iconBg:
-      'from-green-500/30 to-blue-500/30 dark:from-green-400/40 dark:to-blue-400/40',
+    gradient: 'from-[#5eef81] to-[#48df7b]',
+    iconBg: 'from-[#5eef81] to-[#48df7b]',
   },
   {
     id: 'plugins',
@@ -67,9 +65,8 @@ const primaryNavItems: NavItem[] = [
     label: 'Plugins',
     icon: HiPuzzlePiece,
     description: 'Extend functionality',
-    gradient: 'from-[#5599fe] to-[#a679f0]',
-    iconBg:
-      'from-blue-500/30 to-purple-500/30 dark:from-blue-400/40 dark:to-purple-400/40',
+    gradient: 'from-[#7eb9ff] to-[#5599fe]',
+    iconBg: 'from-[#7eb9ff] to-[#5599fe]',
   },
   {
     id: 'hcs10',
@@ -77,9 +74,8 @@ const primaryNavItems: NavItem[] = [
     label: 'My Profile',
     icon: HiUserCircle,
     description: 'Manage your profile',
-    gradient: 'from-[#a679f0] to-[#48df7b]',
-    iconBg:
-      'from-purple-500/30 to-green-500/30 dark:from-purple-400/40 dark:to-green-400/40',
+    gradient: 'from-[#6b73c1] to-[#5054a1]',
+    iconBg: 'from-[#6b73c1] to-[#5054a1]',
   },
 ];
 
@@ -91,7 +87,7 @@ const secondaryNavItems: NavItem[] = [
     icon: HiCog6Tooth,
     description: 'Configure your workspace',
     gradient: 'from-gray-500 to-gray-600',
-    iconBg: 'from-gray-500/20 to-gray-600/20',
+    iconBg: 'from-gray-500 to-gray-600',
   },
   {
     id: 'help',
@@ -100,7 +96,7 @@ const secondaryNavItems: NavItem[] = [
     icon: HiQuestionMarkCircle,
     description: 'Get support',
     gradient: 'from-blue-500 to-indigo-600',
-    iconBg: 'from-blue-500/20 to-indigo-600/20',
+    iconBg: 'from-blue-500 to-indigo-600',
   },
   {
     id: 'acknowledgements',
@@ -109,7 +105,7 @@ const secondaryNavItems: NavItem[] = [
     icon: HiHeart,
     description: 'Credits & licenses',
     gradient: 'from-pink-500 to-rose-600',
-    iconBg: 'from-pink-500/20 to-rose-600/20',
+    iconBg: 'from-pink-500 to-rose-600',
   },
 ];
 
@@ -147,7 +143,8 @@ const SidebarContent: React.FC<SidebarProps & { location: any }> = ({
         >
           <div
             className={cn(
-              'w-10 h-10 rounded-lg flex items-center justify-center transition-all duration-200',
+              'rounded-lg flex items-center justify-center transition-all duration-200',
+              isCollapsed ? 'w-12 h-12' : 'w-10 h-10',
               `bg-gradient-to-br ${
                 item.iconBg ||
                 'from-gray-100/50 to-gray-200/50 dark:from-white/5 dark:to-white/10'
@@ -155,7 +152,7 @@ const SidebarContent: React.FC<SidebarProps & { location: any }> = ({
               'group-hover:scale-110 group-hover:shadow-lg'
             )}
           >
-            <Icon className='w-5 h-5 text-gray-600 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white transition-all duration-300' />
+            <Icon className='w-5 h-5 text-white transition-all duration-300' />
           </div>
 
           {!isCollapsed && (
@@ -194,8 +191,9 @@ const SidebarContent: React.FC<SidebarProps & { location: any }> = ({
 
         <div
           className={cn(
-            'relative w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300 sparkle-hover',
+            'relative rounded-xl flex items-center justify-center transition-all duration-300',
             'before:absolute before:inset-0 before:rounded-xl before:opacity-0 before:transition-opacity before:duration-300',
+            isCollapsed ? 'w-12 h-12' : 'w-10 h-10',
             active
               ? `before:opacity-100 before:bg-gradient-to-br ${
                   item.gradient || 'from-[#5599fe] to-[#a679f0]'

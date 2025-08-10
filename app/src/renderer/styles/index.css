@@ -49,6 +49,30 @@
     transition-duration: 0.3s;
   }
   
+  /* Custom text selection styles for better visibility */
+  ::selection {
+    background-color: rgba(85, 153, 254, 0.3);
+    color: inherit;
+  }
+  
+  ::-moz-selection {
+    background-color: rgba(85, 153, 254, 0.3);
+    color: inherit;
+  }
+  
+  /* Selection styles for blue message bubbles */
+  .bg-blue-500 ::selection,
+  .bg-blue-500::selection {
+    background-color: rgba(255, 255, 255, 0.4) !important;
+    color: #ffffff !important;
+  }
+  
+  .bg-blue-500 ::-moz-selection,
+  .bg-blue-500::-moz-selection {
+    background-color: rgba(255, 255, 255, 0.4) !important;
+    color: #ffffff !important;
+  }
+  
   /* Special handling for backdrop filters and transforms */
   .backdrop-blur-sm, .backdrop-blur, .backdrop-blur-md, .backdrop-blur-lg, .backdrop-blur-xl {
     transition-property: backdrop-filter, background-color, border-color;

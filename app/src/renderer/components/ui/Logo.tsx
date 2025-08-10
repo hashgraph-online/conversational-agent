@@ -5,13 +5,14 @@ interface LogoProps {
   className?: string
   showText?: boolean
   size?: 'sm' | 'md' | 'lg'
+  variant?: 'default' | 'white'
 }
 
 /**
  * Logo component that handles light/dark mode theme switching
  * Uses separate logo files for light and dark modes for proper branding
  */
-const Logo: React.FC<LogoProps> = ({ className, showText = true, size = 'md' }) => {
+const Logo: React.FC<LogoProps> = ({ className, showText = true, size = 'md', variant = 'default' }) => {
   const [isDarkMode, setIsDarkMode] = useState(false)
 
   useEffect(() => {
@@ -45,21 +46,29 @@ const Logo: React.FC<LogoProps> = ({ className, showText = true, size = 'md' }) 
     lg: 'text-lg'
   }
 
-  const logoSrc = isDarkMode 
+  const logoSrc = variant === 'white' 
     ? '/src/renderer/assets/images/logos/logo-dark.png'
-    : '/src/renderer/assets/images/logos/logo-light.png'
+    : (isDarkMode 
+      ? '/src/renderer/assets/images/logos/logo-dark.png'
+      : '/src/renderer/assets/images/logos/logo-light.png')
+
+  const filterStyle = variant === 'white' 
+    ? { filter: 'brightness(0) invert(1)' }
+    : { filter: 'brightness(0) saturate(100%) invert(42%) sepia(93%) saturate(1352%) hue-rotate(196deg) brightness(102%) contrast(96%)' }
 
   return (
-    <div className={cn('flex items-center gap-2', className)}>
+    <div className={cn('flex items-center justify-center', showText && 'gap-2', className)}>
       <img
         src={logoSrc}
         alt="Hashgraph Online"
         className={cn(
           sizeClasses[size],
           'transition-all duration-200',
-          'object-contain'
+          'object-contain',
+          'w-auto',
+          'mx-auto'
         )}
-        style={{ filter: 'brightness(0) saturate(100%) invert(42%) sepia(93%) saturate(1352%) hue-rotate(196deg) brightness(102%) contrast(96%)' }}
+        style={filterStyle}
       />
       {showText && (
         <span className={cn(

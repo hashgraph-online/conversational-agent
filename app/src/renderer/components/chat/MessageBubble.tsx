@@ -1,8 +1,9 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import Typography from '../ui/Typography';
 import type { Message } from '../../stores/agentStore';
-import { FiUser, FiCpu, FiHash, FiClock } from 'react-icons/fi';
+import { FiUser, FiCpu, FiHash, FiClock, FiCopy, FiCheck, FiMaximize2, FiX } from 'react-icons/fi';
 import { cn } from '../../lib/utils';
+import Logo from '../ui/Logo';
 import { TransactionDisplay } from './TransactionDisplay';
 import { TransactionApprovalButton } from './TransactionApprovalButton';
 import { useNotificationStore } from '../../stores/notificationStore';
@@ -65,6 +66,9 @@ function cleanMessageContent(content: string): string {
 const MessageBubble: React.FC<MessageBubbleProps> = ({ message, userProfile }) => {
   const isUser = message.role === 'user';
   const isSystem = message.role === 'system';
+  const [isHovered, setIsHovered] = useState(false);
+  const [isCopied, setIsCopied] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const addNotification = useNotificationStore(
     (state) => state.addNotification
   );
@@ -122,6 +126,36 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, userProfile }) =
   const processMarkdown = (text: string) => {
     let processed = text;
 
+    // Process math equations first (before other markdown)
+    // LaTeX display math blocks \[...\]
+    processed = processed.replace(/\\\[([\s\S]*?)\\\]/g, (_, math) => {
+      const cleanMath = math.trim()
+        .replace(/\\text\{([^}]+)\}/g, '$1')  // Convert \text{} to plain text
+        .replace(/\\,/g, ' ')  // Replace \, with space
+        .replace(/\\/g, '');   // Remove remaining backslashes
+      return `<div class="math-display my-3 p-3 bg-white/10 dark:bg-gray-800/50 rounded-lg overflow-x-auto border border-white/20"><code class="text-sm font-mono text-white">${cleanMath}</code></div>`;
+    });
+
+    // LaTeX inline math \(...\)
+    processed = processed.replace(/\\\(([\s\S]*?)\\\)/g, (_, math) => {
+      const cleanMath = math.trim()
+        .replace(/\\text\{([^}]+)\}/g, '$1')
+        .replace(/\\,/g, ' ')
+        .replace(/\\/g, '');
+      return `<code class="inline-math px-1.5 py-0.5 bg-white/10 dark:bg-gray-800/50 rounded font-mono text-sm text-white">${cleanMath}</code>`;
+    });
+
+    // Display math ($$...$$)
+    processed = processed.replace(/\$\$([^$]+)\$\$/g, (_, math) => {
+      return `<div class="math-display my-3 p-3 bg-white/10 dark:bg-gray-800/50 rounded-lg overflow-x-auto border border-white/20"><code class="text-sm font-mono text-white">${math.trim()}</code></div>`;
+    });
+
+    // Inline math ($...$)
+    processed = processed.replace(/\$([^$]+)\$/g, (_, math) => {
+      return `<code class="inline-math px-1.5 py-0.5 bg-white/10 dark:bg-gray-800/50 rounded font-mono text-sm text-white">${math}</code>`;
+    });
+
+    // Code blocks
     processed = processed.replace(/`([^`]+)`/g, (_, code) => {
       return `<code class="inline-code-style">${code}</code>`;
     });
@@ -137,6 +171,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, userProfile }) =
       '<a href="$2" target="_blank" rel="noopener noreferrer" class="underline text-white hover:text-blue-100 font-semibold">$1</a>'
     );
 
+    processed = processed.replace(/^#### (.*$)/gm, '<h4 class="text-base font-bold mt-3 mb-2">$1</h4>');
     processed = processed.replace(/^### (.*$)/gm, '<h3 class="text-lg font-bold mt-4 mb-2">$1</h3>');
     processed = processed.replace(/^## (.*$)/gm, '<h2 class="text-xl font-bold mt-4 mb-2">$1</h2>');
     processed = processed.replace(/^# (.*$)/gm, '<h1 class="text-2xl font-bold mt-4 mb-2">$1</h1>');
@@ -160,6 +195,22 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, userProfile }) =
     }).format(timestamp);
   };
 
+  const handleCopyMessage = async () => {
+    try {
+      // Get clean text content without markdown/HTML
+      const cleanContent = cleanMessageContent(message.content);
+      await navigator.clipboard.writeText(cleanContent);
+      setIsCopied(true);
+      
+      // Reset copied state after 2 seconds
+      setTimeout(() => {
+        setIsCopied(false);
+      }, 2000);
+    } catch (error) {
+      console.error('Failed to copy message:', error);
+    }
+  };
+
   if (isSystem) {
     return (
       <div
@@ -177,7 +228,91 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, userProfile }) =
   }
 
   return (
-    <div
+    <>
+      {/* Fullscreen Modal */}
+      {isFullscreen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="relative w-full max-w-4xl max-h-[90vh] bg-white dark:bg-gray-900 rounded-xl shadow-2xl flex flex-col">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-800">
+              <div className="flex items-center gap-3">
+                <div className={cn(
+                  "w-8 h-8 rounded-full flex items-center justify-center",
+                  isUser ? "bg-gray-300 dark:bg-gray-600" : "bg-blue-500 dark:bg-[#a679f0]"
+                )}>
+                  {isUser ? (
+                    <FiUser className="w-4 h-4 text-gray-700 dark:text-white" />
+                  ) : (
+                    <Logo showText={false} size="sm" variant="white" className="w-5 h-5" />
+                  )}
+                </div>
+                <Typography variant="h6" className="font-medium">
+                  {isUser ? 'You' : 'Assistant'}
+                </Typography>
+                <Typography variant="caption" color="muted">
+                  {formatTime(message.timestamp)}
+                </Typography>
+              </div>
+              <button
+                onClick={() => setIsFullscreen(false)}
+                className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-gray-700 dark:text-gray-300"
+                aria-label="Close fullscreen"
+              >
+                <FiX className="w-5 h-5" />
+              </button>
+            </div>
+            
+            {/* Modal Content */}
+            <div className="flex-1 overflow-y-auto p-6">
+              <div className="prose prose-sm dark:prose-invert max-w-none">
+                {contentParts.map((part, index) => {
+                  if (part.type === 'code') {
+                    return (
+                      <CodeBlock
+                        key={`code-${index}`}
+                        code={part.content}
+                        language={part.language}
+                        showLineNumbers
+                        className='my-4'
+                      />
+                    );
+                  }
+                  
+                  return (
+                    <div
+                      key={`text-${index}`}
+                      className='text-sm text-gray-900 dark:text-gray-100 select-text [&_.inline-code-style]:bg-gray-200 [&_.inline-code-style]:dark:bg-gray-700 [&_.inline-code-style]:px-1.5 [&_.inline-code-style]:py-0.5 [&_.inline-code-style]:rounded [&_.inline-code-style]:font-mono [&_.inline-code-style]:text-xs'
+                      dangerouslySetInnerHTML={{ __html: processMarkdown(part.content) }}
+                    />
+                  );
+                })}
+              </div>
+            </div>
+            
+            {/* Modal Footer */}
+            <div className="flex justify-end gap-2 p-4 border-t border-gray-200 dark:border-gray-800">
+              <button
+                onClick={handleCopyMessage}
+                className="px-4 py-2 text-sm rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors flex items-center gap-2"
+              >
+                {isCopied ? (
+                  <>
+                    <FiCheck className="w-4 h-4" />
+                    Copied
+                  </>
+                ) : (
+                  <>
+                    <FiCopy className="w-4 h-4" />
+                    Copy
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      <div
       className={cn(
         'flex w-full',
         isUser ? 'justify-end' : 'justify-start'
@@ -186,6 +321,8 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, userProfile }) =
       aria-label={`${isUser ? 'User' : 'Assistant'} message at ${formatTime(
         message.timestamp
       )}`}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
     >
       <div
         className={cn(
@@ -211,7 +348,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, userProfile }) =
               'avatar-fallback flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center',
               isUser
                 ? 'bg-gray-300 dark:bg-gray-600'
-                : 'bg-blue-500',
+                : 'bg-blue-500 dark:bg-[#a679f0]',
               isUser && userProfile?.profileImage ? 'hidden' : ''
             )}
             aria-hidden='true'
@@ -225,7 +362,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, userProfile }) =
                 <FiUser className='w-4 h-4 text-gray-700 dark:text-white' />
               )
             ) : (
-              <FiCpu className='w-4 h-4 text-white' />
+              <Logo showText={false} size="sm" variant="white" className="w-5 h-5" />
             )}
           </div>
         </div>
@@ -238,12 +375,55 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, userProfile }) =
         >
           <div
             className={cn(
-              'px-4 py-3 rounded-2xl shadow-sm',
+              'px-4 py-3 rounded-2xl shadow-xs select-text relative group',
               isUser
-                ? 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white rounded-tr-md'
-                : 'bg-blue-500 text-white rounded-tl-md'
+                ? 'bg-white dark:bg-gray-800 border border-gray-200/50 dark:border-gray-700/50 text-gray-900 dark:text-white rounded-tr-md'
+                : 'bg-gradient-to-br from-blue-500 to-blue-500/90 dark:from-[#a679f0] dark:to-[#9568df] text-white rounded-tl-md shadow-blue-500/10'
             )}
+            style={!isUser ? {
+              WebkitUserSelect: 'text',
+              userSelect: 'text'
+            } : undefined}
           >
+            {/* Action buttons */}
+            <div className={cn(
+              "absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-all duration-200"
+            )}>
+              {/* Expand button - only show for longer messages */}
+              {contentParts.some(part => part.content.length > 500) && (
+                <button
+                  onClick={() => setIsFullscreen(true)}
+                  className={cn(
+                    'p-1.5 rounded-md transition-all duration-200',
+                    isUser 
+                      ? 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                      : 'bg-white/10 text-white/70 hover:bg-white/20 hover:text-white'
+                  )}
+                  title="Expand message"
+                >
+                  <FiMaximize2 className="w-3.5 h-3.5" />
+                </button>
+              )}
+              
+              {/* Copy button */}
+              <button
+                onClick={handleCopyMessage}
+                className={cn(
+                  'p-1.5 rounded-md transition-all duration-200',
+                  isUser 
+                    ? 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                    : 'bg-white/10 text-white/70 hover:bg-white/20 hover:text-white'
+                )}
+                title={isCopied ? 'Copied!' : 'Copy message'}
+              >
+                {isCopied ? (
+                  <FiCheck className="w-3.5 h-3.5" />
+                ) : (
+                  <FiCopy className="w-3.5 h-3.5" />
+                )}
+              </button>
+            </div>
+            
             <div className={contentParts.length > 1 ? 'space-y-2' : ''}>
               {contentParts.map((part, index) => {
                 if (part.type === 'code') {
@@ -262,7 +442,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, userProfile }) =
                   return (
                     <span
                       key={`text-${index}`}
-                      className='whitespace-pre-wrap break-words text-gray-900 dark:text-white'
+                      className='whitespace-pre-wrap break-words text-gray-900 dark:text-white select-text cursor-text text-sm'
                     >
                       {part.content}
                     </span>
@@ -272,7 +452,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, userProfile }) =
                 return (
                   <div
                     key={`text-${index}`}
-                    className='prose prose-sm dark:prose-invert max-w-none prose-p:my-1 prose-headings:my-2 prose-ul:my-1 prose-li:my-0 [&_.inline-code-style]:bg-gray-200 [&_.inline-code-style]:dark:bg-gray-700 [&_.inline-code-style]:px-1.5 [&_.inline-code-style]:py-0.5 [&_.inline-code-style]:rounded [&_.inline-code-style]:font-mono [&_.inline-code-style]:text-xs'
+                    className='prose prose-sm dark:prose-invert max-w-none prose-p:my-1 prose-headings:my-2 prose-ul:my-1 prose-li:my-0 select-text cursor-text text-sm [&_.inline-code-style]:bg-gray-200 [&_.inline-code-style]:dark:bg-gray-700 [&_.inline-code-style]:px-1.5 [&_.inline-code-style]:py-0.5 [&_.inline-code-style]:rounded [&_.inline-code-style]:font-mono [&_.inline-code-style]:text-xs'
                     dangerouslySetInnerHTML={{ __html: processMarkdown(part.content) }}
                   />
                 );
@@ -282,8 +462,9 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, userProfile }) =
 
           <div
             className={cn(
-              'flex items-center space-x-2 px-2',
-              isUser ? 'flex-row-reverse space-x-reverse' : 'flex-row'
+              'flex items-center space-x-2 px-2 transition-opacity duration-200',
+              isUser ? 'flex-row-reverse space-x-reverse' : 'flex-row',
+              isHovered ? 'opacity-100' : 'opacity-0'
             )}
           >
             <div className='flex items-center space-x-1'>
@@ -398,6 +579,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, userProfile }) =
         </div>
       </div>
     </div>
+    </>
   );
 };
 

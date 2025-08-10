@@ -33,8 +33,8 @@ const dashboardCards: DashboardCard[] = [
     label: 'Agent Chat',
     icon: HiChatBubbleBottomCenterText,
     description: 'Have conversations with your AI assistant powered by advanced language models',
-    gradient: 'from-[#a679f0] to-[#5599fe]',
-    iconBg: 'from-[#a679f0] to-[#5599fe]',
+    gradient: 'from-[#c89fff] to-[#a679f0]',
+    iconBg: 'from-[#c89fff] to-[#a679f0]',
     category: 'primary',
   },
   {
@@ -43,8 +43,8 @@ const dashboardCards: DashboardCard[] = [
     label: 'MCP Servers',
     icon: HiServerStack,
     description: 'Connect and manage extensions that give your assistant new capabilities',
-    gradient: 'from-[#48df7b] to-[#5599fe]',
-    iconBg: 'from-[#48df7b] to-[#5599fe]',
+    gradient: 'from-[#5eef81] to-[#48df7b]',
+    iconBg: 'from-[#5eef81] to-[#48df7b]',
     category: 'primary',
   },
   {
@@ -53,8 +53,8 @@ const dashboardCards: DashboardCard[] = [
     label: 'Plugins',
     icon: HiPuzzlePiece,
     description: 'Browse and install plugins to extend functionality and add new features',
-    gradient: 'from-[#5599fe] to-[#a679f0]',
-    iconBg: 'from-[#5599fe] to-[#a679f0]',
+    gradient: 'from-[#7eb9ff] to-[#5599fe]',
+    iconBg: 'from-[#7eb9ff] to-[#5599fe]',
     category: 'primary',
   },
   {
@@ -63,8 +63,8 @@ const dashboardCards: DashboardCard[] = [
     label: 'My Profile',
     icon: HiUserCircle,
     description: 'Manage your Hedera profile and customize your identity on the network',
-    gradient: 'from-[#a679f0] to-[#48df7b]',
-    iconBg: 'from-[#a679f0] to-[#48df7b]',
+    gradient: 'from-[#6b73c1] to-[#5054a1]',
+    iconBg: 'from-[#6b73c1] to-[#5054a1]',
     category: 'primary',
   },
   {
@@ -263,10 +263,6 @@ const DashboardPage: React.FC = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
           >
-            <Typography variant="h6" className="font-semibold mb-4 text-gray-700 dark:text-gray-300">
-              Core Features
-            </Typography>
-            
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {primaryCards.map((card, index) => {
                 const Icon = card.icon;
@@ -324,11 +320,11 @@ const DashboardPage: React.FC = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.3 }}
           >
-            <Typography variant="h6" className="font-semibold mb-4 text-gray-700 dark:text-gray-300">
+            <Typography variant="h6" className="font-semibold mb-4 text-gray-700 dark:text-gray-300 text-center">
               Resources & Support
             </Typography>
             
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
               {secondaryCards.map((card, index) => {
                 const Icon = card.icon;
                 
@@ -353,14 +349,14 @@ const DashboardPage: React.FC = () => {
                         </div>
                         
                         <div className="flex-1 min-w-0">
-                          <Typography variant="body1" className="font-semibold mb-1 flex items-center gap-2">
+                          <div className="font-semibold flex items-center gap-2 text-xs sm:text-sm md:text-base font-normal text-gray-900 dark:text-white">
                             {card.label}
                             <HiArrowRight className="w-3 h-3 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300" />
-                          </Typography>
+                          </div>
                           
-                          <Typography variant="caption" color="muted" className="line-clamp-2">
+                          <div className="text-xs font-normal text-gray-600 dark:text-gray-400 line-clamp-2">
                             {card.description}
-                          </Typography>
+                          </div>
                         </div>
                       </div>
                     </div>

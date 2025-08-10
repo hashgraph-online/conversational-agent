@@ -1,30 +1,44 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Alert, AlertDescription } from '../ui/alert';
 import { Button } from '../ui/Button';
-import { FiInfo, FiExternalLink } from 'react-icons/fi';
+import { FiInfo, FiExternalLink, FiX } from 'react-icons/fi';
 import { LegalDisclaimerModal } from './LegalDisclaimerModal';
 
 export const Disclaimer: React.FC = () => {
+  const [isVisible, setIsVisible] = useState(true);
+
+  if (!isVisible) {
+    return null;
+  }
+
   return (
-    <Alert className="border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-900/50">
+    <Alert className="border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-900/50 relative">
       <FiInfo className="h-4 w-4 text-gray-600 dark:text-gray-400" />
       <AlertDescription className="text-xs text-gray-600 dark:text-gray-400">
         <div className="flex items-start justify-between gap-3">
-          <div>
-            <strong>Important Disclaimer:</strong> This AI assistant provides information and executes transactions on the Hedera network. 
-            Always verify transaction details before approval. Cryptocurrency transactions are irreversible. 
-            This tool is for informational purposes and should not be considered financial advice. 
-            Use at your own risk. Never share your private keys.
+          <div className="pr-6">
+            <strong>Disclaimer:</strong> This AI assistant operates on the Hedera network. Verify all details before approval — transactions are irreversible. This is not financial advice. Use at your own risk and never share private keys.
           </div>
-          <LegalDisclaimerModal>
+          <div className="flex items-center gap-1">
+            <LegalDisclaimerModal>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-auto p-1 text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 shrink-0"
+              >
+                Full Terms <FiExternalLink className="w-3 h-3 ml-1" />
+              </Button>
+            </LegalDisclaimerModal>
             <Button
               variant="ghost"
               size="sm"
-              className="h-auto p-1 text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 shrink-0"
+              onClick={() => setIsVisible(false)}
+              className="h-6 w-6 p-0 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 shrink-0"
+              aria-label="Close disclaimer"
             >
-              Full Terms <FiExternalLink className="w-3 h-3 ml-1" />
+              <FiX className="w-3.5 h-3.5" />
             </Button>
-          </LegalDisclaimerModal>
+          </div>
         </div>
       </AlertDescription>
     </Alert>

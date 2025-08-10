@@ -1,22 +1,19 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import Typography from '../components/ui/Typography';
-import { Button } from '../components/ui/Button';
-import { Badge } from '../components/ui/badge';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '../components/ui/tooltip';
-import { Alert, AlertDescription } from '../components/ui/alert';
-import { useAgentStore } from '../stores/agentStore';
-import { useConfigStore } from '../stores/configStore';
-import { HCS10Client } from '@hashgraphonline/standards-sdk';
-import {
-  FiSettings,
-  FiRefreshCw,
-  FiSend,
+import React, { useEffect, useState, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { motion, AnimatePresence } from 'framer-motion'
+import Typography from '../components/ui/Typography'
+import Logo from '../components/ui/Logo'
+import { Button } from '../components/ui/Button'
+import { Badge } from '../components/ui/badge'
+import { Tooltip, TooltipContent, TooltipTrigger } from '../components/ui/tooltip'
+import { Alert, AlertDescription } from '../components/ui/alert'
+import { useAgentStore } from '../stores/agentStore'
+import { useConfigStore } from '../stores/configStore'
+import { HCS10Client } from '@hashgraphonline/standards-sdk'
+import { 
+  FiSettings, 
+  FiRefreshCw, 
+  FiSend, 
   FiMessageSquare,
   FiZap,
   FiWifi,
@@ -49,6 +46,109 @@ interface UserProfile {
     model?: string;
     creator?: string;
   };
+}
+
+// Animated suggestion card component
+const AnimatedSuggestionCard: React.FC<{ setInputValue: (value: string) => void }> = ({ setInputValue }) => {
+  const [currentIndex, setCurrentIndex] = useState(0)
+  const [displayText, setDisplayText] = useState('')
+  const [isTyping, setIsTyping] = useState(true)
+  
+  const suggestions = [
+    { icon: FiCpu, text: "Inscribe this poem...", color: 'from-purple-500/70 to-purple-600/70' },
+    { icon: FiCode, text: "What's the price of HBAR?", color: 'from-blue-500/70 to-blue-600/70' },
+    { icon: FiShield, text: "Send 1 HBAR to 0.0.800", color: 'from-green-500/70 to-green-600/70' },
+    { icon: FiMessageSquare, text: "Create an NFT collection", color: 'from-indigo-500/70 to-indigo-600/70' }
+  ]
+  
+  const currentSuggestion = suggestions[currentIndex]
+  const Icon = currentSuggestion.icon
+  
+  // Typing animation effect
+  useEffect(() => {
+    const targetText = currentSuggestion.text
+    let currentText = ''
+    let charIndex = 0
+    
+    setIsTyping(true)
+    setDisplayText('')
+    
+    const typingInterval = setInterval(() => {
+      if (charIndex < targetText.length) {
+        currentText += targetText[charIndex]
+        setDisplayText(currentText)
+        charIndex++
+      } else {
+        clearInterval(typingInterval)
+        setIsTyping(false)
+      }
+    }, 50)
+    
+    return () => clearInterval(typingInterval)
+  }, [currentIndex, currentSuggestion.text])
+  
+  // Auto-advance to next suggestion
+  useEffect(() => {
+    if (!isTyping) {
+      const timer = setTimeout(() => {
+        setCurrentIndex((prev) => (prev + 1) % suggestions.length)
+      }, 3000)
+      
+      return () => clearTimeout(timer)
+    }
+  }, [isTyping, suggestions.length])
+  
+  return (
+    <div className="mt-8 flex flex-col items-center gap-4">
+      <Typography variant="caption" color="muted" className="text-xs uppercase tracking-wider">
+        Try asking
+      </Typography>
+      
+      <motion.button
+        key={currentIndex}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        whileHover={{ scale: 1.01 }}
+        whileTap={{ scale: 0.99 }}
+        onClick={() => setInputValue(currentSuggestion.text)}
+        className="relative px-6 py-5 bg-white/80 dark:bg-gray-900/50 backdrop-blur-sm rounded-2xl border border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700 hover:shadow-xl transition-all min-w-[320px] max-w-md group"
+      >
+        <div className="flex items-center gap-4">
+          {/* Animated icon container with fade in/out */}
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={`icon-${currentIndex}`}
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              transition={{ duration: 0.8, ease: "easeInOut" }}
+              className={cn(
+                "w-10 h-10 rounded-lg bg-gradient-to-br flex items-center justify-center shadow-lg flex-shrink-0",
+                currentSuggestion.color
+              )}
+            >
+              <Icon className="w-5 h-5 text-white" />
+            </motion.div>
+          </AnimatePresence>
+          
+          {/* Text with typing animation - properly centered */}
+          <div className="flex-1 text-left">
+            <Typography variant="body1" className="text-gray-900 dark:text-white font-medium leading-tight">
+              {displayText}
+              {isTyping && (
+                <motion.span
+                  animate={{ opacity: [1, 0] }}
+                  transition={{ duration: 0.5, repeat: Infinity }}
+                  className="inline-block w-0.5 h-4 bg-gray-600 dark:bg-gray-400 ml-0.5 align-middle"
+                />
+              )}
+            </Typography>
+          </div>
+        </div>
+      </motion.button>
+    </div>
+  )
 }
 
 const ChatPage: React.FC<ChatPageProps> = () => {
@@ -455,207 +555,183 @@ const ChatPage: React.FC<ChatPageProps> = () => {
   }
 
   return (
-    <div
-      className='flex flex-col bg-gray-50 dark:bg-gray-950 relative -m-6'
-      style={{ height: 'calc(100vh - 4rem)' }}
-    >
-      <div className='absolute inset-0 opacity-[0.005] dark:opacity-[0.01] pointer-events-none'>
+    <div className="flex flex-col bg-gradient-to-br from-gray-50/95 via-white/90 to-gray-100/95 dark:from-gray-950/98 dark:via-gray-900/95 dark:to-gray-800/98 relative h-full">
+      {/* Enhanced luxurious animated background */}
+      <div className="absolute inset-0 opacity-[0.03] dark:opacity-[0.04] pointer-events-none">
         <motion.div
           className='absolute inset-0'
           animate={{
             backgroundPosition: ['0% 0%', '100% 100%'],
           }}
           transition={{
-            duration: 30,
+            duration: 50,
             repeat: Infinity,
             repeatType: 'reverse',
+            ease: "easeInOut"
           }}
           style={{
-            backgroundImage: `repeating-linear-gradient(45deg, transparent, transparent 35px, rgba(85, 153, 254, 0.05) 35px, rgba(85, 153, 254, 0.05) 70px)`,
-            backgroundSize: '200% 200%',
+            backgroundImage: `
+              repeating-linear-gradient(45deg, transparent, transparent 80px, rgba(166, 121, 240, 0.08) 80px, rgba(166, 121, 240, 0.08) 160px),
+              repeating-linear-gradient(-45deg, transparent, transparent 100px, rgba(85, 153, 254, 0.06) 100px, rgba(85, 153, 254, 0.06) 200px),
+              repeating-linear-gradient(135deg, transparent, transparent 120px, rgba(94, 239, 129, 0.04) 120px, rgba(94, 239, 129, 0.04) 240px)
+            `,
+            backgroundSize: '500% 500%',
           }}
         />
       </div>
-      <header className='h-16 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border-b border-gray-200 dark:border-gray-800 flex items-center justify-between px-6 relative z-10'>
-        <div className='flex items-center gap-4'>
-          <div className='flex items-center gap-3'>
-            <motion.div
-              className='w-10 h-10 bg-gradient-to-br from-[#a679f0]/80 to-[#5599fe]/80 rounded-xl flex items-center justify-center shadow-sm'
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              <FiZap className='w-5 h-5 text-white' />
-            </motion.div>
-            <div>
-              <Typography variant='h6' className='font-bold'>
-                Your Assistant
+      
+      {/* Premium gradient overlay with depth */}
+      <div className="absolute inset-0 bg-gradient-to-br from-white/30 via-transparent to-gray-50/20 dark:from-gray-950/40 dark:via-transparent dark:to-gray-900/30 pointer-events-none" />
+      <div className="absolute inset-0 bg-gradient-to-t from-transparent via-white/10 to-transparent dark:from-transparent dark:via-gray-900/10 dark:to-transparent pointer-events-none" />
+      <header className="h-14 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border-b border-gray-200/30 dark:border-gray-800/30 flex items-center justify-between px-8 lg:px-16 xl:px-24 2xl:px-32 relative z-10 gap-6 shadow-sm shadow-gray-200/10 dark:shadow-gray-900/20">
+        <div className="max-w-6xl mx-auto w-full flex items-center justify-between gap-6">
+          <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
+            <div className="flex items-center gap-2">
+              <motion.div 
+                className={cn(
+                  "w-2.5 h-2.5 rounded-full",
+                  isConnected ? "bg-[#48df7b]" : "bg-gray-400"
+                )}
+                animate={isConnected ? { scale: [1, 1.2, 1] } : {}}
+                transition={{ duration: 2, repeat: Infinity }}
+              />
+              <Typography variant="caption" color="muted" className="font-medium">
+                {status === 'connected' ? 'Online' : status}
               </Typography>
-              <div className='flex items-center gap-2'>
-                <div
-                  className={cn(
-                    'w-2 h-2 rounded-full',
-                    isConnected ? 'bg-[#48df7b]' : 'bg-gray-400'
-                  )}
-                />
-                <Typography variant='caption' color='muted'>
-                  {status === 'connected' ? 'Online' : status}
-                </Typography>
-              </div>
             </div>
           </div>
-        </div>
-
-        <div className='flex items-center gap-3'>
-          <ModeToggle
-            mode={operationalMode}
-            onChange={async (mode) => {
-              try {
-                await setOperationalMode(mode);
-              } catch (error) {}
-            }}
-            disabled={status === 'connecting' || status === 'disconnecting'}
-          />
-
-          <div className='h-6 w-px bg-gray-300 dark:bg-gray-700' />
-
+        
+        <div className="flex items-center gap-3 sm:gap-4 flex-shrink-0">
+          <div className="hidden lg:block">
+            <ModeToggle
+              mode={operationalMode}
+              onChange={async (mode) => {
+                try {
+                  await setOperationalMode(mode)
+                } catch (error) {
+                }
+              }}
+              disabled={status === 'connecting' || status === 'disconnecting'}
+            />
+          </div>
+          
+          <div className="hidden lg:block h-8 w-px bg-gray-300/60 dark:bg-gray-700/60" />
+          
           {config && (
             <>
-              <div className='flex items-center gap-2 px-3 py-2 bg-gray-100 dark:bg-gray-800 rounded-lg'>
+              <div className="flex items-center gap-2 px-2.5 py-1.5 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-lg border border-gray-200/40 dark:border-gray-700/40 shadow-sm text-sm">
                 {isConnected ? (
                   <FiWifi className='w-4 h-4 text-[#48df7b]' />
                 ) : (
                   <FiWifiOff className='w-4 h-4 text-gray-400' />
                 )}
-                <Typography variant='caption' className='font-medium'>
+                <Typography variant="caption" className="font-semibold hidden sm:inline">
                   {config.hedera?.network?.toUpperCase() || 'TESTNET'}
                 </Typography>
               </div>
-
-              <div className='flex items-center gap-2 px-3 py-2 bg-gray-100 dark:bg-gray-800 rounded-lg'>
-                <FiShield className='w-4 h-4 text-[#a679f0]' />
-                <Typography variant='caption' className='font-medium'>
-                  {config.hedera?.accountId || 'Not configured'}
+              
+              <div className="hidden sm:flex items-center gap-2 px-2.5 py-1.5 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-lg border border-gray-200/40 dark:border-gray-700/40 shadow-sm text-sm">
+                <FiShield className="w-4 h-4 text-[#a679f0]" />
+                <Typography variant="caption" className="font-semibold">
+                  {config.hedera?.accountId?.slice(-6) || 'Not configured'}
                 </Typography>
               </div>
             </>
           )}
+          </div>
         </div>
       </header>
 
       <div className='flex-1 overflow-y-auto relative min-h-0'>
         {messages.length === 0 ? (
-          <div className='h-full flex items-center justify-center p-8'>
-            <div className='text-center space-y-6 max-w-2xl relative z-10 pt-8'>
+          <div className="h-full flex items-center justify-center p-12 lg:p-16">
+            <div className="text-center space-y-8 max-w-3xl relative z-10 pt-12">
+              {/* Enhanced floating orbs */}
               <motion.div
-                className='absolute -top-10 -right-20 w-64 h-64 bg-[#a679f0]/5 rounded-full blur-3xl'
+                className="absolute -top-16 -right-24 w-80 h-80 bg-gradient-to-br from-[#a679f0]/8 to-[#5599fe]/6 rounded-full blur-3xl"
                 animate={{
-                  scale: [1, 1.1, 1],
-                  opacity: [0.05, 0.1, 0.05],
+                  scale: [1, 1.2, 1],
+                  opacity: [0.06, 0.12, 0.06],
+                  rotate: [0, 180, 360],
                 }}
                 transition={{
-                  duration: 6,
+                  duration: 8,
                   repeat: Infinity,
                   ease: 'easeInOut',
                 }}
               />
               <motion.div
-                className='absolute -bottom-10 -left-20 w-64 h-64 bg-[#48df7b]/5 rounded-full blur-3xl'
+                className="absolute -bottom-16 -left-24 w-80 h-80 bg-gradient-to-br from-[#48df7b]/8 to-[#5eef81]/6 rounded-full blur-3xl"
                 animate={{
-                  scale: [1.1, 1, 1.1],
-                  opacity: [0.05, 0.1, 0.05],
+                  scale: [1.2, 1, 1.2],
+                  opacity: [0.06, 0.12, 0.06],
+                  rotate: [360, 180, 0],
                 }}
                 transition={{
-                  duration: 6,
+                  duration: 8,
                   repeat: Infinity,
                   ease: 'easeInOut',
-                  delay: 3,
+                  delay: 4,
                 }}
               />
-
               <motion.div
-                className='w-16 h-16 bg-gradient-to-br from-[#a679f0]/70 to-[#5599fe]/70 rounded-2xl flex items-center justify-center mx-auto shadow-md'
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.5 }}
-                whileHover={{ scale: 1.05 }}
+                className="absolute top-1/3 -right-32 w-64 h-64 bg-gradient-to-br from-[#7eb9ff]/6 to-[#5599fe]/4 rounded-full blur-3xl"
+                animate={{
+                  scale: [1, 1.3, 1],
+                  opacity: [0.04, 0.08, 0.04],
+                  x: [0, 30, 0],
+                }}
+                transition={{
+                  duration: 10,
+                  repeat: Infinity,
+                  ease: 'easeInOut',
+                  delay: 2,
+                }}
+              />
+              
+              <motion.div 
+                className="w-20 h-20 bg-gradient-to-br from-[#a679f0]/90 to-[#5599fe]/90 rounded-3xl flex items-center justify-center mx-auto shadow-2xl shadow-purple-500/20 ring-1 ring-white/10"
+                initial={{ opacity: 0, scale: 0.8, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                transition={{ duration: 0.8, ease: "easeOut" }}
+                whileHover={{ 
+                  scale: 1.1, 
+                  shadow: "0 25px 50px rgba(166, 121, 240, 0.4)",
+                  transition: { duration: 0.3 }
+                }}
               >
-                <FiMessageSquare className='w-8 h-8 text-white' />
+                <FiMessageSquare className="w-10 h-10 text-white" />
               </motion.div>
-              <div className='space-y-3'>
-                <Typography
-                  variant='h4'
-                  className='font-bold text-gray-900 dark:text-white'
+              <div className="space-y-4">
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.8, delay: 0.2 }}
                 >
-                  Welcome to HashgraphOnline
-                </Typography>
-                <Typography variant='body1' color='muted'>
-                  I can help you with Hedera network operations, HCS-1
-                  inscriptions, HCS-20 ticks, account management, NFT minting,
-                  smart contracts, and more. Start by asking me a question or
-                  requesting help with a task.
-                </Typography>
+                  <Typography 
+                    variant="h3" 
+                    className="font-bold text-gray-900 dark:text-white text-3xl lg:text-4xl"
+                  >
+                    Welcome to HashgraphOnline
+                  </Typography>
+                </motion.div>
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.8, delay: 0.4 }}
+                >
+                  <Typography variant="body1" color="muted" className="text-lg leading-relaxed max-w-2xl mx-auto">
+                    I can help you with Hedera network operations, HCS-1 inscriptions, HCS-20 ticks, 
+                    account management, NFT minting, smart contracts, and more. Start by asking me a question or requesting help with a task.
+                  </Typography>
+                </motion.div>
               </div>
 
-              <div className='grid grid-cols-1 sm:grid-cols-2 gap-4 mt-8'>
-                {[
-                  {
-                    icon: FiCpu,
-                    text: 'Inscribe this poem',
-                    color: 'bg-purple-500/70',
-                  },
-                  {
-                    icon: FiCode,
-                    text: "What's the price of HBAR?",
-                    color: 'bg-blue-500/70',
-                  },
-                  {
-                    icon: FiShield,
-                    text: 'Send 1 HBAR to 0.0.800',
-                    color: 'bg-green-500/70',
-                  },
-                  {
-                    icon: FiMessageSquare,
-                    text: 'Create an NFT collection',
-                    color: 'bg-indigo-500/70',
-                  },
-                ].map((suggestion, index) => {
-                  const Icon = suggestion.icon;
-
-                  return (
-                    <motion.button
-                      key={index}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.5, delay: index * 0.1 }}
-                      whileHover={{ scale: 1.02, y: -1 }}
-                      whileTap={{ scale: 0.98 }}
-                      onClick={() => setInputValue(suggestion.text)}
-                      className='p-4 bg-white/80 dark:bg-gray-900/50 backdrop-blur-sm rounded-xl border border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700 hover:shadow-lg transition-all text-left group relative overflow-hidden'
-                    >
-                      <div className='relative'>
-                        <div
-                          className={cn(
-                            'w-10 h-10 rounded-lg flex items-center justify-center mb-3 shadow-sm group-hover:shadow-md transition-all duration-300',
-                            suggestion.color
-                          )}
-                        >
-                          <Icon className='w-5 h-5 text-white' />
-                        </div>
-                        <Typography
-                          variant='body2'
-                          className='text-gray-700 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white transition-colors duration-300'
-                        >
-                          {suggestion.text}
-                        </Typography>
-                      </div>
-                    </motion.button>
-                  );
-                })}
-              </div>
+              <AnimatedSuggestionCard setInputValue={setInputValue} />
             </div>
           </div>
         ) : (
-          <div className='py-6 pr-6 space-y-4'>
+          <div className="py-12 px-8 lg:px-16 xl:px-24 2xl:px-32 space-y-8 max-w-6xl mx-auto w-full">
             {messages.map((message) => (
               <MessageBubble
                 key={message.id}
@@ -671,41 +747,26 @@ const ChatPage: React.FC<ChatPageProps> = () => {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.3 }}
               >
-                <div className='bg-white/80 dark:bg-gray-900/50 backdrop-blur-sm border border-gray-200 dark:border-gray-800 rounded-2xl px-4 py-3 shadow-lg'>
-                  <div className='flex items-center gap-3'>
-                    <div className='flex gap-1'>
-                      <motion.div
-                        className='w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full'
-                        animate={{ y: [-3, 0, -3] }}
-                        transition={{
-                          duration: 0.6,
-                          repeat: Infinity,
-                          delay: 0,
-                        }}
+                <div className="bg-white/90 dark:bg-gray-900/70 backdrop-blur-md border border-gray-200/60 dark:border-gray-800/60 rounded-3xl px-6 py-4 shadow-xl shadow-gray-200/20 dark:shadow-gray-900/30">
+                  <div className="flex items-center gap-4">
+                    <div className="flex gap-1.5">
+                      <motion.div 
+                        className="w-2.5 h-2.5 bg-gradient-to-br from-[#a679f0] to-[#5599fe] rounded-full"
+                        animate={{ y: [-4, 0, -4] }}
+                        transition={{ duration: 0.8, repeat: Infinity, delay: 0, ease: "easeInOut" }}
                       />
-                      <motion.div
-                        className='w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full'
-                        animate={{ y: [-3, 0, -3] }}
-                        transition={{
-                          duration: 0.6,
-                          repeat: Infinity,
-                          delay: 0.15,
-                        }}
+                      <motion.div 
+                        className="w-2.5 h-2.5 bg-gradient-to-br from-[#5599fe] to-[#48df7b] rounded-full"
+                        animate={{ y: [-4, 0, -4] }}
+                        transition={{ duration: 0.8, repeat: Infinity, delay: 0.2, ease: "easeInOut" }}
                       />
-                      <motion.div
-                        className='w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full'
-                        animate={{ y: [-3, 0, -3] }}
-                        transition={{
-                          duration: 0.6,
-                          repeat: Infinity,
-                          delay: 0.3,
-                        }}
+                      <motion.div 
+                        className="w-2.5 h-2.5 bg-gradient-to-br from-[#48df7b] to-[#a679f0] rounded-full"
+                        animate={{ y: [-4, 0, -4] }}
+                        transition={{ duration: 0.8, repeat: Infinity, delay: 0.4, ease: "easeInOut" }}
                       />
                     </div>
-                    <Typography
-                      variant='caption'
-                      className='text-gray-600 dark:text-gray-400 font-medium'
-                    >
+                    <Typography variant="caption" className="text-gray-700 dark:text-gray-300 font-semibold tracking-wide">
                       Assistant is thinking...
                     </Typography>
                   </div>
@@ -718,153 +779,132 @@ const ChatPage: React.FC<ChatPageProps> = () => {
         )}
       </div>
 
-      <div className='border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 flex-shrink-0'>
-        <div className='px-4 pt-2'>
-          <Disclaimer />
+      {/* Input area fixed at bottom */}
+      <div className="border-t border-gray-200/30 dark:border-gray-800/30 bg-white/98 dark:bg-gray-900/98 backdrop-blur-2xl flex-shrink-0 shadow-2xl shadow-gray-200/10 dark:shadow-gray-900/30">
+        {/* Disclaimer */}
+        <div className="px-8 lg:px-16 xl:px-24 2xl:px-32 pt-4">
+          <div className="max-w-6xl mx-auto">
+            <Disclaimer />
+          </div>
         </div>
-
-        <div className='p-4 pt-0'>
-          <div className='max-w-4xl mx-auto'>
-            {fileError && (
-              <Alert className='mb-3 border-orange-200 bg-orange-50 dark:border-orange-800 dark:bg-orange-950/20'>
-                <FiAlertCircle className='h-4 w-4 text-orange-600 dark:text-orange-400' />
-                <AlertDescription className='text-orange-800 dark:text-orange-200'>
-                  {fileError}
-                </AlertDescription>
-              </Alert>
-            )}
-
-            {selectedFiles.length > 0 && (
-              <div className='mb-3 flex flex-wrap gap-2'>
-                {selectedFiles.map((file, index) => (
-                  <div
-                    key={index}
-                    className='inline-flex items-center gap-2 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-1.5 text-sm'
+        
+        <div className="px-8 lg:px-16 xl:px-24 2xl:px-32 pb-8 pt-3">
+        <div className="max-w-6xl mx-auto">
+          {fileError && (
+            <Alert className="mb-3 border-orange-200 bg-orange-50 dark:border-orange-800 dark:bg-orange-950/20">
+              <FiAlertCircle className="h-4 w-4 text-orange-600 dark:text-orange-400" />
+              <AlertDescription className="text-orange-800 dark:text-orange-200">
+                {fileError}
+              </AlertDescription>
+            </Alert>
+          )}
+          
+          {selectedFiles.length > 0 && (
+            <div className="mb-3 flex flex-wrap gap-2">
+              {selectedFiles.map((file, index) => (
+                <div
+                  key={index}
+                  className="inline-flex items-center gap-2 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-1.5 text-sm"
+                >
+                  <FiFile className="w-4 h-4 text-gray-600 dark:text-gray-400 flex-shrink-0" />
+                  <span className="truncate max-w-[200px] text-gray-900 dark:text-gray-100 font-medium">
+                    {file.name}
+                  </span>
+                  <span className="text-xs text-gray-600 dark:text-gray-400">
+                    ({file.size > 1024 * 1024 
+                      ? `${(file.size / (1024 * 1024)).toFixed(1)}MB`
+                      : `${(file.size / 1024).toFixed(1)}KB`
+                    })
+                  </span>
+                  <button
+                    onClick={() => handleRemoveFile(index)}
+                    className="ml-1 p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
+                    aria-label={`Remove ${file.name}`}
                   >
-                    <FiFile className='w-4 h-4 text-gray-600 dark:text-gray-400 flex-shrink-0' />
-                    <span className='truncate max-w-[200px] text-gray-900 dark:text-gray-100 font-medium'>
-                      {file.name}
-                    </span>
-                    <span className='text-xs text-gray-600 dark:text-gray-400'>
-                      (
-                      {file.size > 1024 * 1024
-                        ? `${(file.size / (1024 * 1024)).toFixed(1)}MB`
-                        : `${(file.size / 1024).toFixed(1)}KB`}
-                      )
-                    </span>
-                    <button
-                      onClick={() => handleRemoveFile(index)}
-                      className='ml-1 p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors'
-                      aria-label={`Remove ${file.name}`}
-                    >
-                      <FiX className='w-4 h-4' />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            <div className='flex gap-3 items-end'>
-              <div className='flex-1 relative'>
-                <textarea
-                  value={inputValue}
-                  onChange={(e) => setInputValue(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                      e.preventDefault();
-                      handleSendMessage();
-                    }
-                  }}
-                  placeholder={
-                    isConnected
-                      ? 'Type a message...'
-                      : 'Connect to start chatting...'
+                    <FiX className="w-4 h-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+          
+          <div className="flex gap-4 items-start">
+            <div className="flex-1 relative">
+              <textarea
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault()
+                    handleSendMessage()
                   }
-                  disabled={!isConnected || isSubmitting}
-                  rows={1}
-                  className={cn(
-                    'w-full px-4 py-3 pr-12 rounded-xl resize-none',
-                    'min-h-[48px] max-h-[200px]',
-                    'bg-gray-100 dark:bg-gray-800',
-                    'border border-gray-200 dark:border-gray-700',
-                    'focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500',
-                    'placeholder:text-gray-500 dark:placeholder:text-gray-400',
-                    'text-gray-900 dark:text-white',
-                    'transition-all duration-200',
-                    'disabled:opacity-50 disabled:cursor-not-allowed'
-                  )}
-                  style={{
-                    height: 'auto',
-                    overflowY:
-                      inputValue.split('\n').length > 4 ? 'auto' : 'hidden',
-                  }}
-                  onInput={(e) => {
-                    const target = e.target as HTMLTextAreaElement;
-                    target.style.height = 'auto';
-                    target.style.height =
-                      Math.min(target.scrollHeight, 200) + 'px';
-                  }}
-                />
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      onClick={handleFileButtonClick}
-                      disabled={!isConnected || isSubmitting}
-                      variant='ghost'
-                      size='icon'
-                      className='absolute right-2 bottom-2 h-8 w-8'
-                    >
-                      <FiPaperclip className='w-4 h-4' />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Attach files (max 10MB each)</p>
-                  </TooltipContent>
-                </Tooltip>
-              </div>
-              <Button
-                onClick={handleSendMessage}
-                disabled={
-                  !isConnected ||
-                  isSubmitting ||
-                  (!inputValue.trim() && selectedFiles.length === 0)
-                }
-                variant='default'
-                size='default'
-                className='px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white border-0 h-[48px]'
-              >
-                <FiSend className='w-4 h-4' />
-                Send
-              </Button>
-            </div>
-
-            <div className='mt-2 flex items-center justify-between'>
-              <Typography variant='caption' color='muted'>
-                Press Enter to send, Shift+Enter for new line • Click 📎 to add
-                files
-              </Typography>
-              <Typography
-                variant='caption'
-                color='muted'
+                }}
+                placeholder={isConnected ? "Type a message..." : "Connect to start chatting..."}
+                disabled={!isConnected || isSubmitting}
+                rows={1}
                 className={cn(
-                  'tabular-nums',
-                  inputValue.length > 1800 && 'text-orange-500',
-                  inputValue.length > 1950 && 'text-red-500'
+                  "w-full px-6 py-4 pr-14 rounded-2xl resize-none",
+                  "min-h-[56px] max-h-[200px]",
+                  "bg-gray-50/80 dark:bg-gray-800/60 backdrop-blur-md",
+                  "border border-gray-200/60 dark:border-gray-700/60",
+                  "focus:outline-none focus:ring-1 focus:ring-blue-500/10 focus:border-gray-300 dark:focus:border-gray-600 focus:bg-white dark:focus:bg-gray-800",
+                  "placeholder:text-gray-500 dark:placeholder:text-gray-400",
+                  "text-gray-900 dark:text-white text-base",
+                  "transition-all duration-300 ease-out",
+                  "disabled:opacity-50 disabled:cursor-not-allowed",
+                  "shadow-lg shadow-gray-200/20 dark:shadow-gray-900/20"
                 )}
+                style={{
+                  height: 'auto',
+                  overflowY: inputValue.split('\n').length > 4 ? 'auto' : 'hidden'
+                }}
+                onInput={(e) => {
+                  const target = e.target as HTMLTextAreaElement
+                  target.style.height = 'auto'
+                  target.style.height = Math.min(target.scrollHeight, 200) + 'px'
+                }}
+              />
+              <Button
+                onClick={handleFileButtonClick}
+                disabled={!isConnected || isSubmitting}
+                variant="ghost"
+                size="icon"
+                className="absolute right-3 top-3 h-9 w-9 hover:bg-gray-200/60 dark:hover:bg-gray-700/60 rounded-xl transition-colors duration-200"
               >
+                <FiPaperclip className="w-4 h-4" />
+              </Button>
+              
+              {/* Character count */}
+              <div className={cn(
+                "absolute bottom-3 right-14 text-xs tabular-nums pointer-events-none font-medium",
+                inputValue.length > 1800 && "text-orange-500",
+                inputValue.length > 1950 && "text-red-500",
+                inputValue.length <= 1800 && "text-gray-400 dark:text-gray-500"
+              )}>
                 {inputValue.length}/2000
-              </Typography>
+              </div>
             </div>
+            <Button
+              onClick={handleSendMessage}
+              disabled={!isConnected || isSubmitting || (!inputValue.trim() && selectedFiles.length === 0)}
+              variant="default"
+              size="default"
+              className="px-6 py-4 bg-[#5599fe] hover:bg-[#4488ee] text-white border-0 h-[56px] w-[56px] rounded-2xl shadow-lg shadow-blue-500/20 hover:shadow-blue-500/30 transition-all duration-300 ease-out flex items-center justify-center"
+            >
+              <FiSend className="w-11 h-11" />
+            </Button>
           </div>
 
-          <input
-            ref={fileInputRef}
-            type='file'
-            multiple
-            onChange={handleFileSelect}
-            className='hidden'
-            accept='*/*'
-          />
+        </div>
+        
+        <input
+          ref={fileInputRef}
+          type="file"
+          multiple
+          onChange={handleFileSelect}
+          className="hidden"
+          accept="*/*"
+        />
         </div>
       </div>
     </div>

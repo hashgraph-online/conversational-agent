@@ -18,28 +18,44 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({ notification
   const getIcon = () => {
     switch (notification.type) {
       case 'success':
-        return <FiCheckCircle className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />;
+        return (
+          <div className="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center">
+            <FiCheckCircle className="w-4 h-4 text-white" />
+          </div>
+        );
       case 'error':
-        return <FiXCircle className="w-6 h-6 text-red-600 dark:text-red-400" />;
+        return (
+          <div className="w-8 h-8 rounded-full bg-red-500 flex items-center justify-center">
+            <FiXCircle className="w-4 h-4 text-white" />
+          </div>
+        );
       case 'warning':
-        return <FiAlertTriangle className="w-6 h-6 text-amber-600 dark:text-amber-400" />;
+        return (
+          <div className="w-8 h-8 rounded-full bg-yellow-500 flex items-center justify-center">
+            <FiAlertTriangle className="w-4 h-4 text-white" />
+          </div>
+        );
       case 'info':
       default:
-        return <FiInfo className="w-6 h-6 text-blue-600 dark:text-blue-400" />;
+        return (
+          <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center">
+            <FiInfo className="w-4 h-4 text-white" />
+          </div>
+        );
     }
   };
 
-  const getBorderColor = () => {
+  const getBackgroundColor = () => {
     switch (notification.type) {
       case 'success':
-        return 'border-emerald-500';
+        return 'bg-gradient-to-br from-green-500/10 to-green-600/5 border-green-500/20';
       case 'error':
-        return 'border-red-500 dark:border-red-400';
+        return 'bg-gradient-to-br from-red-500/10 to-red-600/5 border-red-500/20';
       case 'warning':
-        return 'border-amber-500';
+        return 'bg-gradient-to-br from-yellow-500/10 to-yellow-600/5 border-yellow-500/20';
       case 'info':
       default:
-        return 'border-blue-500';
+        return 'bg-gradient-to-br from-blue-500/10 to-blue-600/5 border-blue-500/20';
     }
   };
 
@@ -64,9 +80,8 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({ notification
       exit={{ opacity: 0, x: 100, scale: 0.95 }}
       transition={{ duration: 0.2 }}
       className={cn(
-        "pointer-events-auto mb-3 rounded-xl shadow-xl border-l-4 p-5 min-w-[340px] max-w-lg backdrop-blur-sm",
-        getBorderColor(),
-        getBackgroundGradient()
+        "pointer-events-auto mb-3 backdrop-blur-sm rounded-2xl shadow-xl border p-4 min-w-[320px] max-w-md",
+        getBackgroundColor()
       )}
       role="alert"
     >
@@ -96,7 +111,7 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({ notification
         </div>
         <button
           onClick={() => removeNotification(notification.id)}
-          className="ml-4 flex-shrink-0 p-1.5 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-white/50 dark:hover:bg-gray-700/30 transition-all duration-200"
+          className="ml-4 flex-shrink-0 p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-all"
           aria-label="Dismiss notification"
         >
           <FiX className="w-4 h-4" />

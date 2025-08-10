@@ -60,31 +60,20 @@ export const ModeToggle: React.FC<ModeToggleProps> = ({
               />
             </div>
           </TooltipTrigger>
-          <TooltipContent>
-            <Typography variant="caption">
+          <TooltipContent className="bg-[#5599fe] text-white border-[#4488ee]">
+            <Typography variant="caption" className="text-white">
               {isReturnBytes
                 ? "Return Bytes Mode: AI returns transaction bytes for manual signing"
                 : "Autonomous Mode: AI executes transactions directly"
               }
             </Typography>
             <div className="mt-1">
-              <Typography variant="caption" className="text-gray-400">
+              <Typography variant="caption" className="text-blue-100">
                 Shortcut: Ctrl/Cmd+M
               </Typography>
             </div>
           </TooltipContent>
         </Tooltip>
-
-        <Typography 
-          variant="caption" 
-          className={cn(
-            'font-medium transition-colors',
-            isReturnBytes ? 'text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400'
-          )}
-        >
-          <FiCode className="inline w-3 h-3 mr-1" />
-          Return Bytes
-        </Typography>
       </div>
     </TooltipProvider>
   )

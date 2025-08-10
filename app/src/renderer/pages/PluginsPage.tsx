@@ -15,7 +15,8 @@ import {
   Sparkles,
   Puzzle,
   AlertCircle,
-  X
+  X,
+  Wrench
 } from 'lucide-react'
 import Typography from '../components/ui/Typography'
 import { Button } from '../components/ui/Button'
@@ -313,15 +314,20 @@ const PluginsPage: React.FC<PluginsPageProps> = () => {
 
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
-            <Typography variant="h1" className="text-3xl font-bold bg-gradient-to-r from-[#a679f0] via-[#5599fe] to-[#48df7b] bg-clip-text text-transparent">
-              Plugins
-            </Typography>
+            <div className="flex items-center gap-3">
+              <Typography variant="h1" className="text-3xl font-bold bg-gradient-to-r from-[#a679f0] via-[#5599fe] to-[#48df7b] bg-clip-text text-transparent">
+                Plugins
+              </Typography>
+              <div className="px-2 py-1 bg-[#5599fe]/20 text-[#5599fe] dark:text-[#5599fe] rounded-md text-xs font-semibold">
+                COMING SOON
+              </div>
+            </div>
             
-            <div className="flex items-center p-1 bg-muted rounded-lg">
+            <div className="flex items-center p-1 bg-muted rounded-lg opacity-50 pointer-events-none">
               <Button
                 variant={viewMode === 'installed' ? 'default' : 'ghost'}
                 size="sm"
-                onClick={() => setViewMode('installed')}
+                disabled
                 className={cn(
                   "transition-all",
                   viewMode === 'installed' && "bg-[#5599fe] text-white hover:bg-[#4488ed]"
@@ -333,7 +339,7 @@ const PluginsPage: React.FC<PluginsPageProps> = () => {
               <Button
                 variant={viewMode === 'catalog' ? 'default' : 'ghost'}
                 size="sm"
-                onClick={() => setViewMode('catalog')}
+                disabled
                 className={cn(
                   "transition-all",
                   viewMode === 'catalog' && "bg-[#5599fe] text-white hover:bg-[#4488ed]"
@@ -346,19 +352,35 @@ const PluginsPage: React.FC<PluginsPageProps> = () => {
           </div>
           
           <Typography variant="body1" className="text-muted-foreground mb-3 text-sm">
-            {viewMode === 'installed' 
-              ? 'Manage your installed plugins and their configurations'
-              : 'Discover and install plugins from the NPM registry'
-            }
+            The plugin system will allow you to extend your agent with additional capabilities
           </Typography>
           
-
-          <div className="p-3 bg-gradient-to-br from-[#5599fe]/10 to-[#5599fe]/5 rounded-lg border border-[#5599fe]/20">
-            <div className="flex items-center gap-2">
-              <Sparkles className="h-4 w-4 text-[#5599fe]" />
-              <Typography variant="body2" className="text-sm">
-                <span className="font-medium">Coming Soon:</span> The plugin system is in development. Soon you'll be able to extend your agent's capabilities.
-              </Typography>
+          {/* Coming Soon Notice - Made more prominent */}
+          <div className="p-4 bg-gradient-to-br from-[#5599fe]/20 to-[#5599fe]/10 rounded-lg border-2 border-[#5599fe]/30">
+            <div className="flex items-start gap-3">
+              <Info className="h-5 w-5 text-[#5599fe] mt-0.5" />
+              <div>
+                <Typography variant="body1" className="font-semibold text-[#5599fe] mb-1">
+                  Plugin System Under Development
+                </Typography>
+                <Typography variant="body2" className="text-sm text-muted-foreground">
+                  The plugin system is currently being developed and is not yet functional. Soon you'll be able to:
+                </Typography>
+                <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
+                  <li className="flex items-center gap-2">
+                    <div className="w-1 h-1 rounded-full bg-[#5599fe]" />
+                    Install plugins from the NPM registry
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <div className="w-1 h-1 rounded-full bg-[#5599fe]" />
+                    Extend your agent with custom tools and integrations
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <div className="w-1 h-1 rounded-full bg-[#5599fe]" />
+                    Manage plugin configurations and permissions
+                  </li>
+                </ul>
+              </div>
             </div>
           </div>
         </div>
@@ -386,23 +408,53 @@ const PluginsPage: React.FC<PluginsPageProps> = () => {
           </div>
         )}
 
+        {/* Coming Soon Message - Moved up */}
+        <div className="text-center py-8 mb-6 bg-gradient-to-br from-[#5599fe]/5 to-[#5599fe]/10 rounded-xl border border-[#5599fe]/20">
+          <div className="max-w-md mx-auto">
+            <div className="w-16 h-16 bg-gradient-to-br from-[#5599fe]/20 to-[#5599fe]/10 rounded-xl flex items-center justify-center mx-auto mb-4">
+              <Wrench className="w-8 h-8 text-[#5599fe]" />
+            </div>
+            <Typography variant="h4" className="font-bold mb-2">
+              Plugin System Coming Soon
+            </Typography>
+            <Typography variant="body1" className="text-muted-foreground mb-4">
+              We're working hard to bring you an amazing plugin ecosystem. Check back soon!
+            </Typography>
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-[#5599fe]/10 text-[#5599fe] rounded-full text-sm">
+              <Loader2 className="w-3 h-3 animate-spin" />
+              In Development
+            </div>
+          </div>
+        </div>
 
-        <div className="mb-6">
-          <div className="relative max-w-sm">
+        {/* Search Bar - Disabled */}
+        <div className="mb-6 opacity-50 pointer-events-none">
+          <div className="relative max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               type="text"
-              placeholder={viewMode === 'installed' ? 'Search installed plugins...' : 'Search NPM registry...'}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search"
+              value=""
+              disabled
               className="pl-10 h-9"
             />
           </div>
         </div>
 
-
-        <div className="grid gap-6 lg:grid-cols-3">
-          <div className="lg:col-span-2">
+        {/* Main Content - With overlay */}
+        <div className="relative">
+          {/* Overlay to show content is not functional */}
+          <div className="absolute inset-0 bg-background/60 z-10 rounded-lg flex items-center justify-center">
+            <div className="text-center p-8 max-w-md">
+              <Typography variant="body1" className="text-muted-foreground">
+                Preview of upcoming plugin interface
+              </Typography>
+            </div>
+          </div>
+          
+          {/* Original content - now behind overlay */}
+          <div className="grid gap-6 lg:grid-cols-3">
+            <div className="lg:col-span-2">
             {viewMode === 'installed' ? (
               <>
                 {isLoading ? (
@@ -586,6 +638,7 @@ const PluginsPage: React.FC<PluginsPageProps> = () => {
               </CardContent>
             </Card>
           </div>
+        </div>
         </div>
       </div>
     </div>

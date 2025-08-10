@@ -993,18 +993,22 @@ export const TransactionApprovalButton: React.FC<
                 </div>
 
                 <div className='ml-3 sm:ml-4 overflow-hidden'>
-                  <Typography
-                    variant='body1'
-                    className='font-medium text-purple-800 dark:text-purple-200 truncate text-sm sm:text-base'
-                  >
+                  <Typography variant='body1' className={cn(
+                    'font-medium truncate text-sm sm:text-base',
+                    isAlreadyExecuted 
+                      ? 'text-gray-700 dark:text-gray-300'
+                      : 'text-purple-800 dark:text-purple-200'
+                  )}>
                     {isAlreadyExecuted
                       ? 'Transaction Already Executed'
                       : 'Transaction Requires Approval'}
                   </Typography>
-                  <Typography
-                    variant='caption'
-                    className='text-xs sm:text-sm text-purple-700/80 dark:text-purple-300/80 mt-1 sm:mt-1.5 break-words'
-                  >
+                  <Typography variant='caption' className={cn(
+                    'text-xs sm:text-sm mt-1 sm:mt-1.5 break-words',
+                    isAlreadyExecuted
+                      ? 'text-gray-600 dark:text-gray-400'
+                      : 'text-purple-700/80 dark:text-purple-300/80'
+                  )}>
                     {isAlreadyExecuted
                       ? `This scheduled transaction has already been executed${
                           executedTimestamp

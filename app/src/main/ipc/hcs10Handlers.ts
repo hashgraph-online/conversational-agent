@@ -50,8 +50,9 @@ export function setupHCS10Handlers(): void {
       const profileData = data as HCS10ProfileFormData;
       logger.info('Profile data received', { 
         name: profileData.name,
+        profileType: profileData.profileType,
         hasProfileImage: !!profileData.profileImage || !!profileData.profileImageFile,
-        capabilitiesCount: profileData.capabilities?.length || 0,
+        capabilitiesCount: profileData.profileType === 'aiAgent' ? (profileData.capabilities?.length || 0) : 'N/A',
         socialsCount: profileData.socials ? Object.keys(profileData.socials).filter(k => profileData.socials![k as keyof typeof profileData.socials]).length : 0
       });
 
