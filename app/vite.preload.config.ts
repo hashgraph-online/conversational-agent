@@ -1,3 +1,4 @@
+import path from 'path';
 import { defineConfig } from 'vite';
 
 export default defineConfig({
@@ -5,24 +6,28 @@ export default defineConfig({
     lib: {
       entry: 'src/preload/index.ts',
       formats: ['cjs'],
-      fileName: () => 'preload.js'
+      fileName: () => 'preload.js',
     },
     rollupOptions: {
       external: ['electron'],
       output: {
         format: 'cjs',
         inlineDynamicImports: true,
-        entryFileNames: 'preload.js'
-      }
+        entryFileNames: 'preload.js',
+        dir: '.vite/build'
+      },
     },
     minify: false,
-    emptyOutDir: false
-  }
-  ,
+    emptyOutDir: false,
+    outDir: '.vite/build'
+  },
   resolve: {
     alias: {
-      pino: '/Users/michaelkantor/CascadeProjects/hashgraph-online/conversational-agent/app/src/lib/pino-stub.ts',
-      'thread-stream': '/Users/michaelkantor/CascadeProjects/hashgraph-online/conversational-agent/app/src/lib/thread-stream-stub.ts'
-    }
-  }
+      pino: path.resolve(__dirname, './src/lib/pino-stub.ts'),
+      'thread-stream': path.resolve(
+        __dirname,
+        './src/lib/thread-stream-stub.ts'
+      ),
+    },
+  },
 });

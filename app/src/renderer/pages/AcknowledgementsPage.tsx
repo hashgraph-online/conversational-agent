@@ -5,6 +5,8 @@ import { Card } from '../components/ui/Card';
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/Button';
 import { cn } from '../lib/utils';
+import { getPublicAssetPath } from '../utils/assets';
+import { daoLogos } from '../assets/logos';
 import {
   HiHeart,
   HiArrowTopRightOnSquare,
@@ -21,7 +23,7 @@ const AcknowledgementsPage: React.FC = () => {
     {
       name: 'Hiero JavaScript SDK',
       description:
-        'The official JavaScript/TypeScript SDK for interacting with Hedera networks',
+        'The official JavaScript/TypeScript SDK for interacting with Hedera Hashgraphs',
       link: 'https://github.com/hiero-ledger/hiero-sdk-js',
       icon: HiCommandLine,
       gradient: 'from-[#7c3aed] to-[#a855f7]',
@@ -29,7 +31,7 @@ const AcknowledgementsPage: React.FC = () => {
     {
       name: 'Hedera Agent Kit',
       description:
-        "The foundational toolkit that powers HashgraphOnline's interaction with the Hedera network",
+        "The foundational toolkit that powers HashgraphOnline's interaction with the Hedera Hashgraph",
       link: 'https://github.com/hedera-dev/hedera-agent-kit',
       icon: HiCube,
       gradient: 'from-[#a679f0] to-[#5599fe]',
@@ -241,7 +243,7 @@ const AcknowledgementsPage: React.FC = () => {
         />
       </div>
 
-      <div className='min-h-screen bg-background'>
+      <div className='min-h-screen bg-background relative'>
         <div className='container mx-auto px-6 py-8 max-w-6xl'>
 
           <div className='mb-8 text-center'>
@@ -261,7 +263,6 @@ const AcknowledgementsPage: React.FC = () => {
               making this project possible.
             </Typography>
           </div>
-
 
           <motion.section
             initial={{ opacity: 0, y: 20 }}
@@ -316,7 +317,6 @@ const AcknowledgementsPage: React.FC = () => {
             </div>
           </motion.section>
 
-
           <motion.section
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -355,7 +355,6 @@ const AcknowledgementsPage: React.FC = () => {
             </div>
           </motion.section>
 
-
           <motion.section
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -390,7 +389,6 @@ const AcknowledgementsPage: React.FC = () => {
             </div>
           </motion.section>
 
-
           <motion.section
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -422,7 +420,7 @@ const AcknowledgementsPage: React.FC = () => {
                           )}
                         >
                           <img
-                            src={`/logos/${member.logo}`}
+                            src={daoLogos[member.logo] || getPublicAssetPath(`logos/${member.logo}`)}
                             alt={`${member.name} logo`}
                             className='w-full h-full object-contain'
                           />
@@ -458,7 +456,6 @@ const AcknowledgementsPage: React.FC = () => {
               ))}
             </div>
           </motion.section>
-
 
           <motion.section
             initial={{ opacity: 0, y: 20 }}
@@ -515,7 +512,6 @@ const AcknowledgementsPage: React.FC = () => {
             </div>
           </motion.section>
 
-
           <motion.section
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -563,7 +559,6 @@ const AcknowledgementsPage: React.FC = () => {
               </div>
             </Card>
           </motion.section>
-
 
           <motion.div
             initial={{ opacity: 0 }}

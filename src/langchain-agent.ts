@@ -54,7 +54,9 @@ export class LangChainAgent extends BaseAgent {
         if (this.config.mcp.autoConnect !== false) {
           await this.initializeMCP();
         } else {
-          this.logger.info('MCP servers configured but autoConnect=false, skipping synchronous connection');
+          this.logger.info(
+            'MCP servers configured but autoConnect=false, skipping synchronous connection'
+          );
           this.mcpManager = new MCPClientManager(this.logger);
         }
       }
@@ -63,18 +65,18 @@ export class LangChainAgent extends BaseAgent {
         modelName,
         maxTokens: 90000,
         reserveTokens: 10000,
-        storageLimit: 1000
+        storageLimit: 1000,
       });
-      
+
       this.logger.info('SmartMemoryManager initialized:', {
         modelName,
         toolsCount: this.tools.length,
         maxTokens: 90000,
-        reserveTokens: 10000
+        reserveTokens: 10000,
       });
 
       this.systemMessage = this.buildSystemPrompt();
-      
+
       this.smartMemory.setSystemPrompt(this.systemMessage);
 
       await this.createExecutor();
@@ -96,28 +98,31 @@ export class LangChainAgent extends BaseAgent {
     }
 
     try {
-      this.logger.info('LangChainAgent.chat called with:', { message, contextLength: context?.messages?.length || 0 });
-      
+      this.logger.info('LangChainAgent.chat called with:', {
+        message,
+        contextLength: context?.messages?.length || 0,
+      });
+
       if (context?.messages && context.messages.length > 0) {
         this.smartMemory.clear();
-        
+
         for (const msg of context.messages) {
           this.smartMemory.addMessage(msg);
         }
       }
-      
+
       const { HumanMessage } = await import('@langchain/core/messages');
       this.smartMemory.addMessage(new HumanMessage(message));
-      
+
       const memoryStats = this.smartMemory.getMemoryStats();
       this.logger.info('Memory stats before execution:', {
         totalMessages: memoryStats.totalActiveMessages,
         currentTokens: memoryStats.currentTokenCount,
         maxTokens: memoryStats.maxTokens,
         usagePercentage: memoryStats.usagePercentage,
-        toolsCount: this.tools.length
+        toolsCount: this.tools.length,
       });
-      
+
       const result = await this.executor.invoke({
         input: message,
         chat_history: this.smartMemory.getMessages(),
@@ -133,13 +138,18 @@ export class LangChainAgent extends BaseAgent {
       };
 
       if (result.intermediateSteps && Array.isArray(result.intermediateSteps)) {
-        const toolCalls = result.intermediateSteps.map((step: any, index: number) => ({
-          id: `call_${index}`,
-          name: step.action?.tool || 'unknown',
-          args: step.action?.toolInput || {},
-          output: typeof step.observation === 'string' ? step.observation : JSON.stringify(step.observation)
-        }));
-        
+        const toolCalls = result.intermediateSteps.map(
+          (step: any, index: number) => ({
+            id: `call_${index}`,
+            name: step.action?.tool || 'unknown',
+            args: step.action?.toolInput || {},
+            output:
+              typeof step.observation === 'string'
+                ? step.observation
+                : JSON.stringify(step.observation),
+          })
+        );
+
         if (toolCalls.length > 0) {
           response.tool_calls = toolCalls;
         }
@@ -183,8 +193,8 @@ export class LangChainAgent extends BaseAgent {
           activeMessages: finalMemoryStats.totalActiveMessages,
           tokenUsage: finalMemoryStats.currentTokenCount,
           maxTokens: finalMemoryStats.maxTokens,
-          usagePercentage: finalMemoryStats.usagePercentage
-        }
+          usagePercentage: finalMemoryStats.usagePercentage,
+        },
       };
 
       this.logger.info('LangChainAgent.chat returning response:', response);
@@ -260,7 +270,6 @@ export class LangChainAgent extends BaseAgent {
     }
   }
 
-
   private async createAgentKit(): Promise<HederaAgentKit> {
     const corePlugins = getAllHederaCorePlugins();
     const extensionPlugins = this.config.extensions?.plugins || [];
@@ -295,10 +304,15 @@ export class LangChainAgent extends BaseAgent {
         throw new Error('OpenAI API key required');
       }
 
+      const modelName = this.config.ai?.modelName || 'gpt-4o-mini';
+      const isGPT5Model =
+        modelName.toLowerCase().includes('gpt-5') ||
+        modelName.toLowerCase().includes('gpt5');
+
       llm = new ChatOpenAI({
         apiKey,
-        modelName: this.config.ai?.modelName || 'gpt-4o-mini',
-        temperature: this.config.ai?.temperature ?? 0.1,
+        modelName,
+        temperature: isGPT5Model ? 1 : this.config.ai?.temperature ?? 0.1,
         callbacks: this.tokenTracker ? [this.tokenTracker] : [],
       });
     }
@@ -341,26 +355,44 @@ export class LangChainAgent extends BaseAgent {
       }
     }
 
-    let userFriendlyMessage = 'Sorry, I encountered an error processing your request.';
-    let userFriendlyOutput = 'Sorry, I encountered an error processing your request.';
-    
+    let userFriendlyMessage = errorMessage;
+    let userFriendlyOutput = errorMessage;
+
     if (errorMessage.includes('429')) {
       if (errorMessage.includes('quota')) {
-        userFriendlyMessage = 'API quota exceeded. Please check your OpenAI billing and usage limits.';
-        userFriendlyOutput = 'I\'m currently unable to respond because the API quota has been exceeded. Please check your OpenAI account billing and usage limits, then try again.';
+        userFriendlyMessage =
+          'API quota exceeded. Please check your OpenAI billing and usage limits.';
+        userFriendlyOutput =
+          "I'm currently unable to respond because the API quota has been exceeded. Please check your OpenAI account billing and usage limits, then try again.";
       } else {
-        userFriendlyMessage = 'Too many requests. Please wait a moment and try again.';
-        userFriendlyOutput = 'I\'m receiving too many requests right now. Please wait a moment and try again.';
+        userFriendlyMessage =
+          'Too many requests. Please wait a moment and try again.';
+        userFriendlyOutput =
+          "I'm receiving too many requests right now. Please wait a moment and try again.";
       }
-    } else if (errorMessage.includes('401') || errorMessage.includes('unauthorized')) {
-      userFriendlyMessage = 'API authentication failed. Please check your API key configuration.';
-      userFriendlyOutput = 'There\'s an issue with the API authentication. Please check your OpenAI API key configuration in settings.';
+    } else if (
+      errorMessage.includes('401') ||
+      errorMessage.includes('unauthorized')
+    ) {
+      userFriendlyMessage =
+        'API authentication failed. Please check your API key configuration.';
+      userFriendlyOutput =
+        "There's an issue with the API authentication. Please check your OpenAI API key configuration in settings.";
     } else if (errorMessage.includes('timeout')) {
       userFriendlyMessage = 'Request timed out. Please try again.';
-      userFriendlyOutput = 'The request took too long to process. Please try again.';
-    } else if (errorMessage.includes('network') || errorMessage.includes('fetch')) {
-      userFriendlyMessage = 'Network error. Please check your internet connection and try again.';
-      userFriendlyOutput = 'There was a network error. Please check your internet connection and try again.';
+      userFriendlyOutput =
+        'The request took too long to process. Please try again.';
+    } else if (
+      errorMessage.includes('network') ||
+      errorMessage.includes('fetch')
+    ) {
+      userFriendlyMessage =
+        'Network error. Please check your internet connection and try again.';
+      userFriendlyOutput =
+        'There was a network error. Please check your internet connection and try again.';
+    } else if (errorMessage.includes('400')) {
+      userFriendlyMessage = errorMessage;
+      userFriendlyOutput = errorMessage;
     }
 
     const errorResponse: ChatResponse = {
@@ -424,15 +456,20 @@ export class LangChainAgent extends BaseAgent {
     }
 
     if (!this.mcpManager) {
-      this.logger.warn('MCP manager not initialized. Cannot connect to servers.');
+      this.logger.warn(
+        'MCP manager not initialized. Cannot connect to servers.'
+      );
       return;
     }
 
     this.logger.info('Starting async MCP server connections...');
 
     for (const serverConfig of this.config.mcp.servers) {
-      this.connectServer(serverConfig).catch(error => {
-        this.logger.error(`Connection to MCP server ${serverConfig.name} failed:`, error);
+      this.connectServer(serverConfig).catch((error) => {
+        this.logger.error(
+          `Connection to MCP server ${serverConfig.name} failed:`,
+          error
+        );
       });
     }
   }
@@ -443,14 +480,14 @@ export class LangChainAgent extends BaseAgent {
   private async connectServer(serverConfig: any): Promise<void> {
     try {
       this.logger.info(`Connecting to MCP server: ${serverConfig.name}`);
-      
+
       const status = await this.mcpManager!.connectServer(serverConfig);
-      
+
       if (status.connected) {
         this.logger.info(
           `Connected to MCP server ${status.serverName} with ${status.tools.length} tools`
         );
-        
+
         for (const mcpTool of status.tools) {
           const langchainTool = convertMCPToolToLangChain(
             mcpTool,
@@ -459,18 +496,20 @@ export class LangChainAgent extends BaseAgent {
           );
           this.tools.push(langchainTool);
         }
-        
+
         if (this.initialized && this.executor) {
           await this.createExecutor();
         }
-        
       } else {
         this.logger.error(
           `Failed to connect to MCP server ${status.serverName}: ${status.error}`
         );
       }
     } catch (error) {
-      this.logger.error(`Error connecting to MCP server ${serverConfig.name}:`, error);
+      this.logger.error(
+        `Error connecting to MCP server ${serverConfig.name}:`,
+        error
+      );
     }
   }
 

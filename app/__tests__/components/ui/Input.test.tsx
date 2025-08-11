@@ -1,55 +1,65 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { Input } from '@/renderer/components/ui/Input';
+import { Input } from '../../../src/renderer/components/ui/input';
 
 describe('Input', () => {
   it('renders correctly', () => {
-    render(<Input placeholder="Enter text" />);
+    render(<Input placeholder='Enter text' />);
     expect(screen.getByPlaceholderText('Enter text')).toBeInTheDocument();
   });
 
   it('accepts value and onChange props', async () => {
     const handleChange = jest.fn();
     const user = userEvent.setup();
-    
-    render(<Input value="" onChange={handleChange} />);
+
+    render(<Input value='' onChange={handleChange} />);
     const input = screen.getByRole('textbox');
-    
+
     await user.type(input, 'Hello');
     expect(handleChange).toHaveBeenCalledTimes(5);
   });
 
   it('can be disabled', () => {
-    render(<Input disabled placeholder="Disabled input" />);
+    render(<Input disabled placeholder='Disabled input' />);
     const input = screen.getByPlaceholderText('Disabled input');
-    
+
     expect(input).toBeDisabled();
-    expect(input).toHaveClass('disabled:opacity-50', 'disabled:cursor-not-allowed');
+    expect(input).toHaveClass(
+      'disabled:opacity-50',
+      'disabled:cursor-not-allowed'
+    );
   });
 
   it('supports different types', () => {
-    const { rerender, container } = render(<Input type="email" />);
+    const { rerender, container } = render(<Input type='email' />);
     let input = screen.getByRole('textbox');
     expect(input).toHaveAttribute('type', 'email');
 
-    rerender(<Input type="password" />);
+    rerender(<Input type='password' />);
     input = container.querySelector('input')!;
     expect(input).toHaveAttribute('type', 'password');
 
-    rerender(<Input type="number" />);
+    rerender(<Input type='number' />);
     input = screen.getByRole('spinbutton');
     expect(input).toHaveAttribute('type', 'number');
   });
 
   it('applies default styles', () => {
-    render(<Input data-testid="input" />);
+    render(<Input data-testid='input' />);
     const input = screen.getByTestId('input');
-    expect(input).toHaveClass('h-9', 'w-full', 'rounded-md', 'border', 'px-3', 'py-1');
+    expect(input).toHaveClass(
+      'h-10',
+      'w-full',
+      'rounded-xl',
+      'border',
+      'px-4',
+      'py-2'
+    );
   });
 
   it('supports custom className', () => {
-    render(<Input className="custom-class" />);
+    render(<Input className='custom-class' />);
     const input = screen.getByRole('textbox');
     expect(input).toHaveClass('custom-class');
   });
@@ -61,7 +71,7 @@ describe('Input', () => {
   });
 
   it('supports autoComplete attribute', () => {
-    render(<Input autoComplete="email" />);
+    render(<Input autoComplete='email' />);
     const input = screen.getByRole('textbox');
     expect(input).toHaveAttribute('autoComplete', 'email');
   });
@@ -70,23 +80,23 @@ describe('Input', () => {
     const user = userEvent.setup();
     render(<Input maxLength={5} />);
     const input = screen.getByRole('textbox');
-    
+
     await user.type(input, 'Hello World');
     expect(input).toHaveValue('Hello');
   });
 
   it('supports pattern attribute', () => {
-    render(<Input pattern="[0-9]*" />);
+    render(<Input pattern='[0-9]*' />);
     const input = screen.getByRole('textbox');
     expect(input).toHaveAttribute('pattern', '[0-9]*');
   });
 
   it('has proper ARIA attributes', () => {
     render(
-      <Input 
-        aria-label="Email address"
-        aria-describedby="email-help"
-        aria-invalid="true"
+      <Input
+        aria-label='Email address'
+        aria-describedby='email-help'
+        aria-invalid='true'
       />
     );
     const input = screen.getByRole('textbox');
@@ -99,27 +109,22 @@ describe('Input', () => {
     const handleFocus = jest.fn();
     const handleBlur = jest.fn();
     const user = userEvent.setup();
-    
-    render(
-      <Input 
-        onFocus={handleFocus}
-        onBlur={handleBlur}
-      />
-    );
+
+    render(<Input onFocus={handleFocus} onBlur={handleBlur} />);
     const input = screen.getByRole('textbox');
-    
+
     await user.tab();
     expect(input).toHaveFocus();
     expect(handleFocus).toHaveBeenCalled();
-    
+
     await user.tab();
     expect(input).not.toHaveFocus();
     expect(handleBlur).toHaveBeenCalled();
   });
 
   it('supports focus ring styles', () => {
-    render(<Input data-testid="input" />);
+    render(<Input data-testid='input' />);
     const input = screen.getByTestId('input');
-    expect(input).toHaveClass('focus-visible:ring-ring/50');
+    expect(input).toHaveClass('focus:ring-2');
   });
 });

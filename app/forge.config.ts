@@ -3,25 +3,27 @@ import { MakerSquirrel } from '@electron-forge/maker-squirrel';
 import { MakerZIP } from '@electron-forge/maker-zip';
 import { MakerDeb } from '@electron-forge/maker-deb';
 import { MakerRpm } from '@electron-forge/maker-rpm';
-import { MakerDMG } from '@electron-forge/maker-dmg';
+import { MakerPKG } from '@electron-forge/maker-pkg';
 import { VitePlugin } from '@electron-forge/plugin-vite';
 
 const config: ForgeConfig = {
   packagerConfig: {
+    name: 'Hashgraph Online',
     icon: './assets/hol-app-icon-bubble',
     appBundleId: 'com.hashgraphonline.conversational-agent',
-    appCategoryType: 'public.app-category.productivity'
+    appCategoryType: 'public.app-category.productivity',
+    osxSign: {} // Empty object to skip code signing
   },
   rebuildConfig: {},
   makers: [
-    new MakerSquirrel({
-      name: 'conversational_agent',
-      setupIcon: './assets/hol-app-bubble.png'
-    }),
-    new MakerZIP({}, ['darwin']),
-    new MakerDMG({
-      icon: './assets/hol-app-bubble.icns'
-    }),
+    // Squirrel has Wine issues on macOS ARM
+    // new MakerSquirrel({
+    //   name: 'conversational_agent',
+    //   setupIcon: './assets/hol-app-icon-bubble.ico',
+    //   authors: 'Hashgraph Online',
+    //   description: 'Desktop application for HashgraphOnline'
+    // }, ['win32']),
+    new MakerZIP({}, ['darwin', 'win32']),
     new MakerRpm({
       options: {
         categories: ['Utility'],

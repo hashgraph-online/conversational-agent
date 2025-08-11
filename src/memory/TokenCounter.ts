@@ -8,15 +8,15 @@ import type { BaseMessage } from '@langchain/core/messages';
  */
 export class TokenCounter {
   private encoding: ReturnType<typeof encoding_for_model>;
-  private modelName: TiktokenModel;
+  private modelName: string;
 
   private static readonly MESSAGE_OVERHEAD = 3;
   private static readonly ROLE_OVERHEAD = 1;
 
-  constructor(modelName: TiktokenModel = 'gpt-4o') {
-    this.modelName = modelName;
+  constructor(modelName: string | TiktokenModel = 'gpt-4o') {
+    this.modelName = String(modelName);
     try {
-      this.encoding = encoding_for_model(modelName);
+      this.encoding = encoding_for_model(modelName as TiktokenModel);
     } catch {
       this.encoding = encoding_for_model('gpt-4o');
       this.modelName = 'gpt-4o';

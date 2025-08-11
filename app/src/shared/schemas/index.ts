@@ -16,6 +16,12 @@ export const ConfigurationSchema = z.object({
   theme: z.enum(['light', 'dark', 'system']).optional(),
   autoStart: z.boolean().optional(),
   minimizeToTray: z.boolean().optional(),
+  autonomousMode: z.boolean().default(false).optional(),
+  legalAcceptance: z.object({
+    termsAccepted: z.boolean().default(false),
+    privacyAccepted: z.boolean().default(false),
+    acceptedAt: z.string().datetime().optional(),
+  }).default({ termsAccepted: false, privacyAccepted: false }).optional(),
 });
 
 export const IPCMessageSchema = z.discriminatedUnion('channel', [

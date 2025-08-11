@@ -275,7 +275,7 @@ export class ReferenceContextManager {
     }
     
     if (includeActions) {
-      display += `\n💡 You can say "inscribe it" to inscribe this content to the Hedera network.`;
+      display += `\n💡 You can say "inscribe it" to inscribe this content to the Hedera Hashgraph.`;
     }
     
     display += `\n\n*Reference ID: ${reference.referenceId.substring(0, 12)}...*`;

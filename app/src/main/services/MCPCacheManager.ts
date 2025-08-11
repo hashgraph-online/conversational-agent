@@ -11,6 +11,30 @@ import type {
   NewServerCategory
 } from '../db/schema'
 
+type MCPServerInput = {
+  id: string
+  name: string
+  description?: string
+  author?: string | null
+  version?: string | null
+  url?: string | null
+  packageName?: string | null
+  repositoryType?: string | null
+  repositoryUrl?: string | null
+  configCommand?: string | null
+  configArgs?: string | null
+  configEnv?: string | null
+  tags?: string | null
+  license?: string | null
+  createdAt?: string | null
+  updatedAt?: string | null
+  installCount?: number | null
+  rating?: number | null
+  registry: string
+  isActive?: boolean | null
+  searchVector?: string | null
+}
+
 export interface CacheSearchOptions {
   query?: string
   tags?: string[]
@@ -133,18 +157,18 @@ export class MCPCacheManager {
   /**
    * Cache or update a server
    */
-  async cacheServer(server: Omit<NewMCPServer, 'lastFetched'>): Promise<void> {
+  async cacheServer(server: MCPServerInput): Promise<void> {
     if (!this.isDatabaseAvailable()) {
       this.logger.warn('Database not available - skipping server cache')
       return
     }
 
     try {
-      const serverData: NewMCPServer = {
+      const serverData = {
         ...server,
         lastFetched: new Date(),
         searchVector: this.generateSearchVector(server)
-      }
+      } as any
 
       await this.db!.insert(schema.mcpServers)
         .values(serverData)
@@ -170,7 +194,7 @@ export class MCPCacheManager {
   /**
    * Bulk cache servers for efficient batch operations
    */
-  async bulkCacheServers(servers: Omit<NewMCPServer, 'lastFetched'>[]): Promise<void> {
+  async bulkCacheServers(servers: MCPServerInput[]): Promise<void> {
     const startTime = Date.now()
     
     if (!this.isDatabaseAvailable()) {
@@ -180,11 +204,11 @@ export class MCPCacheManager {
     
     try {
       for (const server of servers) {
-        const serverData: NewMCPServer = {
+        const serverData = {
           ...server,
           lastFetched: new Date(),
           searchVector: this.generateSearchVector(server)
-        }
+        } as any
 
         await this.db!.insert(schema.mcpServers)
           .values(serverData)
@@ -508,7 +532,7 @@ export class MCPCacheManager {
     return createHash('sha256').update(hashData).digest('hex')
   }
 
-  private generateSearchVector(server: Omit<NewMCPServer, 'lastFetched'>): string {
+  private generateSearchVector(server: MCPServerInput): string {
     const searchable = [
       server.name,
       server.description,
@@ -537,7 +561,7 @@ export class MCPCacheManager {
 
       if (cached) {
         await this.db!.update(schema.searchCache)
-          .set({ hitCount: (cached.hitCount || 0) + 1 })
+          .set({ hitCount: (cached.hitCount || 0) + 1 } as any)
           .where(eq(schema.searchCache.id, cached.id))
           .run()
 
@@ -654,7 +678,7 @@ export class MCPCacheManager {
           totalCount: result.total,
           hasMore: result.hasMore,
           expiresAt
-        })
+        } as any)
         .onConflictDoUpdate({
           target: schema.searchCache.queryHash,
           set: {
@@ -663,7 +687,7 @@ export class MCPCacheManager {
             hasMore: result.hasMore,
             expiresAt: new Date(Date.now() + this.SEARCH_CACHE_TTL),
             hitCount: 1
-          }
+          } as any
         })
         .run()
 
@@ -742,13 +766,13 @@ export class MCPCacheManager {
     }
 
     try {
-      const metric: NewPerformanceMetric = {
+      const metric = {
         operation,
         durationMs,
         cacheHit,
         resultCount,
         errorCount
-      }
+      } as any
 
       this.db!.insert(schema.performanceMetrics).values(metric).run()
     } catch (error) {

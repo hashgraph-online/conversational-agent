@@ -1,6 +1,13 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/renderer/components/ui/Card';
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+  CardFooter,
+} from '../../../src/renderer/components/ui/Card';
 
 describe('Card', () => {
   it('renders with children', () => {
@@ -13,16 +20,20 @@ describe('Card', () => {
   });
 
   it('applies default styles', () => {
-    render(<Card data-testid="card">Content</Card>);
+    render(<Card data-testid='card'>Content</Card>);
     const card = screen.getByTestId('card');
-    expect(card).toHaveClass('rounded-xl', 'border', 'shadow-sm');
+    expect(card).toHaveClass('rounded-2xl', 'border', 'shadow-lg');
   });
 
   it('supports custom className', () => {
-    render(<Card className="custom-class" data-testid="card">Content</Card>);
+    render(
+      <Card className='custom-class' data-testid='card'>
+        Content
+      </Card>
+    );
     const card = screen.getByTestId('card');
     expect(card).toHaveClass('custom-class');
-    expect(card).toHaveClass('rounded-xl');
+    expect(card).toHaveClass('rounded-2xl');
   });
 
   it('renders with complete structure', () => {
@@ -55,7 +66,7 @@ describe('CardHeader', () => {
   });
 
   it('applies default styles', () => {
-    render(<CardHeader data-testid="header">Header</CardHeader>);
+    render(<CardHeader data-testid='header'>Header</CardHeader>);
     const header = screen.getByTestId('header');
     expect(header).toHaveClass('grid', 'items-start', 'gap-1.5', 'px-6');
   });
@@ -75,7 +86,7 @@ describe('CardTitle', () => {
   });
 
   it('supports custom className', () => {
-    render(<CardTitle className="custom-class">Title</CardTitle>);
+    render(<CardTitle className='custom-class'>Title</CardTitle>);
     const title = screen.getByText('Title');
     expect(title).toHaveClass('custom-class');
   });
@@ -102,7 +113,7 @@ describe('CardContent', () => {
   });
 
   it('applies default styles', () => {
-    render(<CardContent data-testid="content">Content</CardContent>);
+    render(<CardContent data-testid='content'>Content</CardContent>);
     const content = screen.getByTestId('content');
     expect(content).toHaveClass('px-6');
   });
@@ -115,13 +126,17 @@ describe('CardFooter', () => {
   });
 
   it('applies default styles', () => {
-    render(<CardFooter data-testid="footer">Footer</CardFooter>);
+    render(<CardFooter data-testid='footer'>Footer</CardFooter>);
     const footer = screen.getByTestId('footer');
     expect(footer).toHaveClass('flex', 'items-center', 'px-6');
   });
 
   it('supports custom className', () => {
-    render(<CardFooter className="justify-end" data-testid="footer">Footer</CardFooter>);
+    render(
+      <CardFooter className='justify-end' data-testid='footer'>
+        Footer
+      </CardFooter>
+    );
     const footer = screen.getByTestId('footer');
     expect(footer).toHaveClass('justify-end');
   });

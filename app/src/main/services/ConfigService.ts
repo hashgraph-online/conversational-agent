@@ -28,6 +28,12 @@ export interface AppConfig {
   };
   llmProvider: 'openai' | 'anthropic';
   hcs10Profiles?: StoredHCS10Profile[];
+  legalAcceptance?: {
+    termsAccepted: boolean;
+    privacyAccepted: boolean;
+    termsAcceptedAt?: string;
+    privacyAcceptedAt?: string;
+  };
 }
 
 /**
@@ -391,7 +397,11 @@ export class ConfigService {
         autoStart: false,
         logLevel: 'info'
       },
-      llmProvider: 'openai'
+      llmProvider: 'openai',
+      legalAcceptance: {
+        termsAccepted: false,
+        privacyAccepted: false
+      }
     };
   }
 

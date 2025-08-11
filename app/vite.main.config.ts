@@ -4,18 +4,22 @@ import path from 'path';
 export default defineConfig({
   build: {
     rollupOptions: {
-      external: ['electron', 'keytar', 'better-sqlite3', 'drizzle-orm/better-sqlite3'],
+      input: path.resolve(__dirname, 'src/main/index.ts'),
       output: {
-        entryFileNames: 'main.js'
-      }
-    }
+        entryFileNames: 'main.js',
+      },
+    },
+    outDir: '.vite/build',
   },
   resolve: {
     conditions: ['node'],
     extensions: ['.ts', '.js', '.mjs', '.json'],
     alias: {
       pino: path.resolve(__dirname, './src/lib/pino-stub.ts'),
-      'thread-stream': path.resolve(__dirname, './src/lib/thread-stream-stub.ts')
-    }
-  }
+      'thread-stream': path.resolve(
+        __dirname,
+        './src/lib/thread-stream-stub.ts'
+      ),
+    },
+  },
 });

@@ -1,6 +1,6 @@
 import React from 'react';
-import { cn } from '@/lib/utils';
-import { gradients } from '@/renderer/lib/styles';
+import { cn } from '../../lib/utils';
+import { gradients } from '../../lib/styles';
 
 export type TypographyVariant =
   | 'h1'

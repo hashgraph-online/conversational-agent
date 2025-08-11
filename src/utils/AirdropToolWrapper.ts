@@ -50,7 +50,7 @@ export class AirdropToolWrapper extends StructuredTool {
   private agentKit: HederaAgentKit & AgentKitWithMirrorNode;
   private logger: Logger;
 
-  constructor(originalTool: StructuredTool, agentKit: HederaAgentKit) {
+  constructor(originalTool: StructuredTool, agentKit: unknown) {
     super();
     this.originalTool = originalTool as StructuredTool & ToolWithCall;
     this.agentKit = agentKit as HederaAgentKit & AgentKitWithMirrorNode;

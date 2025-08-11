@@ -56,6 +56,17 @@ export class MirrorNodeService {
     const mirrorNode = this.getMirrorNode(network);
     return mirrorNode.getTransactionByTimestamp(timestamp);
   }
+
+  /**
+   * Proxy getTokenInfo from HederaMirrorNode
+   */
+  async getTokenInfo(
+    tokenId: string,
+    network: 'mainnet' | 'testnet' = 'testnet'
+  ): Promise<any> {
+    const mirrorNode = this.getMirrorNode(network);
+    return mirrorNode.getTokenInfo(tokenId);
+  }
 }
 
 export default MirrorNodeService;

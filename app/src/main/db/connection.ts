@@ -274,9 +274,9 @@ class DatabaseManager {
         if (!existing) {
           db.insert(schema.registrySync).values({
             registry,
-            status: 'pending',
+            status: 'pending' as const,
             nextSyncAt: new Date(Date.now() + 60000)
-          }).run()
+          } as any).run()
         }
       }
 

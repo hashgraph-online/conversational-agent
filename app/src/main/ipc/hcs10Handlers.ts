@@ -243,5 +243,31 @@ export function setupHCS10Handlers(): void {
     }
   });
 
+  /**
+   * Handler for retrieving HCS-10 profile
+   */
+  ipcMain.handle('hcs10:retrieveProfile', async (
+    event: IpcMainInvokeEvent,
+    accountId: string,
+    network?: 'mainnet' | 'testnet'
+  ): Promise<IPCResponse> => {
+    try {
+      logger.info('HCS10 profile retrieval requested', { accountId, network });
+      
+      const result = await registrationService.retrieveProfile(accountId, network);
+      
+      return {
+        success: true,
+        data: result
+      };
+    } catch (error) {
+      logger.error('Failed to retrieve HCS10 profile:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to retrieve profile'
+      };
+    }
+  });
+
   logger.info('HCS10 IPC handlers initialized with progress tracking support');
 }

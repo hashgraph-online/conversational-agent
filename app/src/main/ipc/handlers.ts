@@ -26,6 +26,7 @@ import type {
 import { ConfigService } from '../services/ConfigService';
 import { registerTransactionHandlers } from '../handlers/transactionHandlers';
 import { MirrorNodeService } from '../services/MirrorNodeService';
+import { TransactionParserService } from '../services/TransactionParserService';
 import { setupHCS10Handlers } from './hcs10Handlers';
 import { UpdateService } from '../services/UpdateService';
 import { OpenRouterService } from '../services/OpenRouterService';
@@ -1333,6 +1334,77 @@ function setupMirrorNodeHandlers(): void {
             error instanceof Error
               ? error.message
               : 'Failed to fetch transaction',
+        };
+      }
+    }
+  );
+
+  // Add getTokenInfo handler
+  ipcMain.handle(
+    'mirrorNode:getTokenInfo',
+    async (
+      event: IpcMainInvokeEvent,
+      tokenId: string,
+      network?: 'mainnet' | 'testnet'
+    ): Promise<IPCResponse> => {
+      try {
+        const tokenInfo = await mirrorNodeService.getTokenInfo(
+          tokenId,
+          network
+        );
+        return { success: true, data: tokenInfo };
+      } catch (error) {
+        return {
+          success: false,
+          error:
+            error instanceof Error
+              ? error.message
+              : 'Failed to fetch token info',
+        };
+      }
+    }
+  );
+
+  // Add TransactionParser handlers
+  const transactionParserService = TransactionParserService.getInstance();
+
+  ipcMain.handle(
+    'transactionParser:validate',
+    async (
+      event: IpcMainInvokeEvent,
+      transactionBytes: string
+    ): Promise<IPCResponse> => {
+      try {
+        const validation = transactionParserService.validateTransactionBytes(transactionBytes);
+        return { success: true, data: validation };
+      } catch (error) {
+        return {
+          success: false,
+          error:
+            error instanceof Error
+              ? error.message
+              : 'Failed to validate transaction bytes',
+        };
+      }
+    }
+  );
+
+  ipcMain.handle(
+    'transactionParser:parse',
+    async (
+      event: IpcMainInvokeEvent,
+      transactionBytes: string
+    ): Promise<IPCResponse> => {
+      try {
+        const parsed = await transactionParserService.parseTransactionBytes(transactionBytes);
+        return { success: true, data: parsed };
+      } catch (error) {
+        return {
+          success: false,
+          error:
+            error instanceof Error
+              ? error.message
+              : 'Failed to parse transaction bytes',
         };
       }
     }

@@ -1,7 +1,8 @@
 import React from 'react';
-import { cn } from '@/renderer/lib/utils';
+import { cn } from '../../lib/utils';
 
-export interface StatusIndicatorProps extends React.HTMLAttributes<HTMLDivElement> {
+export interface StatusIndicatorProps
+  extends React.HTMLAttributes<HTMLDivElement> {
   status?: 'online' | 'offline' | 'connecting' | 'error' | 'warning';
   size?: 'sm' | 'md' | 'lg';
   label?: string;
@@ -47,16 +48,12 @@ export const StatusIndicator: React.FC<StatusIndicatorProps> = ({
 }) => {
   const indicator = (
     <div
-      className={cn(
-        'rounded-full',
-        statusClasses[status],
-        sizeClasses[size]
-      )}
-      role="status"
-      aria-live="polite"
+      className={cn('rounded-full', statusClasses[status], sizeClasses[size])}
+      role='status'
+      aria-live='polite'
       aria-label={ariaLabel || `Status: ${status}`}
       title={tooltip}
-      data-testid="status-indicator"
+      data-testid='status-indicator'
     />
   );
 
@@ -68,17 +65,19 @@ export const StatusIndicator: React.FC<StatusIndicatorProps> = ({
           labelPositionClasses[labelPosition],
           className
         )}
-        data-testid="status-container"
+        data-testid='status-container'
         {...props}
       >
         {indicator}
-        <span className="text-sm text-gray-700 dark:text-gray-300">{label}</span>
+        <span className='text-sm text-gray-700 dark:text-gray-300'>
+          {label}
+        </span>
       </div>
     );
   }
 
   return (
-    <div className={className} data-testid="status-container" {...props}>
+    <div className={className} data-testid='status-container' {...props}>
       {indicator}
     </div>
   );

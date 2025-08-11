@@ -1,1 +1,0 @@
-export { HbarTransferPlugin } from './HbarTransferPlugin';

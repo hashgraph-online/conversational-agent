@@ -37,12 +37,20 @@ export interface AdvancedConfig {
   operationalMode?: 'autonomous' | 'returnBytes'
 }
 
+export interface LegalAcceptanceConfig {
+  termsAccepted: boolean
+  privacyAccepted: boolean
+  acceptedAt?: string
+}
+
 export interface AppConfig {
   hedera: HederaConfig
   openai: OpenAIConfig
   anthropic: AnthropicConfig
   advanced: AdvancedConfig
   llmProvider: 'openai' | 'anthropic'
+  autonomousMode: boolean
+  legalAcceptance: LegalAcceptanceConfig
 }
 
 export interface ConfigStore {
@@ -67,6 +75,7 @@ export interface ConfigStore {
   setAutoStart: (autoStart: boolean) => void
   setLogLevel: (logLevel: 'debug' | 'info' | 'warn' | 'error') => void
   setOperationalMode: (mode: 'autonomous' | 'returnBytes') => void
+  setAutonomousMode: (enabled: boolean) => void
   
   saveConfig: () => Promise<void>
   loadConfig: () => Promise<void>
@@ -101,9 +110,14 @@ const defaultConfig: AppConfig = {
     theme: 'light',
     autoStart: false,
     logLevel: 'info',
-    operationalMode: 'autonomous'
+    operationalMode: 'returnBytes'
   },
-  llmProvider: 'openai'
+  llmProvider: 'openai',
+  autonomousMode: false,
+  legalAcceptance: {
+    termsAccepted: false,
+    privacyAccepted: false,
+  }
 }
 
 export const useConfigStore = create<ConfigStore>((set, get) => ({
@@ -220,6 +234,14 @@ export const useConfigStore = create<ConfigStore>((set, get) => ({
       config: state.config ? {
         ...state.config,
         advanced: { ...state.config.advanced, operationalMode: mode }
+      } : null
+    })),
+  
+  setAutonomousMode: (enabled) => 
+    set((state) => ({
+      config: state.config ? {
+        ...state.config,
+        autonomousMode: enabled
       } : null
     })),
   
@@ -440,7 +462,8 @@ function isValidPrivateKey(privateKey: string): boolean {
  * Migrates old configuration format to new format
  */
 function migrateConfig(config: any): AppConfig {
-  if (config.hedera && config.openai && config.anthropic && config.advanced && config.llmProvider) {
+  if (config.hedera && config.openai && config.anthropic && config.advanced && config.llmProvider &&
+      typeof config.autonomousMode === 'boolean' && config.legalAcceptance) {
     return config as AppConfig
   }
   
@@ -461,8 +484,14 @@ function migrateConfig(config: any): AppConfig {
     advanced: {
       theme: config.theme || config.advanced?.theme || 'light',
       autoStart: config.autoStart || config.advanced?.autoStart || false,
-      logLevel: config.logLevel || config.advanced?.logLevel || 'info'
+      logLevel: config.logLevel || config.advanced?.logLevel || 'info',
+      operationalMode: config.operationalMode || config.advanced?.operationalMode || 'returnBytes'
     },
-    llmProvider: config.llmProvider || 'openai'
+    llmProvider: config.llmProvider || 'openai',
+    autonomousMode: config.autonomousMode || false,
+    legalAcceptance: config.legalAcceptance || {
+      termsAccepted: false,
+      privacyAccepted: false,
+    }
   }
 }
