@@ -238,6 +238,7 @@ export const useAgentStore = create<AgentStore>((set, get) => {
         role: 'user',
         content,
         timestamp: new Date(),
+        metadata: attachments && attachments.length > 0 ? { attachments } : undefined,
       };
 
       set((state) => ({ messages: [...state.messages, userMessage] }));

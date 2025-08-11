@@ -221,7 +221,7 @@ const AcknowledgementsPage: React.FC = () => {
   ];
 
   return (
-    <div className='flex flex-col h-full bg-gray-50 dark:bg-gray-950 relative overflow-hidden'>
+    <div className='flex flex-col min-h-screen bg-gray-50 dark:bg-gray-950 relative overflow-auto'>
 
       <div className='absolute inset-0 opacity-[0.01] dark:opacity-[0.02] pointer-events-none'>
         <motion.div
@@ -244,7 +244,7 @@ const AcknowledgementsPage: React.FC = () => {
       <div className='min-h-screen bg-background'>
         <div className='container mx-auto px-6 py-8 max-w-6xl'>
 
-          <div className='mb-8'>
+          <div className='mb-8 text-center'>
             <Typography
               variant='h1'
               className='text-3xl font-bold mb-4 bg-gradient-to-r from-[#a679f0] via-[#5599fe] to-[#48df7b] bg-clip-text text-transparent'
@@ -269,50 +269,46 @@ const AcknowledgementsPage: React.FC = () => {
             transition={{ duration: 0.5, delay: 0.1 }}
             className='mb-12'
           >
-            <Typography variant='h4' className='font-bold mb-6'>
+            <Typography variant='h2' className='text-2xl font-bold mb-6 text-center bg-gradient-to-r from-[#a679f0] via-[#5599fe] to-[#48df7b] bg-clip-text text-transparent'>
               Core Dependencies
             </Typography>
-            <div className='space-y-4'>
+            <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4'>
               {coreAcknowledgements.map((item, index) => (
                 <motion.div
                   key={item.name}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
                   transition={{ duration: 0.3, delay: index * 0.1 }}
                 >
-                  <Card className='p-6 hover:shadow-lg transition-all duration-300 group'>
-                    <div className='flex items-start gap-4'>
+                  <Card className='p-5 hover:shadow-lg transition-all duration-300 group h-full'>
+                    <div className='flex flex-col h-full items-center text-center'>
                       <div
                         className={cn(
-                          'w-12 h-12 rounded-xl flex items-center justify-center shadow-md group-hover:shadow-lg transition-all duration-300',
+                          'w-12 h-12 rounded-xl flex items-center justify-center shadow-md group-hover:shadow-lg transition-all duration-300 mb-3',
                           `bg-gradient-to-br ${item.gradient}`
                         )}
                       >
                         <item.icon className='w-6 h-6 text-white' />
                       </div>
-                      <div className='flex-1'>
-                        <div className='flex items-center gap-3 mb-2'>
-                          <Typography variant='h6' className='font-bold'>
-                            {item.name}
-                          </Typography>
-                        </div>
-                        <Typography
-                          variant='body2'
-                          color='muted'
-                          className='mb-3'
-                        >
-                          {item.description}
-                        </Typography>
-                        <a
-                          href={item.link}
-                          target='_blank'
-                          rel='noopener noreferrer'
-                          className='inline-flex items-center gap-2 text-sm text-blue-500 hover:text-blue-600 transition-colors'
-                        >
-                          View Project{' '}
-                          <HiArrowTopRightOnSquare className='w-4 h-4' />
-                        </a>
-                      </div>
+                      <Typography variant='h6' className='font-bold mb-2'>
+                        {item.name}
+                      </Typography>
+                      <Typography
+                        variant='body2'
+                        color='muted'
+                        className='mb-3 flex-1'
+                      >
+                        {item.description}
+                      </Typography>
+                      <a
+                        href={item.link}
+                        target='_blank'
+                        rel='noopener noreferrer'
+                        className='inline-flex items-center gap-2 text-sm text-blue-500 hover:text-blue-600 transition-colors'
+                      >
+                        View Project{' '}
+                        <HiArrowTopRightOnSquare className='w-4 h-4' />
+                      </a>
                     </div>
                   </Card>
                 </motion.div>
@@ -327,7 +323,7 @@ const AcknowledgementsPage: React.FC = () => {
             transition={{ duration: 0.5, delay: 0.2 }}
             className='mb-12'
           >
-            <Typography variant='h4' className='font-bold mb-6'>
+            <Typography variant='h2' className='text-2xl font-bold mb-6 text-center bg-gradient-to-r from-[#48df7b] via-[#5599fe] to-[#a679f0] bg-clip-text text-transparent'>
               Hashgraph Consensus Standards
             </Typography>
             <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
@@ -366,7 +362,7 @@ const AcknowledgementsPage: React.FC = () => {
             transition={{ duration: 0.5, delay: 0.3 }}
             className='mb-12'
           >
-            <Typography variant='h4' className='font-bold mb-6'>
+            <Typography variant='h2' className='text-2xl font-bold mb-6 text-center bg-gradient-to-r from-[#5599fe] via-[#48df7b] to-[#a679f0] bg-clip-text text-transparent'>
               Technologies Used
             </Typography>
             <div className='grid grid-cols-1 md:grid-cols-3 gap-6'>
@@ -401,10 +397,10 @@ const AcknowledgementsPage: React.FC = () => {
             transition={{ duration: 0.5, delay: 0.4 }}
             className='mb-12'
           >
-            <Typography variant='h4' className='font-bold mb-6'>
+            <Typography variant='h2' className='text-2xl font-bold mb-6 text-center bg-gradient-to-r from-[#a679f0] via-[#5599fe] to-[#48df7b] bg-clip-text text-transparent'>
               Hashgraph Online DAO Members
             </Typography>
-            <Typography variant='body1' color='muted' className='mb-6'>
+            <Typography variant='body1' color='muted' className='mb-6 text-center max-w-3xl mx-auto'>
               The following organizations are pioneering members of the
               Hashgraph Online DAO, building the core infrastructure and
               applications that power the ecosystem.
@@ -470,7 +466,7 @@ const AcknowledgementsPage: React.FC = () => {
             transition={{ duration: 0.5, delay: 0.5 }}
             className='mb-12'
           >
-            <Typography variant='h4' className='font-bold mb-6'>
+            <Typography variant='h2' className='text-2xl font-bold mb-6 text-center bg-gradient-to-r from-[#48df7b] via-[#a679f0] to-[#5599fe] bg-clip-text text-transparent'>
               Community & Contributors
             </Typography>
             <div className='space-y-4'>

@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { motion } from 'framer-motion';
 import Typography from '../ui/Typography';
 import type { Message } from '../../stores/agentStore';
-import { FiUser, FiCpu, FiHash, FiClock, FiCopy, FiCheck, FiMaximize2, FiX } from 'react-icons/fi';
+import { FiUser, FiCpu, FiHash, FiClock, FiCopy, FiCheck, FiMaximize2, FiX, FiFile, FiImage } from 'react-icons/fi';
 import { cn } from '../../lib/utils';
 import Logo from '../ui/Logo';
 import { TransactionDisplay } from './TransactionDisplay';
@@ -63,12 +64,68 @@ function cleanMessageContent(content: string): string {
   return cleanedContent.replace(/\n<!-- FILE_START:.*? -->[\s\S]*?<!-- FILE_END:.*? -->/g, '');
 }
 
+function renderAttachments(
+  attachments: Array<{name: string; data: string; type: string; size: number;}>,
+  onImageClick?: (imageData: string, imageName: string) => void
+) {
+  return (
+    <div className="mt-3 space-y-2">
+      {attachments.map((attachment, index) => {
+        const sizeStr = attachment.size > 1024 * 1024 
+          ? `${(attachment.size / (1024 * 1024)).toFixed(1)}MB`
+          : `${(attachment.size / 1024).toFixed(1)}KB`;
+        
+        const isImage = attachment.type.startsWith('image/');
+        
+        return (
+          <div 
+            key={index} 
+            className={cn(
+              "flex items-center gap-3 p-3 rounded-lg border transition-colors",
+              "bg-gray-50 dark:bg-gray-800/30 border-gray-200 dark:border-gray-700/30",
+              isImage && onImageClick && "cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800/50"
+            )}
+            onClick={isImage && onImageClick ? () => onImageClick(`data:${attachment.type};base64,${attachment.data}`, attachment.name) : undefined}
+          >
+            <div className="flex-shrink-0">
+              {isImage ? (
+                <FiImage className="w-4 h-4 text-blue-500" />
+              ) : (
+                <FiFile className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+              )}
+            </div>
+            <div className="flex-1 min-w-0">
+              <Typography variant="caption" className="font-medium text-blue-600 dark:text-blue-400 truncate block">
+                {attachment.name}
+              </Typography>
+              <Typography variant="caption" className="text-gray-500 dark:text-gray-400 text-xs">
+                {sizeStr} • {attachment.type}
+              </Typography>
+            </div>
+            {isImage && (
+              <div className="flex-shrink-0 w-12 h-12 rounded overflow-hidden border border-gray-200 dark:border-gray-700">
+                <img 
+                  src={`data:${attachment.type};base64,${attachment.data}`}
+                  alt={attachment.name}
+                  className="w-full h-full object-cover"
+                  loading="lazy"
+                />
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 const MessageBubble: React.FC<MessageBubbleProps> = ({ message, userProfile }) => {
   const isUser = message.role === 'user';
   const isSystem = message.role === 'system';
   const [isHovered, setIsHovered] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [imageModal, setImageModal] = useState<{ imageData: string; imageName: string } | null>(null);
   const addNotification = useNotificationStore(
     (state) => state.addNotification
   );
@@ -286,6 +343,14 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, userProfile }) =
                     />
                   );
                 })}
+                
+                {/* Show attachments in modal for user messages */}
+                {isUser && message.metadata?.attachments && (
+                  renderAttachments(
+                    message.metadata.attachments,
+                    (imageData, imageName) => setImageModal({ imageData, imageName })
+                  )
+                )}
               </div>
             </div>
             
@@ -458,6 +523,14 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, userProfile }) =
                 );
               })}
             </div>
+            
+            {/* Show attachments for user messages */}
+            {isUser && message.metadata?.attachments && (
+              renderAttachments(
+                message.metadata.attachments,
+                (imageData, imageName) => setImageModal({ imageData, imageName })
+              )
+            )}
           </div>
 
           <div
@@ -579,6 +652,48 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, userProfile }) =
         </div>
       </div>
     </div>
+    
+    {/* Image Modal */}
+    {imageModal && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" onClick={() => setImageModal(null)}>
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.95 }}
+          className="relative w-full max-w-4xl max-h-[90vh] bg-white dark:bg-gray-900 rounded-xl shadow-2xl flex flex-col"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Modal Header */}
+          <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-800">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/20 flex items-center justify-center flex-shrink-0">
+                <FiImage className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+              </div>
+              <Typography variant="h6" className="font-medium text-gray-900 dark:text-white truncate">
+                {imageModal.imageName}
+              </Typography>
+            </div>
+            <button
+              onClick={() => setImageModal(null)}
+              className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-gray-700 dark:text-gray-300"
+              aria-label="Close image"
+            >
+              <FiX className="w-5 h-5" />
+            </button>
+          </div>
+          
+          {/* Modal Content */}
+          <div className="flex-1 overflow-hidden p-6 flex items-center justify-center bg-gray-50 dark:bg-gray-900/50">
+            <img 
+              src={imageModal.imageData}
+              alt={imageModal.imageName}
+              className="max-w-full max-h-full object-contain rounded-lg shadow-lg"
+              onClick={() => setImageModal(null)}
+            />
+          </div>
+        </motion.div>
+      </div>
+    )}
     </>
   );
 };

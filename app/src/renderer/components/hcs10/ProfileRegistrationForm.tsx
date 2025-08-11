@@ -96,6 +96,7 @@ export function ProfileRegistrationForm({
   const name = watch('name');
   const description = watch('description');
   const creator = watch('creator');
+  const alias = watch('alias');
 
   const { saveToStorage, clearPersistedData } = useFormPersistence(
     'hcs10_profile_form',
@@ -110,7 +111,7 @@ export function ProfileRegistrationForm({
     }, 1000);
 
     return () => clearTimeout(timer);
-  }, [name, description, creator, watch('alias'), profileType, watch('agentType'), capabilities, socials, logo, saveToStorage]);
+  }, [name, description, creator, alias, profileType, watch('agentType'), capabilities, socials, logo, saveToStorage]);
 
   /**
    * Handle form submission with persistence cleanup
@@ -165,7 +166,12 @@ export function ProfileRegistrationForm({
   const isStepValid = useCallback((step: number) => {
     switch (step) {
       case 1:
-        return name?.length >= 3 && description?.length >= 10 && creator?.length >= 2;
+        return name?.length >= 3 && 
+               description?.length >= 10 && 
+               creator?.length >= 2 && 
+               alias?.length >= 3 && 
+               alias?.length <= 20 && 
+               /^[a-zA-Z0-9_-]+$/.test(alias || '');
       case 2:
         if (profileType === 'person') return true;
         return capabilities?.length > 0 && capabilities.length <= 5;
@@ -174,13 +180,18 @@ export function ProfileRegistrationForm({
       default:
         return false;
     }
-  }, [name, description, creator, profileType, capabilities]);
+  }, [name, description, creator, alias, profileType, capabilities]);
 
   /**
    * Check if form is valid
    */
   const isFormValid = React.useMemo(() => {
-    const basicValid = name?.length >= 3 && description?.length >= 10 && creator?.length >= 2;
+    const basicValid = name?.length >= 3 && 
+                       description?.length >= 10 && 
+                       creator?.length >= 2 && 
+                       alias?.length >= 3 && 
+                       alias?.length <= 20 && 
+                       /^[a-zA-Z0-9_-]+$/.test(alias || '');
     
     if (profileType === 'person') {
       return basicValid;
@@ -188,7 +199,7 @@ export function ProfileRegistrationForm({
       const capabilitiesValid = capabilities?.length > 0 && capabilities.length <= 5;
       return basicValid && capabilitiesValid;
     }
-  }, [name, description, creator, profileType, capabilities]);
+  }, [name, description, creator, alias, profileType, capabilities]);
 
   const handleNextStep = () => {
     if (currentStep < totalSteps && isStepValid(currentStep)) {
@@ -378,15 +389,28 @@ export function ProfileRegistrationForm({
 
             <div>
               <Label htmlFor='alias' className='text-sm font-medium'>
-                Username <span className='text-muted-foreground'>(optional)</span>
+                Username *
               </Label>
               <Input
                 id='alias'
-                placeholder={profileType === 'person' ? '@john_smith' : '@code_assistant'}
+                placeholder={profileType === 'person' ? 'john_smith' : 'code_assistant'}
                 disabled={isSubmitting}
                 {...register('alias')}
-                className='mt-1.5'
+                className={cn(
+                  'mt-1.5',
+                  errors.alias && 'border-destructive'
+                )}
               />
+              {errors.alias && (
+                <Typography variant='body1' className='text-xs text-destructive mt-1'>
+                  {errors.alias.message}
+                </Typography>
+              )}
+              {!errors.alias && (
+                <Typography variant='body1' className='text-[10px] text-muted-foreground/70 mt-0.5'>
+                  3-20 characters • Letters, numbers, underscores, hyphens
+                </Typography>
+              )}
             </div>
           </div>
         </div>

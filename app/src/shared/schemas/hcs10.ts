@@ -40,7 +40,10 @@ export const HCS10ProfileFormSchema = z.object({
   name: z.string().min(3, 'Name must be at least 3 characters'),
   description: z.string().min(10, 'Description must be at least 10 characters'),
   profileType: z.enum(['person', 'aiAgent']),
-  alias: z.string().optional(),
+  alias: z.string()
+    .min(3, 'Username must be at least 3 characters')
+    .max(20, 'Username must be at most 20 characters')
+    .regex(/^[a-zA-Z0-9_-]+$/, 'Username can only contain letters, numbers, underscores, and hyphens'),
   creator: z.string().min(2, 'Creator must be at least 2 characters'),
   version: z.string().min(1, 'Version is required'),
   

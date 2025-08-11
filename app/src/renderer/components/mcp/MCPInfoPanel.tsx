@@ -62,22 +62,7 @@ export const MCPInfoPanel: React.FC<MCPInfoPanelProps> = ({
         </div>
 
 
-        <div className="border border-border rounded-lg p-4">
-          <Typography variant="h6" className="font-medium text-sm mb-3">
-            Quick Actions
-          </Typography>
-          <div className="space-y-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowDetailedInfo(true)}
-              className="w-full justify-start h-8 text-xs"
-            >
-              <FiHelpCircle className="h-3.5 w-3.5 mr-1.5" />
-              Learn About MCP
-            </Button>
-          </div>
-        </div>
+
       </div>
 
 
