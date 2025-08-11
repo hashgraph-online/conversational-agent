@@ -16,13 +16,10 @@ import {
 } from 'react-icons/fi';
 import { cn } from '../../lib/utils';
 import Logo from '../ui/Logo';
-import { TransactionDisplay } from './TransactionDisplay';
 import { TransactionApprovalButton } from './TransactionApprovalButton';
-import { useNotificationStore } from '../../stores/notificationStore';
 import { useAgentStore } from '../../stores/agentStore';
 import { useConfigStore } from '../../stores/configStore';
 import { CodeBlock } from '../ui/CodeBlock';
-import { QuoteDisplay } from './QuoteDisplay';
 
 const getProfileImageUrl = (profileImage: string, network?: string): string => {
   if (profileImage.startsWith('hcs://')) {

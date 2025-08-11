@@ -148,13 +148,13 @@ export const MCPRegistry: React.FC<MCPRegistryProps> = ({
       setIsLoading(false)
       setIsLoadingMore(false)
     }
-  }, [pageSize, servers.length, loadCacheStats])
+  }, [pageSize, loadCacheStats])
 
   useEffect(() => {
     searchRegistries('', [], 0, false)
     loadCacheStats()
     loadInstalledServers()
-  }, [loadCacheStats])
+  }, [])
   
   const loadInstalledServers = async () => {
     if (!window.electron?.loadMCPServers) return
@@ -256,7 +256,7 @@ export const MCPRegistry: React.FC<MCPRegistryProps> = ({
         observer.unobserve(currentRef)
       }
     }
-  }, [hasMore, isLoadingMore, loadMore, servers.length])
+  }, [hasMore, isLoadingMore, loadMore])
 
   const handleInstall = async (server: MCPRegistryServer) => {
     if (!window.electron?.installMCPFromRegistry) {
@@ -608,7 +608,8 @@ const ServerCard: React.FC<ServerCardProps> = ({ server, onInstall, isInstalling
 
   const isInstallable = !!(
     server.packageName ||
-    (server.repository?.url && server.repository.url.includes('github.com'))
+    (server.repository?.url && server.repository.url.includes('github.com')) ||
+    server.name
   )
 
   return (
