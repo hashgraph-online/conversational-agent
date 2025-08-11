@@ -2,6 +2,9 @@ import { useState, useEffect, ReactNode } from 'react';
 import { useLegalStore } from '../../stores/legalStore';
 import { TermsModal } from './TermsModal';
 import { PrivacyModal } from './PrivacyModal';
+import Typography from './Typography';
+import Logo from './Logo';
+import { FiCheck } from 'react-icons/fi';
 
 interface LegalGuardProps {
   children: ReactNode;
@@ -24,13 +27,14 @@ export const LegalGuard = ({ children }: LegalGuardProps) => {
   const [isPrivacyModalOpen, setIsPrivacyModalOpen] = useState(false);
   const [hasInitialized, setHasInitialized] = useState(false);
 
-  // Load legal acceptance state from storage on mount
   useEffect(() => {
-    loadFromStorage();
-    setHasInitialized(true);
+    const loadData = async () => {
+      await loadFromStorage();
+      setHasInitialized(true);
+    };
+    loadData();
   }, [loadFromStorage]);
 
-  // Check what needs to be shown after initialization
   useEffect(() => {
     if (hasInitialized) {
       if (!legalAcceptance.termsAccepted) {
@@ -41,31 +45,27 @@ export const LegalGuard = ({ children }: LegalGuardProps) => {
     }
   }, [hasInitialized, legalAcceptance]);
 
-  const handleAcceptTerms = () => {
-    acceptTerms();
+  const handleAcceptTerms = async () => {
+    await acceptTerms();
     setIsTermsModalOpen(false);
-    // Immediately show privacy modal after terms
     setTimeout(() => {
       setIsPrivacyModalOpen(true);
     }, 300);
   };
 
-  const handleAcceptPrivacy = () => {
-    acceptPrivacy();
+  const handleAcceptPrivacy = async () => {
+    await acceptPrivacy();
     setIsPrivacyModalOpen(false);
   };
 
   const handleDeclineTerms = () => {
-    // Keep modal open - user must accept to proceed
     alert('You must accept the Terms of Service to use this application.');
   };
 
   const handleDeclinePrivacy = () => {
-    // Keep modal open - user must accept to proceed
     alert('You must accept the Privacy Policy to use this application.');
   };
 
-  // Show loading state while initializing
   if (!hasInitialized) {
     return (
       <div className='min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-950 dark:to-gray-900'>
@@ -76,30 +76,38 @@ export const LegalGuard = ({ children }: LegalGuardProps) => {
     );
   }
 
-  // Show full-screen welcome if legal agreements needed
   if (!hasAcceptedAll()) {
     return (
       <div className='min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-950 dark:to-gray-900'>
         <div className='min-h-screen flex items-center justify-center p-8'>
           <div className='max-w-2xl w-full'>
             <div className='text-center mb-12'>
-              <div className='w-24 h-24 bg-gradient-to-br from-[#a679f0] via-[#5599fe] to-[#48df7b] rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-lg'>
-                <div className='text-white text-4xl font-bold'>HO</div>
+              <div className='w-24 h-24 bg-gradient-to-br from-[#a679f0] via-[#5599fe] to-[#48df7b] rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-lg p-5'>
+                <Logo size='lg' showText={false} variant='white' />
               </div>
-              <h1 className='text-4xl font-bold bg-gradient-to-r from-[#a679f0] via-[#5599fe] to-[#48df7b] bg-clip-text text-transparent mb-4'>
+              <Typography
+                variant='h1'
+                className='text-4xl font-bold bg-gradient-to-r from-[#a679f0] via-[#5599fe] to-[#48df7b] bg-clip-text text-transparent mb-4'
+              >
                 Welcome to Hashgraph Online
-              </h1>
-              <p className='text-lg text-gray-600 dark:text-gray-400'>
-                Your gateway to the Hedera ecosystem
-              </p>
+              </Typography>
+              <Typography
+                variant='body1'
+                className='text-lg text-gray-600 dark:text-gray-400'
+              >
+                Interact with Hedera using Hashgraph Online's HCS standards
+              </Typography>
             </div>
 
             <div className='bg-white dark:bg-gray-900 rounded-2xl shadow-xl p-8 border border-gray-200 dark:border-gray-800'>
               <div className='space-y-4 mb-8'>
-                <p className='text-gray-700 dark:text-gray-300 text-center'>
+                <Typography
+                  variant='body1'
+                  className='text-gray-700 dark:text-gray-300 text-center'
+                >
                   Before you can continue, please review and accept our legal
                   agreements:
-                </p>
+                </Typography>
 
                 <div className='space-y-3'>
                   <div className='flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg'>
@@ -111,19 +119,7 @@ export const LegalGuard = ({ children }: LegalGuardProps) => {
                       }`}
                     >
                       {legalAcceptance.termsAccepted && (
-                        <svg
-                          className='w-5 h-5 text-white'
-                          fill='none'
-                          viewBox='0 0 24 24'
-                          stroke='currentColor'
-                        >
-                          <path
-                            strokeLinecap='round'
-                            strokeLinejoin='round'
-                            strokeWidth={2}
-                            d='M5 13l4 4L19 7'
-                          />
-                        </svg>
+                        <FiCheck className='w-5 h-5 text-white' />
                       )}
                     </div>
                     <span
@@ -146,19 +142,7 @@ export const LegalGuard = ({ children }: LegalGuardProps) => {
                       }`}
                     >
                       {legalAcceptance.privacyAccepted && (
-                        <svg
-                          className='w-5 h-5 text-white'
-                          fill='none'
-                          viewBox='0 0 24 24'
-                          stroke='currentColor'
-                        >
-                          <path
-                            strokeLinecap='round'
-                            strokeLinejoin='round'
-                            strokeWidth={2}
-                            d='M5 13l4 4L19 7'
-                          />
-                        </svg>
+                        <FiCheck className='w-5 h-5 text-white' />
                       )}
                     </div>
                     <span
@@ -203,6 +187,5 @@ export const LegalGuard = ({ children }: LegalGuardProps) => {
     );
   }
 
-  // Show app content once everything is accepted
   return <>{children}</>;
 };

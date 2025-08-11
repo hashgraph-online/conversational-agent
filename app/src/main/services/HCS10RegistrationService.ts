@@ -183,13 +183,11 @@ export class HCS10RegistrationService extends EventEmitter {
         prettyPrint: false,
       });
 
-      // Determine if this is a person or agent profile based on profileType
       const isPersonProfile = profileData.profileType === 'person';
 
       let profileBuilder: PersonBuilder | AgentBuilder;
 
       if (isPersonProfile) {
-        // Create PersonBuilder for human profiles
         profileBuilder = new PersonBuilder()
           .setName(profileData.name)
           .setAlias(

@@ -14,8 +14,8 @@ export interface LegalStore {
   acceptPrivacy: () => void;
   acceptAll: () => void;
   reset: () => void;
-  loadFromStorage: () => void;
-  saveToStorage: () => void;
+  loadFromStorage: () => Promise<void>;
+  saveToStorage: () => Promise<void>;
 }
 
 const defaultLegalAcceptance: LegalAcceptance = {
@@ -33,7 +33,7 @@ export const useLegalStore = create<LegalStore>((set, get) => ({
     return legalAcceptance.termsAccepted && legalAcceptance.privacyAccepted;
   },
 
-  acceptTerms: () => {
+  acceptTerms: async () => {
     const now = new Date().toISOString();
     set((state) => ({
       legalAcceptance: {
@@ -42,10 +42,10 @@ export const useLegalStore = create<LegalStore>((set, get) => ({
         termsAcceptedAt: now,
       },
     }));
-    get().saveToStorage();
+    await get().saveToStorage();
   },
 
-  acceptPrivacy: () => {
+  acceptPrivacy: async () => {
     const now = new Date().toISOString();
     set((state) => ({
       legalAcceptance: {
@@ -54,10 +54,10 @@ export const useLegalStore = create<LegalStore>((set, get) => ({
         privacyAcceptedAt: now,
       },
     }));
-    get().saveToStorage();
+    await get().saveToStorage();
   },
 
-  acceptAll: () => {
+  acceptAll: async () => {
     const now = new Date().toISOString();
     set({
       legalAcceptance: {
@@ -67,28 +67,68 @@ export const useLegalStore = create<LegalStore>((set, get) => ({
         privacyAcceptedAt: now,
       },
     });
-    get().saveToStorage();
+    await get().saveToStorage();
   },
 
-  reset: () => {
+  reset: async () => {
     set({ legalAcceptance: defaultLegalAcceptance });
     localStorage.removeItem(STORAGE_KEY);
+    
+    if (window.electron && typeof window.electron.saveConfig === 'function') {
+      try {
+        const config = await window.electron.loadConfig();
+        if (config && config.success) {
+          const updatedConfig = {
+            ...config.config,
+            legalAcceptance: defaultLegalAcceptance
+          };
+          await window.electron.saveConfig(updatedConfig as unknown as Record<string, unknown>);
+        }
+      } catch (error) {
+        console.error('Failed to reset legal acceptance in config:', error);
+      }
+    }
   },
 
-  loadFromStorage: () => {
+  loadFromStorage: async () => {
     try {
+      if (window.electron && typeof window.electron.loadConfig === 'function') {
+        const result = await window.electron.loadConfig();
+        if (result && result.success && result.config?.legalAcceptance) {
+          set({ legalAcceptance: result.config.legalAcceptance });
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(result.config.legalAcceptance));
+          return;
+        }
+      }
+      
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored) {
         const parsed = JSON.parse(stored) as LegalAcceptance;
         set({ legalAcceptance: parsed });
       }
     } catch (error) {
-      // If parsing fails, keep default state
+      console.error('Failed to load legal acceptance:', error);
     }
   },
 
-  saveToStorage: () => {
+  saveToStorage: async () => {
     const { legalAcceptance } = get();
+    
     localStorage.setItem(STORAGE_KEY, JSON.stringify(legalAcceptance));
+    
+    if (window.electron && typeof window.electron.saveConfig === 'function') {
+      try {
+        const result = await window.electron.loadConfig();
+        if (result && result.success) {
+          const updatedConfig = {
+            ...result.config,
+            legalAcceptance
+          };
+          await window.electron.saveConfig(updatedConfig as unknown as Record<string, unknown>);
+        }
+      } catch (error) {
+        console.error('Failed to save legal acceptance to config:', error);
+      }
+    }
   },
 }));

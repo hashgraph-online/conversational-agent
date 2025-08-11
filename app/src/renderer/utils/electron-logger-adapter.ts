@@ -1,4 +1,8 @@
-// Logger types - local definitions to avoid Node.js imports in renderer
+/**
+ * @fileoverview Electron logger adapter for the standards-sdk Logger interface
+ * Avoids ThreadStream issues from pino.
+ */
+
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error' | 'trace';
 
 export interface LoggerOptions {
@@ -37,13 +41,13 @@ export class ElectronRendererLoggerAdapter implements ILogger {
   constructor(options: LoggerOptions = {}) {
     this.moduleContext = options.module || 'renderer';
     this.level = options.level || 'info';
-    
+
     this.logger = electronLog;
-    
+
     if (this.logger.transports && this.logger.transports.console) {
       this.logger.transports.console.level = this.level;
     }
-    
+
     if (process.env.NODE_ENV === 'test' || options.silent) {
       this.setSilent(true);
     }
@@ -51,9 +55,13 @@ export class ElectronRendererLoggerAdapter implements ILogger {
 
   private formatMessage(args: any[]): string {
     const parts: string[] = [`[${this.moduleContext}]`];
-    
-    args.forEach(arg => {
-      if (typeof arg === 'string' || typeof arg === 'number' || typeof arg === 'boolean') {
+
+    args.forEach((arg) => {
+      if (
+        typeof arg === 'string' ||
+        typeof arg === 'number' ||
+        typeof arg === 'boolean'
+      ) {
         parts.push(String(arg));
       } else if (arg instanceof Error) {
         parts.push(arg.message);
@@ -68,7 +76,7 @@ export class ElectronRendererLoggerAdapter implements ILogger {
         }
       }
     });
-    
+
     return parts.join(' ');
   }
 

@@ -175,7 +175,6 @@ export interface TransactionEnrichmentHandler {
   ) => string;
 }
 
-// Token transaction handlers
 const tokenCreationHandler: TransactionEnrichmentHandler = {
   enrich: (
     parsedTransaction,
@@ -200,16 +199,15 @@ const tokenCreationHandler: TransactionEnrichmentHandler = {
 };
 
 const tokenMintHandler: TransactionEnrichmentHandler = {
-  enrich: () => {}, // Token mint doesn't create entities
+  enrich: () => {},
   generateSuccessMessage: () => `Token minting completed successfully!`,
 };
 
 const tokenBurnHandler: TransactionEnrichmentHandler = {
-  enrich: () => {}, // Token burn doesn't create entities
+  enrich: () => {},
   generateSuccessMessage: () => `Token burning completed successfully!`,
 };
 
-// Account transaction handlers
 const cryptoCreateAccountHandler: TransactionEnrichmentHandler = {
   enrich: (
     parsedTransaction,
@@ -233,7 +231,6 @@ const cryptoCreateAccountHandler: TransactionEnrichmentHandler = {
   },
 };
 
-// Contract transaction handlers
 const contractCreateHandler: TransactionEnrichmentHandler = {
   enrich: (
     parsedTransaction,
@@ -264,12 +261,11 @@ const contractCreateHandler: TransactionEnrichmentHandler = {
 };
 
 const contractCallHandler: TransactionEnrichmentHandler = {
-  enrich: () => {}, // Contract calls don't create entities
+  enrich: () => {},
   generateSuccessMessage: () =>
     `Smart contract execution completed successfully!`,
 };
 
-// Consensus transaction handlers
 const consensusCreateTopicHandler: TransactionEnrichmentHandler = {
   enrich: (
     parsedTransaction,
@@ -378,7 +374,6 @@ const consensusDeleteTopicHandler: TransactionEnrichmentHandler = {
   },
 };
 
-// Transfer transaction handlers
 const cryptoTransferHandler: TransactionEnrichmentHandler = {
   enrich: () => {},
   generateSuccessMessage: (transaction, transactionId) => {
@@ -394,7 +389,6 @@ const cryptoTransferHandler: TransactionEnrichmentHandler = {
   },
 };
 
-// Schedule transaction handlers
 const scheduleCreateHandler: TransactionEnrichmentHandler = {
   enrich: (
     parsedTransaction,
@@ -428,7 +422,6 @@ const scheduleDeleteHandler: TransactionEnrichmentHandler = {
   generateSuccessMessage: () => `Schedule deletion completed successfully!`,
 };
 
-// File transaction handlers
 const fileCreateHandler: TransactionEnrichmentHandler = {
   enrich: (
     parsedTransaction,
@@ -467,7 +460,6 @@ const fileDeleteHandler: TransactionEnrichmentHandler = {
   generateSuccessMessage: () => `File deletion completed successfully!`,
 };
 
-// Default handler for unknown transaction types
 const defaultHandler: TransactionEnrichmentHandler = {
   enrich: (
     parsedTransaction,
@@ -490,38 +482,30 @@ const defaultHandler: TransactionEnrichmentHandler = {
   },
 };
 
-// Registry mapping transaction types to handlers
 export const TRANSACTION_ENRICHMENT_REGISTRY: Record<
   string,
   TransactionEnrichmentHandler
 > = {
-  // Token transactions
   TOKENCREATION: tokenCreationHandler,
   TOKENMINT: tokenMintHandler,
   TOKENBURN: tokenBurnHandler,
 
-  // Account transactions
   CRYPTOCREATEACCOUNT: cryptoCreateAccountHandler,
 
-  // Contract transactions
   CONTRACTCREATEINSTANCE: contractCreateHandler,
   CONTRACTCALL: contractCallHandler,
 
-  // Consensus transactions
   CONSENSUSCREATETOPIC: consensusCreateTopicHandler,
   CONSENSUSSUBMITMESSAGE: consensusSubmitMessageHandler,
   CONSENSUSUPDATETOPIC: consensusUpdateTopicHandler,
   CONSENSUSDELETETOPIC: consensusDeleteTopicHandler,
 
-  // Transfer transactions
   CRYPTOTRANSFER: cryptoTransferHandler,
 
-  // Schedule transactions
   SCHEDULECREATE: scheduleCreateHandler,
   SCHEDULESIGN: scheduleSignHandler,
   SCHEDULEDELETE: scheduleDeleteHandler,
 
-  // File transactions
   FILECREATE: fileCreateHandler,
   FILEAPPEND: fileAppendHandler,
   FILEUPDATE: fileUpdateHandler,
