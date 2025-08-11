@@ -3,15 +3,69 @@
  * Matches the structure returned by TransactionParser from standards-sdk.
  */
 
-export type { 
-  AccountAmount,
-  TokenAmount,
-  ContractCallData,
-  TokenCreationData,
-  ConsensusSubmitMessageData,
-  TokenAirdropData,
-  ParsedTransaction as SDKParsedTransaction
-} from '@hashgraphonline/standards-sdk/dist/es/utils/transaction-parser-types';
+export interface AccountAmount {
+  accountId: string;
+  amount: string;
+  isApproval?: boolean;
+}
+
+export interface TokenAmount {
+  tokenId: string;
+  accountId: string;
+  amount: string;
+  isApproval?: boolean;
+}
+
+export interface ContractCallData {
+  contractId: string;
+  gas?: number;
+  amount?: number;
+  functionName?: string;
+  parameters?: any;
+  functionParameters?: string;
+}
+
+export interface TokenCreationData {
+  tokenId?: string;
+  tokenName?: string;
+  tokenSymbol?: string;
+  initialSupply?: string;
+  decimals?: number;
+  maxSupply?: string;
+  tokenType?: string;
+  supplyType?: string;
+  memo?: string;
+  treasuryAccountId?: string;
+}
+
+export interface ConsensusSubmitMessageData {
+  topicId?: string;
+  message?: string;
+  messageEncoding?: 'utf8' | 'base64';
+}
+
+export interface TokenAirdropData {
+  tokenTransfers?: Array<{
+    tokenId: string;
+    transfers: Array<{
+      accountId: string;
+      amount: string;
+    }>;
+  }>;
+}
+
+export interface SDKParsedTransaction {
+  type: string;
+  humanReadableType?: string;
+  details: Record<string, any>;
+  transfers?: AccountAmount[];
+  tokenTransfers?: TokenAmount[];
+  memo?: string;
+  contractCall?: ContractCallData;
+  tokenCreation?: TokenCreationData;
+  consensusSubmitMessage?: ConsensusSubmitMessageData;
+  tokenAirdrop?: TokenAirdropData;
+}
 
 export interface ParsedTransaction {
   type: string;

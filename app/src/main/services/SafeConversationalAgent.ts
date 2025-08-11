@@ -1,7 +1,7 @@
 import { ConversationalAgent } from '@hashgraphonline/conversational-agent';
 import type { AgentOperationalMode } from '@hashgraphonline/conversational-agent';
 import type { NetworkType } from '@hashgraphonline/standards-sdk';
-import type { MCPServerConfig as LibMCPServerConfig } from '@hashgraphonline/conversational-agent/dist/types/mcp/types';
+import type { MCPServerConfig as LibMCPServerConfig } from '@hashgraphonline/conversational-agent';
 
 /**
  * Configuration interface extending ConversationalAgentOptions with entity memory options

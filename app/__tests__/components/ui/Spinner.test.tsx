@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import { Spinner } from '@/renderer/components/ui/Spinner';
+import { Spinner } from '../../../src/renderer/components/ui/Spinner';
 
 describe('Spinner', () => {
   it('renders correctly', () => {
@@ -16,7 +16,7 @@ describe('Spinner', () => {
   });
 
   it('supports custom aria-label', () => {
-    render(<Spinner aria-label="Processing request" />);
+    render(<Spinner aria-label='Processing request' />);
     const spinner = screen.getByRole('status');
     expect(spinner).toHaveAttribute('aria-label', 'Processing request');
   });
@@ -28,19 +28,19 @@ describe('Spinner', () => {
   });
 
   it('supports different sizes', () => {
-    const { rerender } = render(<Spinner size="sm" />);
+    const { rerender } = render(<Spinner size='sm' />);
     let spinner = screen.getByRole('status');
     expect(spinner).toHaveClass('w-3', 'h-3');
 
-    rerender(<Spinner size="md" />);
+    rerender(<Spinner size='md' />);
     spinner = screen.getByRole('status');
     expect(spinner).toHaveClass('w-4', 'h-4');
 
-    rerender(<Spinner size="lg" />);
+    rerender(<Spinner size='lg' />);
     spinner = screen.getByRole('status');
     expect(spinner).toHaveClass('w-6', 'h-6');
 
-    rerender(<Spinner size="xl" />);
+    rerender(<Spinner size='xl' />);
     spinner = screen.getByRole('status');
     expect(spinner).toHaveClass('w-8', 'h-8');
   });
@@ -52,23 +52,23 @@ describe('Spinner', () => {
   });
 
   it('supports different colors', () => {
-    const { rerender } = render(<Spinner color="primary" />);
+    const { rerender } = render(<Spinner color='primary' />);
     let spinner = screen.getByRole('status');
     expect(spinner).toHaveClass('text-primary');
 
-    rerender(<Spinner color="secondary" />);
+    rerender(<Spinner color='secondary' />);
     spinner = screen.getByRole('status');
     expect(spinner).toHaveClass('text-secondary');
 
-    rerender(<Spinner color="accent" />);
+    rerender(<Spinner color='accent' />);
     spinner = screen.getByRole('status');
     expect(spinner).toHaveClass('text-accent');
 
-    rerender(<Spinner color="white" />);
+    rerender(<Spinner color='white' />);
     spinner = screen.getByRole('status');
     expect(spinner).toHaveClass('text-white');
 
-    rerender(<Spinner color="current" />);
+    rerender(<Spinner color='current' />);
     spinner = screen.getByRole('status');
     expect(spinner).toHaveClass('text-current');
   });
@@ -80,7 +80,7 @@ describe('Spinner', () => {
   });
 
   it('supports custom className', () => {
-    render(<Spinner className="custom-class" />);
+    render(<Spinner className='custom-class' />);
     const spinner = screen.getByRole('status');
     expect(spinner).toHaveClass('custom-class');
   });
@@ -92,7 +92,7 @@ describe('Spinner', () => {
   });
 
   it('supports custom screen reader text', () => {
-    render(<Spinner srText="Please wait" />);
+    render(<Spinner srText='Please wait' />);
     expect(screen.getByText('Please wait')).toBeInTheDocument();
   });
 

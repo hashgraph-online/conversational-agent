@@ -1,7 +1,7 @@
 import { SafeConversationalAgent } from './SafeConversationalAgent';
 import type { AgentConfig as SafeAgentConfig } from './SafeConversationalAgent';
 import type { AgentOperationalMode } from '@hashgraphonline/conversational-agent';
-import type { MCPServerConfig as LibMCPServerConfig } from '@hashgraphonline/conversational-agent/dist/types/mcp/types';
+import type { MCPServerConfig as LibMCPServerConfig } from '@hashgraphonline/conversational-agent';
 import { Logger } from '../utils/logger';
 import type { NetworkType } from '@hashgraphonline/standards-sdk';
 import { MCPService } from './MCPService';
@@ -288,12 +288,21 @@ export class AgentService {
         })),
       });
 
+      let modelName = config.modelName || 'gpt-4o-mini';
+      if (modelName.startsWith('openai/')) {
+        modelName = modelName.replace('openai/', '');
+        this.logger.info('Stripped OpenRouter prefix from model name:', {
+          original: config.modelName,
+          cleaned: modelName,
+        });
+      }
+
       const agentConfig: SafeAgentConfig = {
         accountId: config.accountId,
         privateKey: config.privateKey,
         network: config.network,
         openAIApiKey: config.openAIApiKey,
-        openAIModelName: config.modelName || 'gpt-4o-mini',
+        openAIModelName: modelName,
         operationalMode:
           (config.operationalMode as AgentOperationalMode) || 'autonomous',
         llmProvider: config.llmProvider,
@@ -546,7 +555,7 @@ export class AgentService {
       const agentMessage: AgentMessage = {
         id: `msg-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         role: 'assistant',
-        content: response.message || response.output || '',
+        content: response.error || response.message || response.output || '',
         timestamp: new Date(),
         metadata: {
           transactionId: response.transactionId,
@@ -554,6 +563,7 @@ export class AgentService {
           notes: response.notes,
           transactionBytes: transactionBytes,
           description: description || response.description,
+          isError: !!response.error,
           ...response.metadata,
         },
       };

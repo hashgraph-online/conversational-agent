@@ -68,12 +68,12 @@ Resolved message:`;
     try {
       const response = await this.llm.invoke(prompt);
       const resolved = (response.content as string).trim();
-      
+
       if (resolved !== message && resolved.includes('0.0.')) {
         console.log(`[EntityResolver] Resolved: "${message}" → "${resolved}"`);
         return resolved;
       }
-      
+
       return message;
     } catch (error) {
       console.error('[EntityResolver] Failed:', error);
@@ -87,9 +87,12 @@ Resolved message:`;
   async extractEntities(
     response: unknown,
     userMessage: string
-  ): Promise<Array<{ id: string; name: string; type: string; transactionId?: string }>> {
-    const text = typeof response === 'string' ? response : JSON.stringify(response);
-    
+  ): Promise<
+    Array<{ id: string; name: string; type: string; transactionId?: string }>
+  > {
+    const text =
+      typeof response === 'string' ? response : JSON.stringify(response);
+
     const prompt = `Analyze this agent response and extract ONLY newly created entities.
 
 User asked: "${userMessage.substring(0, 200)}"

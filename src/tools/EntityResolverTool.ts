@@ -53,10 +53,14 @@ Rules:
 - "the topic" or "that topic" → replace with most recent topic ID
 - "the token" or "that token" → replace with most recent token ID
 - "it" or "that" after action verb → replace with most recent entity ID
+- "airdrop X" without token ID → add most recent token ID as first parameter
+- Token operations without explicit token → use most recent token ID
 
 Examples:
 - "submit on the topic" → "submit on 0.0.6543472"
 - "airdrop the token" → "airdrop 0.0.123456"
+- "airdrop 10 to 0.0.5842697" → "airdrop 0.0.123456 10 to 0.0.5842697"
+- "mint 100" → "mint 0.0.123456 100"
 
 Return ONLY the resolved message:`;
     

@@ -88,7 +88,7 @@
     "@hashgraph/sdk": "^2.69.0",
     "@hashgraphonline/standards-agent-kit": "0.2.122",
     "@langchain/anthropic": "^0.3.26",
-    "@hashgraphonline/standards-sdk": "^0.0.178",
+    "@hashgraphonline/standards-sdk": "^0.0.179",
     "@langchain/core": "^0.3.66",
     "@langchain/openai": "^0.6.3",
     "@modelcontextprotocol/sdk": "^1.17.0",

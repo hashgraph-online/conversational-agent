@@ -6,7 +6,6 @@ import Typography from './ui/Typography';
 import { FiMoon, FiSun, FiUser } from 'react-icons/fi';
 import { cn } from '../lib/utils';
 import { useConfigStore } from '../stores/configStore';
-import { HCS10Client } from '@hashgraphonline/standards-sdk';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -76,17 +75,16 @@ const ProfileButton: React.FC = () => {
       ) {
         setIsLoadingProfile(true);
         try {
-          const client = new HCS10Client({
-            network: config.hedera.network as 'mainnet' | 'testnet',
-            operatorId: config.hedera.accountId,
-            operatorPrivateKey: config.hedera.privateKey,
-            logLevel: 'info',
-          });
-
-          const profileResult = await client.retrieveProfile(
-            config.hedera.accountId
+          const result = await window.electron.hcs10.retrieveProfile(
+            config.hedera.accountId,
+            config.hedera.network as 'mainnet' | 'testnet'
           );
 
+          if (!result.success) {
+            throw new Error(result.error);
+          }
+
+          const profileResult = result.data;
           if (profileResult.success && profileResult.profile) {
             setUserProfile(profileResult.profile);
           }

@@ -307,7 +307,16 @@ export const useAgentStore = create<AgentStore>((set, get) => {
 
           set((state) => ({ messages: [...state.messages, assistantMessage] }));
         } else {
-          throw new Error(result.error || 'Failed to get response');
+          const errorMessage: Message = {
+            id: generateMessageId(),
+            role: 'assistant',
+            content: result.error || 'Failed to get response',
+            timestamp: new Date(),
+            metadata: {
+              isError: true,
+            },
+          };
+          set((state) => ({ messages: [...state.messages, errorMessage] }));
         }
       } catch (error) {
         const errorMessage =

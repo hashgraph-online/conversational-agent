@@ -23,10 +23,10 @@ export async function clearMCPCache(): Promise<{ success: boolean; message: stri
     
     const resetSync = db.update(schema.registrySync)
       .set({ 
-        status: 'pending', 
+        status: 'pending' as const, 
         lastSyncAt: null, 
         lastSuccessAt: null 
-      })
+      } as any)
       .run()
     logger.info(`Reset ${resetSync.changes} registry sync records`)
     

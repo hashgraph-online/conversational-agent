@@ -107,7 +107,7 @@ export class MCPService {
         this.serverConfigs = loadedConfigs.map((config: MCPServerConfig) => ({
           ...config,
           status: 'disconnected' as const,
-          errorMessage: undefined,
+          errorMessage: undefined as string | undefined,
           lastConnected: config.lastConnected,
           tools: config.tools || []
         }))

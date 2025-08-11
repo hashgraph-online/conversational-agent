@@ -21,8 +21,21 @@ import {
   InscribeProfileResponse,
   CreateAgentResponse,
 } from '@hashgraphonline/standards-sdk';
-import { tagToCapabilityMap } from '../../shared/schemas/hcs10';
 import { EventEmitter } from 'events';
+
+// Main process mapping using real SDK types (not shared schema)
+const tagToCapabilityMap: Record<string, AIAgentCapability> = {
+  'text-generation': AIAgentCapability.TEXT_GENERATION,
+  'data-integration': AIAgentCapability.DATA_INTEGRATION,
+  'analytics': AIAgentCapability.MARKET_INTELLIGENCE,
+  'automation': AIAgentCapability.WORKFLOW_AUTOMATION,
+  'natural-language': AIAgentCapability.LANGUAGE_TRANSLATION,
+  'image-generation': AIAgentCapability.IMAGE_GENERATION,
+  'code-generation': AIAgentCapability.CODE_GENERATION,
+  'translation': AIAgentCapability.LANGUAGE_TRANSLATION,
+  'summarization': AIAgentCapability.SUMMARIZATION_EXTRACTION,
+  'api-integration': AIAgentCapability.API_INTEGRATION,
+};
 
 /**
  * Service for handling HCS-10 profile registration using direct SDK functions
@@ -697,6 +710,39 @@ export class HCS10RegistrationService extends EventEmitter {
         }
         this.saveStateThrottleTimer = null;
       }, 1000);
+    }
+  }
+
+  /**
+   * Retrieves an HCS-10 profile for the specified account
+   */
+  async retrieveProfile(accountId: string, network: 'mainnet' | 'testnet' = 'testnet'): Promise<any> {
+    try {
+      this.logger.info('Retrieving HCS-10 profile', { accountId, network });
+
+      // Create HCS10 client with current config
+      const config = await this.configService.load();
+      const client = new HCS10Client({
+        network,
+        operatorId: config.hedera?.accountId,
+        operatorPrivateKey: config.hedera?.privateKey,
+        logLevel: 'info',
+      });
+
+      const result = await client.retrieveProfile(accountId);
+      
+      this.logger.info('Profile retrieval result', { 
+        success: result.success,
+        hasProfile: !!result.profile 
+      });
+
+      return result;
+    } catch (error) {
+      this.logger.error('Failed to retrieve HCS-10 profile:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to retrieve profile'
+      };
     }
   }
 }

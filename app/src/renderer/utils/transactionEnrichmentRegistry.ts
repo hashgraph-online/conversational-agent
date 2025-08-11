@@ -4,7 +4,7 @@
  */
 
 import { ParsedTransaction } from '../types/transaction';
-import { type Transaction as HederaTransaction } from '@hashgraphonline/standards-sdk/dist/es/services/types';
+import { Transaction } from '@hashgraphonline/standards-sdk';
 
 interface EntityMapping {
   detailsField: string;
@@ -77,10 +77,10 @@ function enrichWithEntityId(
   if (mapping.transactionTypeField && mapping.transactionTypeProperty) {
     const fieldName = mapping.transactionTypeField as keyof ParsedTransaction;
     const propertyName = mapping.transactionTypeProperty;
-    
+
     if (fieldName === 'consensusCreateTopic') {
-      const existingData = 
-        (originalTransactionDetails?.consensusCreateTopic) ||
+      const existingData =
+        originalTransactionDetails?.consensusCreateTopic ||
         parsedTransaction.consensusCreateTopic ||
         {};
       parsedTransaction.consensusCreateTopic = {
@@ -88,8 +88,8 @@ function enrichWithEntityId(
         [propertyName]: entityId,
       };
     } else if (fieldName === 'tokenCreation') {
-      const existingData = 
-        (originalTransactionDetails?.tokenCreation) ||
+      const existingData =
+        originalTransactionDetails?.tokenCreation ||
         parsedTransaction.tokenCreation ||
         {};
       parsedTransaction.tokenCreation = {
@@ -97,8 +97,8 @@ function enrichWithEntityId(
         [propertyName]: entityId,
       };
     } else if (fieldName === 'cryptoCreateAccount') {
-      const existingData = 
-        (originalTransactionDetails?.cryptoCreateAccount) ||
+      const existingData =
+        originalTransactionDetails?.cryptoCreateAccount ||
         parsedTransaction.cryptoCreateAccount ||
         {};
       parsedTransaction.cryptoCreateAccount = {
@@ -106,8 +106,8 @@ function enrichWithEntityId(
         [propertyName]: entityId,
       };
     } else if (fieldName === 'contractCreate') {
-      const existingData = 
-        (originalTransactionDetails?.contractCreate) ||
+      const existingData =
+        originalTransactionDetails?.contractCreate ||
         parsedTransaction.contractCreate ||
         {};
       parsedTransaction.contractCreate = {
@@ -115,8 +115,8 @@ function enrichWithEntityId(
         [propertyName]: entityId,
       };
     } else if (fieldName === 'consensusSubmitMessage') {
-      const existingData = 
-        (originalTransactionDetails?.consensusSubmitMessage) ||
+      const existingData =
+        originalTransactionDetails?.consensusSubmitMessage ||
         parsedTransaction.consensusSubmitMessage ||
         {};
       parsedTransaction.consensusSubmitMessage = {
@@ -124,8 +124,8 @@ function enrichWithEntityId(
         [propertyName]: entityId,
       };
     } else if (fieldName === 'consensusUpdateTopic') {
-      const existingData = 
-        (originalTransactionDetails?.consensusUpdateTopic) ||
+      const existingData =
+        originalTransactionDetails?.consensusUpdateTopic ||
         parsedTransaction.consensusUpdateTopic ||
         {};
       parsedTransaction.consensusUpdateTopic = {
@@ -133,8 +133,8 @@ function enrichWithEntityId(
         [propertyName]: entityId,
       };
     } else if (fieldName === 'consensusDeleteTopic') {
-      const existingData = 
-        (originalTransactionDetails?.consensusDeleteTopic) ||
+      const existingData =
+        originalTransactionDetails?.consensusDeleteTopic ||
         parsedTransaction.consensusDeleteTopic ||
         {};
       parsedTransaction.consensusDeleteTopic = {
@@ -142,8 +142,8 @@ function enrichWithEntityId(
         [propertyName]: entityId,
       };
     } else if (fieldName === 'scheduleCreate') {
-      const existingData = 
-        (originalTransactionDetails?.scheduleCreate) ||
+      const existingData =
+        originalTransactionDetails?.scheduleCreate ||
         parsedTransaction.scheduleCreate ||
         {};
       parsedTransaction.scheduleCreate = {
@@ -151,8 +151,8 @@ function enrichWithEntityId(
         [propertyName]: entityId,
       };
     } else if (fieldName === 'fileCreate') {
-      const existingData = 
-        (originalTransactionDetails?.fileCreate) ||
+      const existingData =
+        originalTransactionDetails?.fileCreate ||
         parsedTransaction.fileCreate ||
         {};
       parsedTransaction.fileCreate = {
@@ -166,7 +166,7 @@ function enrichWithEntityId(
 export interface TransactionEnrichmentHandler {
   enrich: (
     parsedTransaction: ParsedTransaction,
-    mirrorTransaction: HederaTransaction,
+    mirrorTransaction: Transaction,
     originalTransactionDetails?: ParsedTransaction | null
   ) => void;
   generateSuccessMessage: (
@@ -287,7 +287,8 @@ const consensusCreateTopicHandler: TransactionEnrichmentHandler = {
       parsedTransaction.consensusCreateTopic =
         originalTransactionDetails.consensusCreateTopic;
     } else {
-      parsedTransaction.consensusCreateTopic = parsedTransaction.consensusCreateTopic || {};
+      parsedTransaction.consensusCreateTopic =
+        parsedTransaction.consensusCreateTopic || {};
     }
   },
   generateSuccessMessage: (transaction, transactionId) => {

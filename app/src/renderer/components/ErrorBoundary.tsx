@@ -25,31 +25,35 @@ export class ErrorBoundary extends Component<Props, State> {
     return { hasError: true, error };
   }
 
-  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-  }
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {}
 
   render() {
     if (this.state.hasError) {
       return (
-        <div className="flex flex-col items-center justify-center min-h-screen p-8">
-          <div className="max-w-md text-center space-y-4">
-            <Typography variant="h1" gradient>
+        <div className='flex flex-col items-center justify-center min-h-screen p-8'>
+          <div className='max-w-md text-center space-y-4'>
+            <Typography variant='h1' gradient>
               Oops! Something went wrong
             </Typography>
-            <Typography variant="body1" color="muted">
-              We encountered an unexpected error. Please try refreshing the page.
+            <Typography variant='body1' color='muted'>
+              We encountered an unexpected error. Please try refreshing the
+              page.
             </Typography>
             {this.state.error && (
-              <div className="mt-4 p-4 bg-gray-100 dark:bg-gray-800 rounded-lg text-left">
-                <Typography variant="caption" color="muted" className="font-mono break-all">
+              <div className='mt-4 p-4 bg-gray-100 dark:bg-gray-800 rounded-lg text-left'>
+                <Typography
+                  variant='caption'
+                  color='muted'
+                  className='font-mono break-all'
+                >
                   {this.state.error.message}
                 </Typography>
               </div>
             )}
             <Button
               onClick={() => window.location.reload()}
-              variant="gradient"
-              className="mt-6"
+              variant='gradient'
+              className='mt-6'
             >
               Refresh Page
             </Button>

@@ -19,8 +19,8 @@ import {
 } from '@hashgraphonline/standards-sdk';
 import { Hbar } from '@hashgraph/sdk';
 import { type ParsedTransaction } from '../../types/transaction';
-import { type TokenAmount } from '@hashgraphonline/standards-sdk/dist/es/utils/transaction-parser-types';
-import { type Transaction as HederaTransaction } from '@hashgraphonline/standards-sdk/dist/es/services/types';
+import { type TokenAmount } from '@hashgraphonline/standards-sdk';
+import { type Transaction as HederaTransaction } from '@hashgraphonline/standards-sdk';
 import { useConfigStore } from '../../stores/configStore';
 import { TransactionDetails } from './TransactionDetails';
 import { getTransactionEnrichmentHandler } from '../../utils/transactionEnrichmentRegistry';
@@ -80,16 +80,22 @@ const TransactionContent = ({
   if (transactionDetails) {
     const hideHeader = true;
 
-    const hbarTransfersForDisplay = (transactionDetails.transfers || []).map(
-      (t) => ({
-        ...t,
-        amount: getValidAmount(t.amount),
-      })
-    );
+    // Ensure transfers is always an array
+    const transfers = Array.isArray(transactionDetails.transfers)
+      ? transactionDetails.transfers
+      : [];
 
-    const tokenTransfersForDisplay = (
-      transactionDetails.tokenTransfers || []
-    ).map((tokenTransfer) => ({
+    const hbarTransfersForDisplay = transfers.map((t) => ({
+      ...t,
+      amount: getValidAmount(t.amount),
+    }));
+
+    // Ensure tokenTransfers is always an array
+    const tokenTransfers = Array.isArray(transactionDetails.tokenTransfers)
+      ? transactionDetails.tokenTransfers
+      : [];
+
+    const tokenTransfersForDisplay = tokenTransfers.map((tokenTransfer) => ({
       tokenId: tokenTransfer.tokenId,
       accountId: tokenTransfer.accountId,
       amount: getValidAmount(tokenTransfer.amount),
@@ -194,6 +200,14 @@ export const TransactionApprovalButton: React.FC<
             memo: scheduleInfo.memo,
           });
 
+          const convertedTransfers = Array.isArray(parsedTx.transfers)
+            ? parsedTx.transfers.map((transfer: any) => ({
+                accountId: transfer.accountId || transfer.account,
+                amount: transfer.amount,
+                isDecimal: transfer.isDecimal,
+              }))
+            : [];
+
           const convertedTokenTransfers = parsedTx.tokenTransfers
             ? parsedTx.tokenTransfers.map((token: TokenAmount) => ({
                 tokenId: token.tokenId,
@@ -204,7 +218,10 @@ export const TransactionApprovalButton: React.FC<
 
           const parsedTransaction: ParsedTransaction = {
             ...parsedTx,
+            type: parsedTx.type,
+            humanReadableType: parsedTx.humanReadableType || parsedTx.type,
             details: parsedTx,
+            transfers: convertedTransfers,
             tokenTransfers: convertedTokenTransfers,
           };
 
@@ -242,6 +259,14 @@ export const TransactionApprovalButton: React.FC<
           transactionBytes
         );
 
+        const convertedTransfers = Array.isArray(parsedTx.transfers)
+          ? parsedTx.transfers.map((transfer: any) => ({
+              accountId: transfer.accountId || transfer.account,
+              amount: transfer.amount,
+              isDecimal: transfer.isDecimal,
+            }))
+          : [];
+
         const convertedTokenTransfers = parsedTx.tokenTransfers
           ? parsedTx.tokenTransfers.map((token: TokenAmount) => ({
               tokenId: token.tokenId,
@@ -252,7 +277,10 @@ export const TransactionApprovalButton: React.FC<
 
         const parsedTransaction: ParsedTransaction = {
           ...parsedTx,
+          type: parsedTx.type,
+          humanReadableType: parsedTx.humanReadableType || parsedTx.type,
           details: parsedTx,
+          transfers: convertedTransfers,
           tokenTransfers: convertedTokenTransfers,
         };
 
@@ -637,7 +665,6 @@ export const TransactionApprovalButton: React.FC<
     []
   );
 
-
   const enrichTransactionDetails = useCallback(
     async (
       parsedTransaction: ParsedTransaction,
@@ -748,23 +775,31 @@ export const TransactionApprovalButton: React.FC<
                       enhancedTransactionDetails.details?.createdTokenId ||
                       enhancedTransactionDetails.details?.entityId;
 
-                    const formattedTransfers =
-                      enhancedTransactionDetails.transfers?.map((transfer) => ({
-                        accountId: transfer.accountId,
-                        amount:
-                          typeof transfer.amount === 'string'
-                            ? parseFloat(transfer.amount)
-                            : transfer.amount,
-                      })) || [];
+                    const formattedTransfers = Array.isArray(
+                      enhancedTransactionDetails.transfers
+                    )
+                      ? enhancedTransactionDetails.transfers.map(
+                          (transfer) => ({
+                            accountId: transfer.accountId,
+                            amount:
+                              typeof transfer.amount === 'string'
+                                ? parseFloat(transfer.amount)
+                                : transfer.amount,
+                          })
+                        )
+                      : [];
 
-                    const formattedTokenTransfers =
-                      enhancedTransactionDetails.tokenTransfers?.map(
-                        (tokenTransfer) => ({
-                          tokenId: tokenTransfer.tokenId,
-                          accountId: tokenTransfer.accountId,
-                          amount: tokenTransfer.amount,
-                        })
-                      ) || [];
+                    const formattedTokenTransfers = Array.isArray(
+                      enhancedTransactionDetails.tokenTransfers
+                    )
+                      ? enhancedTransactionDetails.tokenTransfers.map(
+                          (tokenTransfer) => ({
+                            tokenId: tokenTransfer.tokenId,
+                            accountId: tokenTransfer.accountId,
+                            amount: tokenTransfer.amount,
+                          })
+                        )
+                      : [];
 
                     return (
                       <TransactionDetails

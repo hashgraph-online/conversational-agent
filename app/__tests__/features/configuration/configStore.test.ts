@@ -1,5 +1,5 @@
 import { renderHook, act } from '@testing-library/react'
-import { useConfigStore } from '@/renderer/stores/configStore'
+import { useConfigStore } from '../../../src/renderer/stores/configStore'
 
 describe('configStore', () => {
   beforeEach(() => {

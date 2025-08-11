@@ -796,7 +796,29 @@ export class MCPRegistryService {
   /**
    * Convert registry server to cached format
    */
-  private convertToCachedServer(server: MCPRegistryServer, registry: string): Omit<NewMCPServer, 'lastFetched'> {
+  private convertToCachedServer(server: MCPRegistryServer, registry: string): {
+    id: string
+    name: string
+    description: string
+    author?: string | null
+    version?: string | null
+    url?: string | null
+    packageName?: string | null
+    repositoryType?: string | null
+    repositoryUrl?: string | null
+    configCommand?: string | null
+    configArgs?: string | null
+    configEnv?: string | null
+    tags?: string | null
+    license?: string | null
+    createdAt?: string | null
+    updatedAt?: string | null
+    installCount?: number | null
+    rating?: number | null
+    registry: string
+    isActive?: boolean | null
+    searchVector?: string | null
+  } {
     return {
       id: server.id,
       name: server.name,

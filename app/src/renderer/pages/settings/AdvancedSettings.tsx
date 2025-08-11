@@ -1,18 +1,22 @@
-import React from 'react'
+import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { FiMoon, FiSun } from 'react-icons/fi'
+import { FiMoon, FiSun, FiRefreshCw, FiAlertTriangle } from 'react-icons/fi'
 import { useConfigStore } from '../../stores/configStore'
 import { advancedConfigSchema, type AdvancedConfigForm } from '../../schemas/configuration'
 import Typography from '../../components/ui/Typography'
 import { Label } from '../../components/ui/label'
 import { Switch } from '../../components/ui/switch'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select'
+import { Button } from '../../components/ui/Button'
+import { useLegalStore } from '../../stores/legalStore'
 
 interface AdvancedSettingsProps {}
 
 export const AdvancedSettings: React.FC<AdvancedSettingsProps> = () => {
   const { config, setTheme, setAutoStart, setLogLevel } = useConfigStore()
+  const { reset: resetLegal, legalAcceptance } = useLegalStore()
+  const [showResetConfirm, setShowResetConfirm] = useState(false)
 
   const {
     register,
@@ -27,7 +31,7 @@ export const AdvancedSettings: React.FC<AdvancedSettingsProps> = () => {
     }
   })
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (config?.advanced) {
       reset({
         theme: config.advanced.theme || 'light',
@@ -41,18 +45,18 @@ export const AdvancedSettings: React.FC<AdvancedSettingsProps> = () => {
   const watchAutoStart = watch('autoStart')
   const watchLogLevel = watch('logLevel')
 
-  React.useEffect(() => {
+  useEffect(() => {
     const updateTheme = async () => {
       await setTheme(watchTheme || 'light')
     }
     updateTheme()
   }, [watchTheme, setTheme])
 
-  React.useEffect(() => {
+  useEffect(() => {
     setAutoStart(watchAutoStart || false)
   }, [watchAutoStart, setAutoStart])
 
-  React.useEffect(() => {
+  useEffect(() => {
     setLogLevel(watchLogLevel || 'info')
   }, [watchLogLevel, setLogLevel])
 
@@ -142,6 +146,94 @@ export const AdvancedSettings: React.FC<AdvancedSettingsProps> = () => {
             <Typography variant="caption" color="muted">
               Controls the verbosity of application logs. Debug level may impact performance.
             </Typography>
+          </div>
+        </div>
+
+        <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
+          <div className="space-y-4">
+            <div>
+              <Typography variant="body1" className="font-medium mb-1" noMargin>Legal Agreements</Typography>
+              <Typography variant="caption" color="muted">
+                Manage your acceptance of Terms of Service and Privacy Policy
+              </Typography>
+            </div>
+            
+            <div className="p-4 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">
+              <div className="space-y-3">
+                {legalAcceptance.termsAccepted && (
+                  <div className="flex items-center gap-2 text-sm">
+                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <Typography variant="caption">
+                      Terms accepted on {new Date(legalAcceptance.termsAcceptedAt || '').toLocaleDateString()}
+                    </Typography>
+                  </div>
+                )}
+                {legalAcceptance.privacyAccepted && (
+                  <div className="flex items-center gap-2 text-sm">
+                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <Typography variant="caption">
+                      Privacy Policy accepted on {new Date(legalAcceptance.privacyAcceptedAt || '').toLocaleDateString()}
+                    </Typography>
+                  </div>
+                )}
+                {(!legalAcceptance.termsAccepted || !legalAcceptance.privacyAccepted) && (
+                  <Typography variant="caption" color="muted">
+                    No legal agreements accepted yet
+                  </Typography>
+                )}
+              </div>
+              
+              <div className="mt-4">
+                {!showResetConfirm ? (
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    className="flex items-center gap-2"
+                    onClick={() => setShowResetConfirm(true)}
+                    disabled={!legalAcceptance.termsAccepted && !legalAcceptance.privacyAccepted}
+                  >
+                    <FiRefreshCw className="w-4 h-4" />
+                    Reset Legal Agreements
+                  </Button>
+                ) : (
+                  <div className="space-y-3 p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-800">
+                    <div className="flex items-start gap-2">
+                      <FiAlertTriangle className="w-5 h-5 text-[#a679f0] mt-0.5" />
+                      <div className="space-y-2 flex-1">
+                        <Typography variant="body2" className="font-medium">
+                          Reset Legal Agreements?
+                        </Typography>
+                        <Typography variant="caption" color="muted">
+                          This will reset your acceptance of Terms of Service and Privacy Policy.
+                          You'll need to accept them again when the app reloads.
+                        </Typography>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setShowResetConfirm(false)}
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        size="sm"
+                        className="bg-gradient-to-r from-[#a679f0] to-[#5599fe] hover:from-[#9568e0] hover:to-[#4488ee] text-white"
+                        onClick={() => {
+                          resetLegal()
+                          setTimeout(() => {
+                            window.location.reload()
+                          }, 100)
+                        }}
+                      >
+                        Reset & Reload
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </div>
 

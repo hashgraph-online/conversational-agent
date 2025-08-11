@@ -5,6 +5,8 @@ import { Card } from '../components/ui/Card';
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/Button';
 import { cn } from '../lib/utils';
+import { getPublicAssetPath } from '../utils/assets';
+import { daoLogos } from '../assets/logos';
 import {
   HiHeart,
   HiArrowTopRightOnSquare,
@@ -221,7 +223,7 @@ const AcknowledgementsPage: React.FC = () => {
   ];
 
   return (
-    <div className='flex flex-col h-full bg-gray-50 dark:bg-gray-950 relative overflow-hidden'>
+    <div className='flex flex-col h-full bg-gray-50 dark:bg-gray-950 relative overflow-y-auto'>
       <div className='absolute inset-0 opacity-[0.01] dark:opacity-[0.02] pointer-events-none'>
         <motion.div
           className='absolute inset-0'
@@ -240,7 +242,7 @@ const AcknowledgementsPage: React.FC = () => {
         />
       </div>
 
-      <div className='min-h-screen bg-background'>
+      <div className='min-h-screen bg-background relative'>
         <div className='container mx-auto px-6 py-8 max-w-6xl'>
           <div className='mb-8'>
             <Typography
@@ -420,7 +422,7 @@ const AcknowledgementsPage: React.FC = () => {
                           )}
                         >
                           <img
-                            src={`/logos/${member.logo}`}
+                            src={daoLogos[member.logo] || getPublicAssetPath(`logos/${member.logo}`)}
                             alt={`${member.name} logo`}
                             className='w-full h-full object-contain'
                           />

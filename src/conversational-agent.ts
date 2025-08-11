@@ -18,7 +18,7 @@ import type { AgentOperationalMode, MirrorNodeConfig } from 'hedera-agent-kit';
 import { HCS10Plugin } from './plugins/hcs-10/HCS10Plugin';
 import { HCS2Plugin } from './plugins/hcs-2/HCS2Plugin';
 import { InscribePlugin } from './plugins/inscribe/InscribePlugin';
-import { HbarTransferPlugin } from './plugins/hbar-transfer/HbarTransferPlugin';
+import { HbarPlugin } from './plugins/hbar/HbarPlugin';
 import { OpenConvaiState } from '@hashgraphonline/standards-agent-kit';
 import type { IStateManager } from '@hashgraphonline/standards-agent-kit';
 import { PrivateKey } from '@hashgraph/sdk';
@@ -26,7 +26,6 @@ import { getSystemMessage } from './config/system-message';
 import type { MCPServerConfig, MCPConnectionStatus } from './mcp/types';
 import { ContentStoreManager } from './services/ContentStoreManager';
 import { SmartMemoryManager, type SmartMemoryConfig } from './memory';
-import { AirdropToolWrapper } from './utils/AirdropToolWrapper';
 import {
   createEntityTools,
   ResolveEntitiesTool,
@@ -94,7 +93,7 @@ export class ConversationalAgent {
   public hcs10Plugin: HCS10Plugin;
   public hcs2Plugin: HCS2Plugin;
   public inscribePlugin: InscribePlugin;
-  public hbarTransferPlugin: HbarTransferPlugin;
+  public hbarTransferPlugin: HbarPlugin;
   public stateManager: IStateManager;
   private options: ConversationalAgentOptions;
   public logger: Logger;
@@ -112,7 +111,7 @@ export class ConversationalAgent {
     this.hcs10Plugin = new HCS10Plugin();
     this.hcs2Plugin = new HCS2Plugin();
     this.inscribePlugin = new InscribePlugin();
-    this.hbarTransferPlugin = new HbarTransferPlugin();
+    this.hbarTransferPlugin = new HbarPlugin();
     this.logger = new Logger({
       module: 'ConversationalAgent',
       silent: options.disableLogging || false,
@@ -197,7 +196,29 @@ export class ConversationalAgent {
 
       await this.agent.boot();
 
-      this.wrapAirdropToolInAgent();
+      if (this.agent) {
+        const cfg = agentConfig;
+        cfg.filtering = cfg.filtering || {};
+        const originalPredicate = cfg.filtering.toolPredicate as
+          | ((t: ToolDescriptor) => boolean)
+          | undefined;
+        const userPredicate = this.options.toolFilter;
+        cfg.filtering.toolPredicate = (tool: ToolDescriptor): boolean => {
+          if (tool && tool.name === 'hedera-account-transfer-hbar') {
+            return false;
+          }
+          if (tool && tool.name === 'hedera-hts-airdrop-token') {
+            return false;
+          }
+          if (originalPredicate && !originalPredicate(tool)) {
+            return false;
+          }
+          if (userPredicate && !userPredicate(tool)) {
+            return false;
+          }
+          return true;
+        };
+      }
 
       if (this.options.mcpServers && this.options.mcpServers.length > 0) {
         this.connectMCP();
@@ -818,37 +839,4 @@ export class ConversationalAgent {
     return JSON.stringify(response);
   }
 
-  private wrapAirdropToolInAgent(): void {
-    if (!this.agent) {
-      return;
-    }
-
-    const baseAgent = this.agent as Record<string, unknown>;
-    if (!baseAgent.tools || !baseAgent.agentKit) {
-      return;
-    }
-
-    try {
-      const tools = baseAgent.tools as Array<{ name: string }>;
-      const airdropToolIndex = tools.findIndex(
-        (tool) => tool.name === 'hedera-hts-airdrop-token'
-      );
-
-      if (airdropToolIndex !== -1) {
-        this.logger.info(
-          'Wrapping airdrop tool with decimal conversion capability at ConversationalAgent level'
-        );
-        const originalTool = tools[airdropToolIndex];
-        const wrappedTool = new AirdropToolWrapper(
-          originalTool,
-          baseAgent.agentKit
-        );
-
-        tools[airdropToolIndex] = wrappedTool as typeof originalTool;
-        this.logger.info('Successfully wrapped airdrop tool');
-      }
-    } catch (error) {
-      this.logger.warn('Failed to wrap airdrop tool:', error);
-    }
-  }
 }

@@ -22,10 +22,10 @@ interface HCS10State {
 export const useHCS10Store = create<HCS10State>()(
   persist(
     (set, get) => ({
-      profiles: [],
-      selectedProfileId: null,
+      profiles: [] as any[],
+      selectedProfileId: null as any,
       isLoading: false,
-      error: null,
+      error: null as any,
 
       /**
        * Add a new profile

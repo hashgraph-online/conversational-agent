@@ -1,4 +1,23 @@
-import type { ILogger, LogLevel, LoggerOptions } from '@hashgraphonline/standards-sdk';
+// Logger types - local definitions to avoid Node.js imports in renderer
+export type LogLevel = 'debug' | 'info' | 'warn' | 'error' | 'trace';
+
+export interface LoggerOptions {
+  module?: string;
+  level?: LogLevel;
+  silent?: boolean;
+}
+
+export interface ILogger {
+  debug(...args: any[]): void;
+  info(...args: any[]): void;
+  warn(...args: any[]): void;
+  error(...args: any[]): void;
+  trace(...args: any[]): void;
+  setLogLevel(level: LogLevel): void;
+  getLevel(): LogLevel;
+  setSilent(silent: boolean): void;
+  setModule(module: string): void;
+}
 
 let electronLog: any;
 try {
