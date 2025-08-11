@@ -8,12 +8,12 @@ import {
   FiSettings,
   FiTrash2,
   FiEdit,
-  FiPlay,
   FiRefreshCw,
   FiWifi,
   FiWifiOff,
   FiActivity,
   FiTool,
+  FiZap,
 } from 'react-icons/fi';
 import { Card } from '../ui/Card';
 import { Button } from '../ui/Button';
@@ -163,7 +163,7 @@ export const MCPServerCard: React.FC<MCPServerCardProps> = ({
                 : 'Test connection'
             }
           >
-            <FiPlay className={cn('w-4 h-4', isRefreshing && 'animate-spin')} />
+            <FiZap className={cn('w-4 h-4', isRefreshing && 'animate-spin')} />
           </Button>
           {(server.status === 'connected' || server.status === 'ready') && (
             <Button
