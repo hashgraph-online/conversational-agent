@@ -95,7 +95,7 @@ export const LegalGuard = ({ children }: LegalGuardProps) => {
                 variant='body1'
                 className='text-lg text-gray-600 dark:text-gray-400'
               >
-                Interact with Hedera using Hashgraph Online's HCS standards
+                Your AI assistant for Hedera - transactions, tokens, HCS standards, and more
               </Typography>
             </div>
 

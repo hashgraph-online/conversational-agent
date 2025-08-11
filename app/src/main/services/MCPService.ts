@@ -2,6 +2,7 @@ import { Logger } from '../utils/logger'
 import { spawn, ChildProcess } from 'child_process'
 import * as path from 'path'
 import * as fs from 'fs'
+import * as os from 'os'
 import { app } from 'electron'
 import { MCPServerValidator } from '../validators/MCPServerValidator'
 import type { ValidationResult } from '../validators/MCPServerValidator'
@@ -139,12 +140,54 @@ export class MCPService {
       this.serverConfigs = servers
       
       const configDir = path.dirname(this.configPath)
-      await fs.promises.mkdir(configDir, { recursive: true })
+      this.logger.debug(`Ensuring config directory exists: ${configDir}`)
       
-      const tempPath = `${this.configPath}.tmp`
-      await fs.promises.writeFile(tempPath, JSON.stringify(servers, null, 2))
-      await fs.promises.rename(tempPath, this.configPath)
-      this.logger.info(`Saved ${servers.length} MCP server configurations`)
+      try {
+        const stat = await fs.promises.stat(configDir)
+        if (!stat.isDirectory()) {
+          throw new Error(`${configDir} exists but is not a directory`)
+        }
+      } catch (error: any) {
+        if (error.code === 'ENOENT') {
+          this.logger.info(`Creating config directory: ${configDir}`)
+          await fs.promises.mkdir(configDir, { recursive: true })
+          
+          const verifyDir = await fs.promises.stat(configDir)
+          if (!verifyDir.isDirectory()) {
+            throw new Error(`Failed to create directory: ${configDir}`)
+          }
+        } else {
+          throw error
+        }
+      }
+      
+      const data = JSON.stringify(servers, null, 2)
+      
+      try {
+        await fs.promises.writeFile(this.configPath, data, 'utf8')
+        this.logger.info(`Directly saved ${servers.length} MCP server configurations to ${this.configPath}`)
+      } catch (writeError: any) {
+        this.logger.warn(`Direct write failed (${writeError.message}), trying alternative approach`)
+        
+        const tempPath = path.join(os.tmpdir(), `mcp-servers-${Date.now()}.json`)
+        this.logger.debug(`Writing to temp directory: ${tempPath}`)
+        
+        await fs.promises.writeFile(tempPath, data, 'utf8')
+        
+        const tempExists = await fs.promises.access(tempPath).then(() => true).catch(() => false)
+        if (!tempExists) {
+          throw new Error(`Failed to create temp file at ${tempPath}`)
+        }
+        
+        const content = await fs.promises.readFile(tempPath, 'utf8')
+        await fs.promises.writeFile(this.configPath, content, 'utf8')
+        
+        await fs.promises.unlink(tempPath).catch(err => 
+          this.logger.warn(`Failed to clean up temp file: ${err}`)
+        )
+        
+        this.logger.info(`Saved ${servers.length} MCP server configurations via temp file`)
+      }
     } catch (error) {
       this.logger.error('Failed to save MCP server configurations:', error)
       throw error

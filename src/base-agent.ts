@@ -11,7 +11,7 @@ import {
 import type { CostCalculation } from 'hedera-agent-kit';
 import type { AIProvider, VercelAIProvider, BAMLProvider } from './providers';
 import { Logger } from '@hashgraphonline/standards-sdk';
-import type { MCPServerConfig } from './mcp/types';
+import type { MCPServerConfig, MCPConnectionStatus } from './mcp/types';
 
 export interface ToolFilterConfig {
   namespaceWhitelist?: string[];
@@ -115,17 +115,17 @@ export abstract class BaseAgent {
   abstract getUsageStats(): UsageStats;
   abstract getUsageLog(): UsageStats[];
   abstract clearUsageStats(): void;
+  abstract connectMCPServers(): Promise<void>;
+  abstract getMCPConnectionStatus(): Map<string, MCPConnectionStatus>;
 
-  getCore(): HederaAgentKit | undefined {
+  public getCore(): HederaAgentKit | undefined {
     return this.agentKit;
   }
 
-  protected filterTools(
-    tools: StructuredTool[]
-  ): StructuredTool[] {
+  protected filterTools(tools: StructuredTool[]): StructuredTool[] {
     let filtered = [...tools];
     const filter = this.config.filtering;
-    
+
     if (!filter) return filtered;
 
     if (filter.namespaceWhitelist?.length) {
@@ -149,7 +149,6 @@ export abstract class BaseAgent {
     this.logger.debug(`Filtered tools: ${tools.length} → ${filtered.length}`);
     return filtered;
   }
-
 
   protected buildSystemPrompt(): string {
     const parts: string[] = [];

@@ -320,6 +320,17 @@ export class AgentService {
       this.initialized = true;
       this.sessionId = `session-${Date.now()}`;
 
+      if (mcpServers && mcpServers.length > 0) {
+        const underlyingAgent = conversationalAgent.getAgent();
+        this.logger.info(`Initiating background MCP connections for ${mcpServers.length} servers...`);
+        
+        setTimeout(() => {
+          underlyingAgent.connectMCPServers().catch(error => {
+            this.logger.error('Failed to initiate MCP server connections:', error);
+          });
+        }, 100);
+      }
+
       this.logger.info('Agent initialized successfully (traditional method)');
       const initTime = Date.now() - startTime;
 
@@ -468,6 +479,12 @@ export class AgentService {
           '[AgentService] Agent returned error:',
           response.error
         );
+        
+        // Handle tool schema errors with a more user-friendly message
+        if (response.error.includes('Received tool input did not match expected schema')) {
+          response.message = 'I encountered an issue formatting the transfer request. Please try rephrasing your request, for example: "Send 1 HBAR to account 0.0.800"';
+          response.output = response.message;
+        }
       }
 
       if (Array.isArray(response.intermediateSteps)) {

@@ -10,6 +10,7 @@ import { useNotificationStore } from '../../stores/notificationStore';
 import { useAgentStore } from '../../stores/agentStore';
 import { useConfigStore } from '../../stores/configStore';
 import { CodeBlock } from '../ui/CodeBlock';
+import { QuoteDisplay } from './QuoteDisplay';
 
 const getProfileImageUrl = (profileImage: string, network?: string): string => {
   if (profileImage.startsWith('hcs://')) {
@@ -63,6 +64,53 @@ function cleanMessageContent(content: string): string {
   return cleanedContent.replace(/\n<!-- FILE_START:.*? -->[\s\S]*?<!-- FILE_END:.*? -->/g, '');
 }
 
+/**
+ * Detects and parses quote information from assistant message content
+ * 
+ * @param content - Message content to parse
+ * @param metadata - Message metadata that might contain quote info
+ * @returns Parsed quote object if found, null otherwise
+ */
+function parseQuoteFromMessage(content: string, metadata?: Record<string, any>): any | null {
+  // First check if metadata contains quote information directly
+  if (metadata?.quote) {
+    return metadata.quote;
+  }
+
+  // Try to parse JSON from content that contains quote information
+  try {
+    // Look for JSON blocks in the content that contain quote information
+    const jsonPattern = /```(?:json)?\n([\s\S]*?)\n```/g;
+    let match;
+    
+    while ((match = jsonPattern.exec(content)) !== null) {
+      try {
+        const parsed = JSON.parse(match[1]);
+        if (parsed.success && parsed.quote) {
+          return parsed.quote;
+        }
+      } catch (e) {
+        // Continue searching other JSON blocks
+      }
+    }
+
+    // Try to parse the entire content as JSON if it looks like a quote response
+    if (content.trim().startsWith('{') && content.includes('quote') && content.includes('totalCostHbar')) {
+      const parsed = JSON.parse(content);
+      if (parsed.success && parsed.quote) {
+        return parsed.quote;
+      }
+      if (parsed.quote) {
+        return parsed.quote;
+      }
+    }
+  } catch (e) {
+    // Not valid JSON, continue with regular content parsing
+  }
+
+  return null;
+}
+
 const MessageBubble: React.FC<MessageBubbleProps> = ({ message, userProfile }) => {
   const isUser = message.role === 'user';
   const isSystem = message.role === 'system';
@@ -72,11 +120,16 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, userProfile }) =
   const addNotification = useNotificationStore(
     (state) => state.addNotification
   );
+  const addMessage = useAgentStore((state) => state.addMessage);
   const config = useConfigStore((state) => state.config);
   const operationalMode = config?.advanced?.operationalMode || 'autonomous';
   
-  const { approveTransaction, rejectTransaction } = useAgentStore();
+  const { approveTransaction, rejectTransaction, approveQuote, declineQuote } = useAgentStore();
 
+  const quoteData = useMemo(() => {
+    if (isUser || isSystem) return null;
+    return parseQuoteFromMessage(message.content, message.metadata);
+  }, [message.content, message.metadata, isUser, isSystem]);
 
   const contentParts = useMemo(() => {
     let cleanedContent = cleanMessageContent(message.content);
@@ -209,6 +262,28 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, userProfile }) =
     } catch (error) {
       console.error('Failed to copy message:', error);
     }
+  };
+
+  /**
+   * Handles quote approval by sending approval message to agent
+   */
+  const handleQuoteApprove = async () => {
+    if (!quoteData) return;
+
+    try {
+      await approveQuote(message.id, quoteData);
+    } catch (error) {
+      // Error handling is done in the store
+    }
+  };
+
+  /**
+   * Handles quote decline by updating the message state
+   */
+  const handleQuoteDecline = async () => {
+    if (!quoteData) return;
+
+    declineQuote(message.id);
   };
 
   if (isSystem) {
@@ -576,6 +651,15 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, userProfile }) =
                 />
               );
           })()}
+
+          {quoteData && !isUser && !message.metadata?.quoteDeclined && (
+            <QuoteDisplay
+              quote={quoteData}
+              onApprove={handleQuoteApprove}
+              onDecline={handleQuoteDecline}
+              isProcessing={message.metadata?.quoteProcessing || false}
+            />
+          )}
         </div>
       </div>
     </div>
