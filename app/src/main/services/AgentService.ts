@@ -706,11 +706,11 @@ export class AgentService {
               if (contentRef) {
                 if (attachment.type.startsWith('image/')) {
                   contentReferences.push(
-                    `[Image File: ${attachment.name}] (content-ref:${contentRef.referenceId})`
+                    `[Image File: ${attachment.name} - Content stored as reference ${contentRef.referenceId}]`
                   );
                 } else {
                   contentReferences.push(
-                    `[File: ${attachment.name}] (content-ref:${contentRef.referenceId})`
+                    `[File: ${attachment.name} - Content stored as reference ${contentRef.referenceId}]`
                   );
                 }
 
