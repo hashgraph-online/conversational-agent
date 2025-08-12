@@ -97,7 +97,7 @@ export class ConversationalAgent {
   public stateManager: IStateManager;
   private options: ConversationalAgentOptions;
   public logger: Logger;
-  private contentStoreManager?: ContentStoreManager;
+  protected contentStoreManager?: ContentStoreManager;
   public memoryManager?: SmartMemoryManager | undefined;
   private entityTools?: {
     resolveEntities: ResolveEntitiesTool;
@@ -185,13 +185,11 @@ export class ConversationalAgent {
 
       this.configureHCS10Plugin(allPlugins);
 
-      if (this.options.mcpServers && this.options.mcpServers.length > 0) {
-        this.contentStoreManager = new ContentStoreManager();
-        await this.contentStoreManager.initialize();
-        this.logger.info(
-          'ContentStoreManager initialized for MCP content reference support'
-        );
-      }
+      this.contentStoreManager = new ContentStoreManager();
+      await this.contentStoreManager.initialize();
+      this.logger.info(
+        'ContentStoreManager initialized for content reference support'
+      );
 
       await this.agent.boot();
 
