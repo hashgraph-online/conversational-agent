@@ -380,13 +380,13 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
                     'w-8 h-8 rounded-full flex items-center justify-center',
                     isUser
                       ? 'bg-gray-300 dark:bg-gray-600'
-                      : 'bg-blue-500 dark:bg-[#a679f0]'
+                      : 'bg-white dark:bg-white border border-gray-200 dark:border-gray-300'
                   )}
                 >
                   {isUser ? (
                     <FiUser className='w-4 h-4 text-gray-700 dark:text-white' />
                   ) : (
-                    <Logo size="sm" className="w-5 h-5" />
+                    <Logo size="sm" variant="dark" className="w-5 h-5" />
                   )}
                 </div>
                 <Typography variant='h6' className='font-medium'>
@@ -504,7 +504,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
                 'avatar-fallback flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center',
                 isUser
                   ? 'bg-gray-300 dark:bg-gray-600'
-                  : 'bg-blue-500 dark:bg-[#a679f0]',
+                  : 'bg-white dark:bg-white border border-gray-200 dark:border-gray-300',
                 isUser && userProfile?.profileImage ? 'hidden' : ''
               )}
               aria-hidden='true'
@@ -523,7 +523,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
                 <Logo
                   showText={false}
                   size='sm'
-                  variant='white'
+                  variant='dark'
                   className='w-5 h-5'
                 />
               )}
