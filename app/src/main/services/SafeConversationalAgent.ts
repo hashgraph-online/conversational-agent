@@ -2,6 +2,7 @@ import { ConversationalAgent } from '@hashgraphonline/conversational-agent';
 import type { AgentOperationalMode } from '@hashgraphonline/conversational-agent';
 import type { NetworkType } from '@hashgraphonline/standards-sdk';
 import type { MCPServerConfig as LibMCPServerConfig } from '@hashgraphonline/conversational-agent';
+import type { ContentStoreManager } from '@hashgraphonline/conversational-agent';
 
 /**
  * Configuration interface extending ConversationalAgentOptions with entity memory options
@@ -53,6 +54,8 @@ export class SafeConversationalAgent extends ConversationalAgent {
         provider: this.config.llmProvider || 'openai',
         hasMemoryManager: !!this.memoryManager,
         memoryManagerType: this.memoryManager?.constructor.name,
+        hasContentStoreManager: !!this.getContentStoreManager(),
+        contentStoreInitialized: this.getContentStoreManager()?.isInitialized(),
       });
 
       if (this.config.mcpServers && this.config.mcpServers.length > 0) {
@@ -119,6 +122,13 @@ export class SafeConversationalAgent extends ConversationalAgent {
       this.logger?.error('Error during disconnect:', error);
       throw error;
     }
+  }
+
+  /**
+   * Get the ContentStoreManager instance
+   */
+  getContentStoreManager(): ContentStoreManager | undefined {
+    return this.contentStoreManager;
   }
 
   /**

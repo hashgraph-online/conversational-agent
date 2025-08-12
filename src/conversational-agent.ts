@@ -93,17 +93,16 @@ export class ConversationalAgent {
   public hcs10Plugin: HCS10Plugin;
   public hcs2Plugin: HCS2Plugin;
   public inscribePlugin: InscribePlugin;
-  public hbarTransferPlugin: HbarPlugin;
+  public hbarPlugin: HbarPlugin;
   public stateManager: IStateManager;
   private options: ConversationalAgentOptions;
   public logger: Logger;
-  private contentStoreManager?: ContentStoreManager;
+  protected contentStoreManager?: ContentStoreManager;
   public memoryManager?: SmartMemoryManager | undefined;
   private entityTools?: {
     resolveEntities: ResolveEntitiesTool;
     extractEntities: ExtractEntitiesTool;
   };
-  private mcpConnectionStatus: Map<string, MCPConnectionStatus> = new Map();
 
   constructor(options: ConversationalAgentOptions) {
     this.options = options;
@@ -111,7 +110,7 @@ export class ConversationalAgent {
     this.hcs10Plugin = new HCS10Plugin();
     this.hcs2Plugin = new HCS2Plugin();
     this.inscribePlugin = new InscribePlugin();
-    this.hbarTransferPlugin = new HbarPlugin();
+    this.hbarPlugin = new HbarPlugin();
     this.logger = new Logger({
       module: 'ConversationalAgent',
       silent: options.disableLogging || false,
@@ -164,8 +163,6 @@ export class ConversationalAgent {
         network as MirrorNetwork
       );
 
-      const allPlugins = this.preparePlugins();
-
       let llm: ChatOpenAI | ChatAnthropic;
       if (llmProvider === 'anthropic') {
         llm = new ChatAnthropic({
@@ -181,18 +178,18 @@ export class ConversationalAgent {
         });
       }
 
+      const allPlugins = this.preparePlugins();
       const agentConfig = this.createAgentConfig(serverSigner, llm, allPlugins);
+
       this.agent = createAgent(agentConfig);
 
       this.configureHCS10Plugin(allPlugins);
 
-      if (this.options.mcpServers && this.options.mcpServers.length > 0) {
-        this.contentStoreManager = new ContentStoreManager();
-        await this.contentStoreManager.initialize();
-        this.logger.info(
-          'ContentStoreManager initialized for MCP content reference support'
-        );
-      }
+      this.contentStoreManager = new ContentStoreManager();
+      await this.contentStoreManager.initialize();
+      this.logger.info(
+        'ContentStoreManager initialized for content reference support'
+      );
 
       await this.agent.boot();
 
@@ -338,10 +335,10 @@ export class ConversationalAgent {
       this.hcs10Plugin,
       this.hcs2Plugin,
       this.inscribePlugin,
-      this.hbarTransferPlugin,
+      this.hbarPlugin,
     ];
 
-    const corePlugins: BasePlugin[] = getAllHederaCorePlugins();
+    const corePlugins = getAllHederaCorePlugins();
 
     if (enabledPlugins) {
       const enabledSet = new Set(enabledPlugins);
@@ -720,65 +717,14 @@ export class ConversationalAgent {
       return;
     }
 
-    this.options.mcpServers.forEach((server) => {
-      this.mcpConnectionStatus.set(server.name, {
-        serverName: server.name,
-        connected: false,
-        tools: [],
+    this.agent
+      .connectMCPServers()
+      .catch((e) => {
+        this.logger.error('Failed to connect MCP servers:', e);
+      })
+      .then(() => {
+        this.logger.info('MCP servers connected successfully');
       });
-    });
-
-    this.startConnections();
-  }
-
-  /**
-   * Start MCP connections without blocking initialization
-   * @private
-   */
-  private async startConnections(): Promise<void> {
-    if (!this.agent || !this.options.mcpServers) {
-      return;
-    }
-
-    try {
-      this.logger.info('Starting MCP server connections asynchronously...');
-
-      for (const server of this.options.mcpServers) {
-        this.connectServer(server);
-      }
-    } catch (error) {
-      this.logger.error('Error starting MCP connections:', error);
-    }
-  }
-
-  /**
-   * Connect to a single MCP server
-   * @param {MCPServerConfig} server - Server configuration
-   * @private
-   */
-  private async connectServer(server: MCPServerConfig): Promise<void> {
-    try {
-      this.logger.info(`Connecting to MCP server: ${server.name}`);
-
-      const status = this.mcpConnectionStatus.get(server.name);
-      if (status) {
-        setTimeout(() => {
-          status.connected = true;
-          this.logger.info(`MCP server ${server.name} connected successfully`);
-        }, Math.random() * 2000 + 1000);
-      }
-    } catch (error) {
-      this.logger.error(
-        `Failed to connect to MCP server ${server.name}:`,
-        error
-      );
-
-      const status = this.mcpConnectionStatus.get(server.name);
-      if (status) {
-        status.connected = false;
-        status.error = error instanceof Error ? error.message : 'Unknown error';
-      }
-    }
   }
 
   /**
@@ -786,7 +732,10 @@ export class ConversationalAgent {
    * @returns {Map<string, MCPConnectionStatus>} Connection status map
    */
   getMCPConnectionStatus(): Map<string, MCPConnectionStatus> {
-    return new Map(this.mcpConnectionStatus);
+    if (this.agent) {
+      return this.agent.getMCPConnectionStatus();
+    }
+    return new Map();
   }
 
   /**
@@ -795,8 +744,12 @@ export class ConversationalAgent {
    * @returns {boolean} True if connected, false otherwise
    */
   isMCPServerConnected(serverName: string): boolean {
-    const status = this.mcpConnectionStatus.get(serverName);
-    return status?.connected ?? false;
+    if (this.agent) {
+      const statusMap = this.agent.getMCPConnectionStatus();
+      const status = statusMap.get(serverName);
+      return status?.connected ?? false;
+    }
+    return false;
   }
 
   /**
@@ -838,5 +791,4 @@ export class ConversationalAgent {
 
     return JSON.stringify(response);
   }
-
 }

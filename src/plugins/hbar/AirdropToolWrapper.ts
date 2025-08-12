@@ -127,7 +127,7 @@ export class AirdropToolWrapper extends StructuredTool {
           `${mirrorNodeUrl}/api/v1/tokens/${tokenId}`
         );
         if (response.ok) {
-          const tokenData = await response.json() as Record<string, unknown>;
+          const tokenData = (await response.json()) as Record<string, unknown>;
           const decimals = parseInt(String(tokenData.decimals || '0'));
           this.logger.info(
             `Token ${tokenId} found with ${decimals} decimals via API`

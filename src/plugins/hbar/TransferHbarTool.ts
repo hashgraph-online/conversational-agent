@@ -19,7 +19,7 @@ const TransferHbarZodSchemaCore = z.object({
     .array(HbarTransferInputSchema)
     .min(1)
     .describe(
-      'Array of ALL transfers for this transaction. For multi-party transfers (e.g., "A sends 5 to C and B sends 3 to C"), include all transfers here: [{accountId: "A", amount: -5}, {accountId: "B", amount: -3}, {accountId: "C", amount: 8}]. Amounts must sum to zero.'
+      'Array of transfers. For simple transfers from your operator account, just include the recipient with positive amount: [{accountId: "0.0.800", amount: 1}]. For complex multi-party transfers, include all parties with negative amounts for senders and positive for receivers.'
     ),
   memo: z.string().optional().describe('Optional. Memo for the transaction.'),
 });
@@ -34,7 +34,7 @@ export class TransferHbarTool extends BaseHederaTransactionTool<
 > {
   name = 'hedera-account-transfer-hbar-v2';
   description =
-    'PRIMARY TOOL FOR HBAR TRANSFERS: Transfers HBAR between accounts. Supports multiple transfers in a single transaction - when multiple accounts need to send/receive HBAR (e.g., "A sends 5 HBAR to C and B sends 3 HBAR to C"), include ALL transfers in one transfers array. The sum of all transfers must equal zero. Use this for scheduled transactions and multi-signature scenarios.';
+    'PRIMARY TOOL FOR HBAR TRANSFERS: Transfers HBAR between accounts. For simple transfers from the operator account, just specify the recipient with a positive amount (e.g., [{accountId: "0.0.800", amount: 1}] to send 1 HBAR to 0.0.800). The sender will be automatically added. For multi-party transfers (e.g., "A sends 5 HBAR to C and B sends 3 HBAR to C"), include ALL transfers with their amounts (negative for senders, positive for receivers).';
   specificInputSchema = TransferHbarZodSchemaCore;
   namespace = 'account';
 

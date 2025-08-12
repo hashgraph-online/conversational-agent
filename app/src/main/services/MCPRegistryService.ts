@@ -101,7 +101,7 @@ export class MCPRegistryService {
         try {
           const cacheResult = await this.cacheManager.searchServers(cacheOptions)
           
-          if (cacheResult.fromCache || cacheResult.servers.length > 0) {
+          if (cacheResult.servers.length > 0) {
             const convertedServers = cacheResult.servers.map(this.convertFromCachedServer)
             const installableServers = convertedServers.filter(server => {
               const installable = this.isServerInstallable(server)
@@ -111,13 +111,15 @@ export class MCPRegistryService {
               return installable
             })
             
-            this.logger.info(`Found ${installableServers.length} installable servers from cache (filtered from ${cacheResult.servers.length}, ${cacheResult.queryTime}ms)`)
+            this.logger.info(`Using cached results: Found ${installableServers.length} installable servers (filtered from ${cacheResult.servers.length}, fromCache: ${cacheResult.fromCache}, total: ${cacheResult.total}, ${cacheResult.queryTime}ms)`)
             return {
               servers: installableServers,
-              total: installableServers.length,
+              total: cacheResult.total,
               hasMore: cacheResult.hasMore
             }
           }
+          
+          this.logger.info(`Cache returned no results - serverCount: ${cacheResult.servers.length}, total: ${cacheResult.total}, proceeding to fresh search`)
 
           this.triggerBackgroundSync()
         } catch (cacheError) {
@@ -125,7 +127,9 @@ export class MCPRegistryService {
         }
       }
       
+      this.logger.info('Performing fresh registry search...')
       const freshResults = await this.searchRegistriesWithTimeout(options, 5000)
+      this.logger.info(`Fresh search completed: ${freshResults.servers.length} servers, total: ${freshResults.total}, hasMore: ${freshResults.hasMore}`)
       
       return freshResults
 
@@ -179,6 +183,7 @@ export class MCPRegistryService {
     const hasCommand = !!registryServer.config?.command
     const hasGitHub = !!(registryServer.repository?.url && registryServer.repository.url.includes('github.com'))
     const hasPackageName = !!registryServer.packageName
+    const hasName = !!registryServer.name
     
     if (hasCommand || hasGitHub) {
       return true
@@ -190,6 +195,11 @@ export class MCPRegistryService {
         this.logger.debug(`Filtering out server with invalid packageName: ${registryServer.packageName}`)
         return false
       }
+      return true
+    }
+    
+    // Allow servers with at least a name (can potentially be installed by name)
+    if (hasName) {
       return true
     }
     
@@ -543,7 +553,11 @@ export class MCPRegistryService {
       try {
         await this.cacheManager.clearSearchCache()
         await this.cacheManager.clearRegistrySync()
-        this.logger.info('Registry cache and sync status cleared')
+        // Also clear all server cache
+        await this.cacheManager.clearRegistryCache('pulsemcp')
+        await this.cacheManager.clearRegistryCache('official')
+        await this.cacheManager.clearRegistryCache('smithery')
+        this.logger.info('Registry cache and sync status cleared completely')
       } catch (error) {
         this.logger.error('Failed to clear cache:', error)
       }
@@ -758,13 +772,11 @@ export class MCPRegistryService {
       ])
 
       const allServers: MCPRegistryServer[] = []
-      let totalCount = 0
 
       if (results[0].status === 'fulfilled' && Array.isArray(results[0].value)) {
         results[0].value.forEach((result, index) => {
           if (result.status === 'fulfilled' && result.value) {
             allServers.push(...result.value.servers)
-            totalCount += result.value.total || result.value.servers.length
           } else {
             const registryNames = ['PulseMCP', 'Official Registry', 'Smithery Registry']
             this.logger.warn(`Failed to fetch from ${registryNames[index]}:`, 
@@ -776,16 +788,23 @@ export class MCPRegistryService {
       const uniqueServers = this.deduplicateServers(allServers)
       const filteredServers = this.filterServers(uniqueServers, options)
       const sortedServers = this.sortServers(filteredServers, options.query)
+      
+      // Calculate total based on actual filtered results, not registry totals
+      const totalCount = sortedServers.length
 
       const cacheServers = sortedServers.map(server => this.convertToCachedServer(server, 'mixed'))
       if (cacheServers.length > 0) {
         await this.cacheManager.bulkCacheServers(cacheServers)
       }
 
+      const offset = options.offset || 0
+      const hasMoreResults = offset + sortedServers.length < totalCount
+
       return {
         servers: sortedServers,
         total: totalCount,
-        hasMore: false      }
+        hasMore: hasMoreResults
+      }
 
     } catch (error) {
       this.logger.warn('Timeout registry search failed:', error)

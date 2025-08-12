@@ -24,12 +24,14 @@ import {
 import { MCPClientManager } from './mcp/MCPClientManager';
 import { convertMCPToolToLangChain } from './mcp/adapters/langchain';
 import { SmartMemoryManager } from './memory/SmartMemoryManager';
+import type { MCPConnectionStatus } from './mcp/types';
 
 export class LangChainAgent extends BaseAgent {
   private executor: ContentAwareAgentExecutor | undefined;
   private systemMessage = '';
   private mcpManager?: MCPClientManager;
   private smartMemory: SmartMemoryManager | undefined;
+  private mcpConnectionStatus: Map<string, MCPConnectionStatus> = new Map();
 
   async boot(): Promise<void> {
     if (this.initialized) {
@@ -270,6 +272,10 @@ export class LangChainAgent extends BaseAgent {
     }
   }
 
+  getMCPConnectionStatus(): Map<string, MCPConnectionStatus> {
+    return new Map(this.mcpConnectionStatus);
+  }
+
   private async createAgentKit(): Promise<HederaAgentKit> {
     const corePlugins = getAllHederaCorePlugins();
     const extensionPlugins = this.config.extensions?.plugins || [];
@@ -448,7 +454,7 @@ export class LangChainAgent extends BaseAgent {
   }
 
   /**
-   * Connect to MCP servers asynchronously after agent boot
+   * Connect to MCP servers asynchronously after agent boot with background timeout pattern
    */
   async connectMCPServers(): Promise<void> {
     if (!this.config.mcp?.servers || this.config.mcp.servers.length === 0) {
@@ -456,62 +462,70 @@ export class LangChainAgent extends BaseAgent {
     }
 
     if (!this.mcpManager) {
-      this.logger.warn(
-        'MCP manager not initialized. Cannot connect to servers.'
-      );
-      return;
+      this.mcpManager = new MCPClientManager(this.logger);
     }
 
-    this.logger.info('Starting async MCP server connections...');
+    this.logger.info(`Starting background MCP server connections for ${this.config.mcp.servers.length} servers...`);
 
-    for (const serverConfig of this.config.mcp.servers) {
-      this.connectServer(serverConfig).catch((error) => {
-        this.logger.error(
-          `Connection to MCP server ${serverConfig.name} failed:`,
-          error
-        );
-      });
-    }
+    this.config.mcp.servers.forEach(serverConfig => {
+      this.connectServerInBackground(serverConfig);
+    });
+
+    this.logger.info('MCP server connections initiated in background');
   }
 
   /**
-   * Connect to a single MCP server
+   * Connect to a single MCP server in background with timeout
    */
-  private async connectServer(serverConfig: any): Promise<void> {
-    try {
-      this.logger.info(`Connecting to MCP server: ${serverConfig.name}`);
+  private connectServerInBackground(serverConfig: any): void {
+    const serverName = serverConfig.name;
+    
+    setTimeout(async () => {
+      try {
+        this.logger.info(`Background connecting to MCP server: ${serverName}`);
+        
+        const status = await this.mcpManager!.connectServer(serverConfig);
+        this.mcpConnectionStatus.set(serverName, status);
 
-      const status = await this.mcpManager!.connectServer(serverConfig);
-
-      if (status.connected) {
-        this.logger.info(
-          `Connected to MCP server ${status.serverName} with ${status.tools.length} tools`
-        );
-
-        for (const mcpTool of status.tools) {
-          const langchainTool = convertMCPToolToLangChain(
-            mcpTool,
-            this.mcpManager!,
-            serverConfig
+        if (status.connected) {
+          this.logger.info(
+            `Successfully connected to MCP server ${status.serverName} with ${status.tools.length} tools`
           );
-          this.tools.push(langchainTool);
-        }
 
-        if (this.initialized && this.executor) {
-          await this.createExecutor();
+          for (const mcpTool of status.tools) {
+            const langchainTool = convertMCPToolToLangChain(
+              mcpTool,
+              this.mcpManager!,
+              serverConfig
+            );
+            this.tools.push(langchainTool);
+          }
+
+          if (this.initialized && this.executor) {
+            this.logger.info(`Recreating executor with ${this.tools.length} total tools`);
+            await this.createExecutor();
+          }
+        } else {
+          this.logger.error(
+            `Failed to connect to MCP server ${status.serverName}: ${status.error}`
+          );
         }
-      } else {
+      } catch (error) {
         this.logger.error(
-          `Failed to connect to MCP server ${status.serverName}: ${status.error}`
+          `Background connection failed for MCP server ${serverName}:`,
+          error
         );
+        
+        this.mcpConnectionStatus.set(serverName, {
+          connected: false,
+          serverName,
+          tools: [],
+          error: error instanceof Error ? error.message : 'Connection failed'
+        });
       }
-    } catch (error) {
-      this.logger.error(
-        `Error connecting to MCP server ${serverConfig.name}:`,
-        error
-      );
-    }
+    }, 1000);
   }
+
 
   /**
    * Check if a string is valid JSON

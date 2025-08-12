@@ -48,7 +48,15 @@ export interface AgentStore {
 
   connect: () => Promise<void>;
   disconnect: () => Promise<void>;
-  sendMessage: (content: string, attachments?: Array<{name: string; data: string; type: string; size: number;}>) => Promise<void>;
+  sendMessage: (
+    content: string,
+    attachments?: Array<{
+      name: string;
+      data: string;
+      type: string;
+      size: number;
+    }>
+  ) => Promise<void>;
 
   approveTransaction: (messageId: string) => Promise<void>;
   rejectTransaction: (messageId: string) => Promise<void>;
@@ -226,7 +234,15 @@ export const useAgentStore = create<AgentStore>((set, get) => {
       }
     },
 
-    sendMessage: async (content: string, attachments?: Array<{name: string; data: string; type: string; size: number;}>) => {
+    sendMessage: async (
+      content: string,
+      attachments?: Array<{
+        name: string;
+        data: string;
+        type: string;
+        size: number;
+      }>
+    ) => {
       const { isConnected, messages } = get();
 
       if (!isConnected) {
@@ -238,7 +254,8 @@ export const useAgentStore = create<AgentStore>((set, get) => {
         role: 'user',
         content,
         timestamp: new Date(),
-        metadata: attachments && attachments.length > 0 ? { attachments } : undefined,
+        metadata:
+          attachments && attachments.length > 0 ? { attachments } : undefined,
       };
 
       set((state) => ({ messages: [...state.messages, userMessage] }));
@@ -302,8 +319,7 @@ export const useAgentStore = create<AgentStore>((set, get) => {
                   transactionParsingError: 'Invalid transaction bytes format',
                 };
               }
-            } catch (error) {
-            }
+            } catch (error) {}
           }
 
           set((state) => ({ messages: [...state.messages, assistantMessage] }));

@@ -3,9 +3,11 @@ import {
   HederaTool,
   BasePlugin,
   HederaAgentKit,
+  HederaAirdropTokenTool,
 } from 'hedera-agent-kit';
 import { TransferHbarTool } from './TransferHbarTool';
-import { AirdropToolWrapper } from '../../utils/AirdropToolWrapper';
+import { AirdropToolWrapper } from './AirdropToolWrapper';
+import { StructuredTool } from '@langchain/core/tools';
 
 export class HbarPlugin extends BasePlugin {
   id = 'hbar';
@@ -16,7 +18,8 @@ export class HbarPlugin extends BasePlugin {
   author = 'Hashgraph Online';
   namespace = 'account';
 
-  private tools: HederaTool[] = [];
+  private tools: (HederaTool | AirdropToolWrapper)[] = [];
+  private originalAirdropTool: StructuredTool | null = null;
 
   override async initialize(context: GenericPluginContext): Promise<void> {
     await super.initialize(context);
@@ -49,22 +52,31 @@ export class HbarPlugin extends BasePlugin {
       logger: this.context.logger,
     });
 
-    const originalAirdropTool = hederaKit
-      .getAggregatedLangChainTools()
-      .find((tool) => tool.name === 'hedera-hts-airdrop-token');
-    if (!originalAirdropTool) {
-      throw new Error('Airdrop tool not found in HederaKit');
+    this.tools = [transfer];
+
+    try {
+      this.context.logger.info(
+        'Creating wrapper for passed original airdrop tool'
+      );
+
+      const airdropTool = new HederaAirdropTokenTool({
+        hederaKit: hederaKit,
+        logger: this.context.logger,
+      });
+      const wrappedAirdropTool = new AirdropToolWrapper(airdropTool, hederaKit);
+      this.tools.push(wrappedAirdropTool);
+      this.context.logger.info('Added wrapped airdrop tool to HBAR Plugin');
+    } catch (error) {
+      this.context.logger.error('Error creating airdrop tool wrapper:', error);
     }
 
-    const airdropWrapped = new AirdropToolWrapper(
-      originalAirdropTool,
-      hederaKit
-    ) as unknown as HederaTool;
-
-    this.tools = [transfer, airdropWrapped];
+    this.context.logger.info(
+      `HBAR Plugin tools initialized with ${this.tools.length} tools`
+    );
   }
 
   override getTools(): HederaTool[] {
+    // @ts-ignore
     return this.tools;
   }
 
