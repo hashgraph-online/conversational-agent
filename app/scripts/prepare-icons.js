@@ -6,19 +6,20 @@ const { execSync } = require('child_process');
 
 const assetsDir = path.join(__dirname, '..', 'assets');
 const buildDir = path.join(__dirname, '..', 'build');
-const iconPng = path.join(buildDir, 'icon.png');
-const iconIcns = path.join(assetsDir, 'icon.icns');
+// Use hol-dock.png as the canonical app icon source
+const iconPng = path.join(assetsDir, 'hol-dock.png');
+const iconIcns = path.join(assetsDir, 'hol-dock.icns');
 
-console.log('🔧 Preparing application icons...');
+console.log('🔧 Preparing application icons (hol-dock)...');
 
 // Ensure assets directory exists
 if (!fs.existsSync(assetsDir)) {
   fs.mkdirSync(assetsDir, { recursive: true });
 }
 
-// Check if icon.png exists
+// Check if hol-dock.png exists
 if (!fs.existsSync(iconPng)) {
-  console.error('❌ icon.png not found in build directory');
+  console.error('❌ hol-dock.png not found in assets directory');
   process.exit(1);
 }
 
