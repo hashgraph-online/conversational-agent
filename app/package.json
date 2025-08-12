@@ -9,7 +9,8 @@
     "package": "npm run prepare-icons && electron-forge package",
     "make": "npm run prepare-icons && electron-forge make",
     "publish": "npm run prepare-icons && electron-forge publish",
-    "dev": "npx electron-forge start",
+    "setup": "node scripts/setup-legal-files.js",
+    "dev": "npm run setup && npx electron-forge start",
     "build": "tsc && npm run prepare-icons && electron-forge package",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
@@ -17,7 +18,11 @@
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "prepare-icons": "node scripts/prepare-icons.js",
-    "make:all": "npx tsx scripts/build-all-platforms.ts"
+    "make:all": "npx tsx scripts/build-all-platforms.ts",
+    "dist": "npm run build",
+    "dist:mac": "npm run prepare-icons && electron-forge make --platform darwin",
+    "dist:win": "npm run prepare-icons && electron-forge make --platform win32",
+    "dist:linux": "npm run prepare-icons && electron-forge make --platform linux"
   },
   "keywords": [
     "electron",

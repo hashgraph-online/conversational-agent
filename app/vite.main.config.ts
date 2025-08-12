@@ -8,8 +8,13 @@ export default defineConfig({
       output: {
         entryFileNames: 'main.js',
       },
+      external: [
+        'electron',
+        'better-sqlite3'
+      ],
     },
     outDir: '.vite/build',
+    target: 'node20', // Electron 37 uses Node 22, but node20 is safer for compatibility
   },
   resolve: {
     conditions: ['node'],
