@@ -1,5 +1,6 @@
 {
-  "name": "hashgraph-online-desktop",
+  "name": "hol-desktop",
+  "productName": "HOL Desktop",
   "version": "1.0.0",
   "description": "Desktop application for HashgraphOnline",
   "main": ".vite/build/main.js",

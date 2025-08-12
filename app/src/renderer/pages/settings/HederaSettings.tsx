@@ -6,9 +6,10 @@ import { useConfigStore } from '../../stores/configStore'
 import { hederaConfigSchema, type HederaConfigForm } from '../../schemas/configuration'
 import { Input } from '../../components/ui'
 import { Button } from '../../components/ui'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select'
 import Typography from '../../components/ui/Typography'
 
-interface HederaSettingsProps {}
+interface HederaSettingsProps { }
 
 export const HederaSettings: React.FC<HederaSettingsProps> = () => {
   const { config, setHederaAccountId, setHederaPrivateKey, setHederaNetwork, testHederaConnection, isHederaConfigValid } = useConfigStore()
@@ -133,14 +134,20 @@ export const HederaSettings: React.FC<HederaSettingsProps> = () => {
           <Typography variant="body1" className="font-medium mb-1" noMargin>
             Network
           </Typography>
-          <select
-            id="network"
-            {...register('network')}
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-blue dark:bg-gray-800 dark:text-white"
+          <Select
+            value={watchNetwork}
+            onValueChange={(value) => {
+              reset({ ...watch(), network: value as any })
+            }}
           >
-            <option value="testnet">Testnet</option>
-            <option value="mainnet">Mainnet</option>
-          </select>
+            <SelectTrigger id="network" className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="testnet">Testnet</SelectItem>
+              <SelectItem value="mainnet">Mainnet</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         <div className="pt-4">
@@ -156,11 +163,10 @@ export const HederaSettings: React.FC<HederaSettingsProps> = () => {
 
         {testResult && (
           <div
-            className={`p-3 rounded-md flex items-center space-x-2 ${
-              testResult.success
+            className={`p-3 rounded-md flex items-center space-x-2 ${testResult.success
                 ? 'bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-300 border border-green-200 dark:border-green-800'
                 : 'bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-300 border border-red-200 dark:border-red-800'
-            }`}
+              }`}
           >
             {testResult.success ? (
               <FiCheckCircle className="w-5 h-5 flex-shrink-0" />

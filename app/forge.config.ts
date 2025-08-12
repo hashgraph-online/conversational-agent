@@ -8,10 +8,15 @@ import { VitePlugin } from '@electron-forge/plugin-vite';
 
 const config: ForgeConfig = {
   packagerConfig: {
-    name: 'Hashgraph Online',
+    name: 'HOL Desktop',
     icon: './assets/hol-dock',
     appBundleId: 'com.hashgraphonline.conversational-agent',
     appCategoryType: 'public.app-category.productivity',
+    extendInfo: {
+      CFBundleName: 'HOL Desktop',
+      CFBundleDisplayName: 'HOL Desktop',
+      CFBundleShortVersionString: '1.0.0'
+    },
     osxSign: {} // Empty object to skip code signing
   },
   rebuildConfig: {},
@@ -28,14 +33,14 @@ const config: ForgeConfig = {
       options: {
         categories: ['Utility'],
         description: 'Desktop application for HashgraphOnline',
-        icon: './assets/hol-dock.png'
+        icon: './assets/HOL-Icon.png'
       }
     }),
     new MakerDeb({
       options: {
         categories: ['Utility'],
         description: 'Desktop application for HashgraphOnline',
-        icon: './assets/hol-dock.png'
+        icon: './assets/HOL-Icon.png'
       }
     })
   ],
