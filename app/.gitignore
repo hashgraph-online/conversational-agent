@@ -68,6 +68,3 @@ build/privacy.md
 build/terms.md
 build/entitlements.mac.plist
 build/icon.icns
-
-# Generated type definitions
-src/types/hashgraphonline-conversational-agent.d.ts
