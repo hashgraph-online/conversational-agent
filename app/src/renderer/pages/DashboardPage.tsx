@@ -2,7 +2,6 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import Typography from '../components/ui/Typography';
-import Logo from '../components/ui/Logo';
 import {
   HiChatBubbleBottomCenterText,
   HiServerStack,
@@ -219,52 +218,20 @@ const DashboardPage: React.FC = () => {
           transition={{ duration: 0.5 }}
           className='text-center mb-12'
         >
-          <div className='inline-flex items-center justify-center mb-6'>
-            <motion.div
-              className='relative'
-              animate={{
-                scale: [1, 1.05, 1],
-              }}
-              transition={{
-                duration: 6,
-                repeat: Infinity,
-                ease: 'easeInOut',
-              }}
-            >
-              <motion.div
-                className='absolute inset-0 rounded-2xl blur-xl'
-                animate={{
-                  background: [
-                    'linear-gradient(to bottom right, rgba(166, 121, 240, 0.5), rgba(85, 153, 254, 0.5))',
-                    'linear-gradient(to bottom right, rgba(85, 153, 254, 0.5), rgba(72, 223, 123, 0.5))',
-                    'linear-gradient(to bottom right, rgba(72, 223, 123, 0.5), rgba(166, 121, 240, 0.5))',
-                    'linear-gradient(to bottom right, rgba(166, 121, 240, 0.5), rgba(85, 153, 254, 0.5))',
-                  ],
-                }}
-                transition={{
-                  duration: 10,
-                  repeat: Infinity,
-                  ease: 'linear',
-                }}
-              />
-
-              <Logo size='lg' showText={false} className='relative z-10' />
-            </motion.div>
-          </div>
-
-          <Typography variant='h1' className='font-bold text-5xl mb-4'>
-            <span className='bg-gradient-to-r from-[#a679f0] via-[#5599fe] to-[#48df7b] bg-clip-text text-transparent'>
-              Welcome to HashgraphOnline
+          <Typography
+            variant='h1'
+            className='font-bold text-5xl mb-4'
+          >
+            <span className='bg-gradient-to-r from-[#5599fe] to-[#48df7b] bg-clip-text text-transparent'>
+              Your gateway to the Hedera Hashgraph.
             </span>
           </Typography>
-
           <Typography
             variant='body1'
             color='muted'
             className='max-w-2xl mx-auto'
           >
-            Your gateway to the Hedera Hashgraph. Chat with AI, manage
-            extensions, and explore blockchain capabilities.
+            Chat with AI, manage extensions, and explore blockchain capabilities.
           </Typography>
         </motion.div>
 

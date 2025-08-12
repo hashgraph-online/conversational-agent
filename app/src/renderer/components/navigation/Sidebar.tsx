@@ -299,27 +299,13 @@ const SidebarContent: React.FC<SidebarProps & { location: any }> = ({
 
         {isCollapsed ? (
           <Link to='/dashboard' className='flex justify-center pt-2 group'>
-            <div className='relative transform transition-transform duration-200 group-hover:scale-105'>
-              <div className='absolute inset-0 bg-gradient-to-br from-[#a679f0] to-[#5599fe] rounded-2xl blur-xl opacity-50 group-hover:opacity-70 transition-opacity' />
-              <Logo size='md' showText={false} className='relative' />
-            </div>
+            <Logo variant='icon' size='md-lg' className='transform transition-transform duration-200 group-hover:scale-105' />
           </Link>
         ) : (
-          <div className='flex items-start gap-3 pr-8'>
-            <Link to='/dashboard' className='relative flex-shrink-0 group'>
-              <div className='absolute inset-0 bg-gradient-to-br from-[#a679f0] to-[#5599fe] rounded-2xl blur-xl opacity-50 group-hover:opacity-70 transition-opacity' />
-              <Logo size='lg' showText={false} className='relative transform transition-transform duration-200 group-hover:scale-105' />
+          <div className='flex justify-start px-4'>
+            <Link to='/dashboard' className='group'>
+              <Logo size='lg' className='transform transition-transform duration-200 group-hover:scale-105' />
             </Link>
-            <div className='flex-1 min-w-0 flex flex-col'>
-              <Link
-                to='/dashboard'
-                className='text-2xl font-bold bg-gradient-to-r from-[#5599fe] to-[#a679f0] bg-clip-text text-transparent font-mono tracking-wide hover:opacity-80 transition-opacity'
-                style={{ lineHeight: '1' }}
-              >
-                <div>Hashgraph</div>
-                <div>Online</div>
-              </Link>
-            </div>
           </div>
         )}
       </div>

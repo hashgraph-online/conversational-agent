@@ -50,33 +50,27 @@ export const PrivacyModal: React.FC<PrivacyModalProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className='max-w-4xl max-h-[90vh] overflow-hidden flex flex-col p-0 border-0'>
-        {/* Beautiful gradient header */}
-        <div className='relative bg-gradient-to-br from-[#48df7b] via-[#5599fe] to-[#a679f0] p-8'>
-          <div className='absolute inset-0 bg-black/10' />
-          <div className='relative z-10'>
-            <div className='flex items-center justify-center mb-4'>
-              <motion.div
-                initial={{ scale: 0.8, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ duration: 0.3 }}
-                className='w-16 h-16 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center'
-              >
-                <FiLock className='w-8 h-8 text-white' />
-              </motion.div>
+      <DialogContent className='!max-w-none w-[95vw] h-[90vh] overflow-hidden flex flex-col p-0' showCloseButton={false}>
+        {/* Clean header */}
+        <div className='bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 p-6'>
+          <div className='flex items-center gap-4'>
+            <div className='w-12 h-12 bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center'>
+              <FiLock className='w-6 h-6 text-gray-700 dark:text-gray-300' />
             </div>
-            <Typography
-              variant='h3'
-              className='text-center text-white font-bold mb-2'
-            >
-              Privacy Policy
-            </Typography>
-            <Typography
-              variant='body2'
-              className='text-center text-white/90 max-w-md mx-auto'
-            >
-              Learn how we protect and handle your personal information
-            </Typography>
+            <div>
+              <Typography
+                variant='h3'
+                className='font-bold text-gray-900 dark:text-white'
+              >
+                Privacy Policy
+              </Typography>
+              <Typography
+                variant='body2'
+                className='text-gray-600 dark:text-gray-400'
+              >
+                Learn how we protect and handle your personal information
+              </Typography>
+            </div>
           </div>
         </div>
 
@@ -175,7 +169,7 @@ export const PrivacyModal: React.FC<PrivacyModalProps> = ({
               <Button
                 onClick={handleAccept}
                 disabled={!hasScrolledToBottom && !isLoading}
-                variant='gradient'
+                variant='default'
                 className='flex items-center gap-2 min-w-[140px]'
               >
                 <FiCheck className='w-4 h-4' />

@@ -9,7 +9,7 @@ import { VitePlugin } from '@electron-forge/plugin-vite';
 const config: ForgeConfig = {
   packagerConfig: {
     name: 'Hashgraph Online',
-    icon: './assets/hol-app-icon-bubble',
+    icon: './assets/hol-dock',
     appBundleId: 'com.hashgraphonline.conversational-agent',
     appCategoryType: 'public.app-category.productivity',
     osxSign: {} // Empty object to skip code signing
@@ -28,14 +28,14 @@ const config: ForgeConfig = {
       options: {
         categories: ['Utility'],
         description: 'Desktop application for HashgraphOnline',
-        icon: './assets/hol-app-bubble.png'
+        icon: './assets/hol-dock.png'
       }
     }),
     new MakerDeb({
       options: {
         categories: ['Utility'],
         description: 'Desktop application for HashgraphOnline',
-        icon: './assets/hol-app-bubble.png'
+        icon: './assets/hol-dock.png'
       }
     })
   ],

@@ -75,10 +75,7 @@ export const ModeToggle: React.FC<ModeToggleProps> = ({
     if (!config?.autonomousMode) {
       return (
         <div className='space-y-1'>
-          <Typography variant='caption' className='text-white font-medium'>
-            Autonomous Mode
-          </Typography>
-          <div className='pt-1 border-t border-blue-400/30'>
+          <div>
             <Typography variant='caption' className='text-blue-100'>
               Currently in Manual Mode - AI returns transaction bytes for manual
               signing
