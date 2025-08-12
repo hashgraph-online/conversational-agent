@@ -88,7 +88,7 @@ The app requires terms of service and privacy policy files:
 ### Start Development Server
 
 ```bash
-pnpm start   # Starts Electron app in dev mode
+pnpm start   # Starts Electron app in dev mode (RECOMMENDED)
 # or
 pnpm dev     # Same as above
 ```
@@ -99,6 +99,7 @@ pnpm dev     # Same as above
 - ✅ Hot module replacement enabled
 - ✅ DevTools available for debugging
 - ✅ Auto-restart on code changes
+- ✅ All dependencies available (including local file dependencies)
 
 ### Other Development Commands
 
@@ -157,10 +158,12 @@ out/
 
 | Build Type | Location | Usage |
 |------------|----------|-------|
-| **App Bundle** | `out/Hashgraph Online-darwin-arm64/Hashgraph Online.app` | Double-click to run |
+| **App Bundle** | `out/Hashgraph Online-darwin-arm64/Hashgraph Online.app` | For testing only* |
 | **Distribution** | `out/make/zip/darwin/arm64/*.zip` | Share with users |
 
 **Installation:** Unzip and drag `.app` to Applications folder
+
+> **Note**: The `.app` file in `out/` is for testing purposes. For production use, always distribute the `.zip` package from `out/make/`. If you need to test the app locally, use `pnpm start` for the best experience.
 
 #### 🪟 Windows
 
@@ -212,6 +215,13 @@ The app requires configuration of:
 | **pnpm not found** | Run `npm install -g pnpm` or use setup script |
 | **Electron fails to start** | Clear and reinstall: `rm -rf node_modules && pnpm install` |
 | **Port 5173 in use** | Kill process: `lsof -ti:5173 \| xargs kill` |
+| **Packaged app error: `Cannot find module '@hashgraphonline/standards-sdk'`** | This happens if the SDK was externalized from the main bundle. Fix: in `vite.main.config.ts`, do not list `@hashgraphonline/*` under `rollupOptions.external` so Vite bundles the module. Ensure it’s in `dependencies` (not `devDependencies`). Rebuild with `pnpm make`. See electron-vite docs: [Troubleshooting](https://electron-vite.org/guide/troubleshooting). |
+
+### Notes on native modules (e.g., better-sqlite3)
+
+- Native addons must be unpacked from ASAR. We configure:
+  - `forge.config.ts` → `packagerConfig.asar = { unpack: '**/*.node' }`
+- Reference: [Electron: Using native Node modules](https://www.electronjs.org/de/docs/latest/tutorial/using-native-node-modules)
 
 ## 📁 Project Structure
 
