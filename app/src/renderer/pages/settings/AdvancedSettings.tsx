@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Button } from '../../components/ui/Button'
 import { useLegalStore } from '../../stores/legalStore'
 
-interface AdvancedSettingsProps {}
+interface AdvancedSettingsProps { }
 
 export const AdvancedSettings: React.FC<AdvancedSettingsProps> = () => {
   const { config, setTheme, setAutoStart, setLogLevel } = useConfigStore()
@@ -137,15 +137,13 @@ export const AdvancedSettings: React.FC<AdvancedSettingsProps> = () => {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="debug">Debug - All logs including debug information</SelectItem>
-                <SelectItem value="info">Info - General information and above</SelectItem>
-                <SelectItem value="warn">Warning - Warnings and errors only</SelectItem>
-                <SelectItem value="error">Error - Errors only</SelectItem>
+                <SelectItem value="debug">Debug</SelectItem>
+                <SelectItem value="info">Info</SelectItem>
+                <SelectItem value="warn">Warning</SelectItem>
+                <SelectItem value="error">Error</SelectItem>
               </SelectContent>
             </Select>
-            <Typography variant="caption" color="muted">
-              Controls the verbosity of application logs. Debug level may impact performance.
-            </Typography>
+            <Typography variant="caption" color="muted">Controls the verbosity of logs.</Typography>
           </div>
         </div>
 
@@ -157,7 +155,7 @@ export const AdvancedSettings: React.FC<AdvancedSettingsProps> = () => {
                 Manage your acceptance of Terms of Service and Privacy Policy
               </Typography>
             </div>
-            
+
             <div className="p-4 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">
               <div className="space-y-3">
                 {legalAcceptance.termsAccepted && (
@@ -182,11 +180,11 @@ export const AdvancedSettings: React.FC<AdvancedSettingsProps> = () => {
                   </Typography>
                 )}
               </div>
-              
+
               <div className="mt-4">
                 {!showResetConfirm ? (
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     size="sm"
                     className="flex items-center gap-2"
                     onClick={() => setShowResetConfirm(true)}

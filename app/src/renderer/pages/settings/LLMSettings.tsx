@@ -11,7 +11,7 @@ import { ModelSelectorWithOpenRouter } from '../../components/ui/ModelSelectorWi
 import { ApiKeyGuide } from '../../components/ui/ApiKeyGuide'
 import { getModelInfo } from '../../lib/models'
 
-interface LLMSettingsProps {}
+interface LLMSettingsProps { }
 
 const llmSettingsSchema = z.object({
   provider: z.enum(['openai', 'anthropic']),
@@ -24,18 +24,18 @@ const llmSettingsSchema = z.object({
 type LLMSettingsForm = z.infer<typeof llmSettingsSchema>
 
 export const LLMSettings: React.FC<LLMSettingsProps> = () => {
-  const { 
-    config, 
+  const {
+    config,
     setLLMProvider,
-    setOpenAIApiKey, 
+    setOpenAIApiKey,
     setOpenAIModel,
     setAnthropicApiKey,
     setAnthropicModel,
     testOpenAIConnection,
     testAnthropicConnection,
-    isLLMConfigValid 
+    isLLMConfigValid
   } = useConfigStore()
-  
+
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null)
   const [isTesting, setIsTesting] = useState(false)
   const [showApiKeyGuide, setShowApiKeyGuide] = useState(false)
@@ -115,10 +115,10 @@ export const LLMSettings: React.FC<LLMSettingsProps> = () => {
     setTestResult(null)
 
     try {
-      const result = watchProvider === 'openai' 
+      const result = watchProvider === 'openai'
         ? await testOpenAIConnection()
         : await testAnthropicConnection()
-      
+
       setTestResult({
         success: result.success,
         message: result.success ? 'Connection successful! 🎉' : result.error || 'Connection failed'
@@ -139,15 +139,15 @@ export const LLMSettings: React.FC<LLMSettingsProps> = () => {
 
   if (showApiKeyGuide) {
     return (
-      <ApiKeyGuide 
-        provider={watchProvider} 
+      <ApiKeyGuide
+        provider={watchProvider}
         onClose={() => setShowApiKeyGuide(false)}
       />
     )
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <div>
         <Typography variant="h4" noMargin>
           AI Language Model Configuration
@@ -160,7 +160,7 @@ export const LLMSettings: React.FC<LLMSettingsProps> = () => {
       </div>
 
       {isFirstTime && (
-        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6">
+        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
           <div className="flex items-start space-x-4">
             <div className="flex-shrink-0">
               <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
@@ -168,11 +168,11 @@ export const LLMSettings: React.FC<LLMSettingsProps> = () => {
               </div>
             </div>
             <div className="flex-1">
-              <Typography variant="h6" className="text-blue-800 dark:text-blue-200 mb-2" noMargin>
+              <Typography variant="h6" className="text-blue-800 dark:text-blue-200 mb-1" noMargin>
                 Welcome! Let's get you set up
               </Typography>
-              <Typography variant="body1" className="text-blue-700 dark:text-blue-300 mb-4" noMargin>
-                To use this conversational agent, you'll need an API key from either OpenAI or Anthropic. 
+              <Typography variant="body1" className="text-blue-700 dark:text-blue-300 mb-3" noMargin>
+                To use this conversational agent, you'll need an API key from either OpenAI or Anthropic.
                 Don't worry - we'll guide you through the entire process!
               </Typography>
               <Button
@@ -188,19 +188,18 @@ export const LLMSettings: React.FC<LLMSettingsProps> = () => {
         </div>
       )}
 
-      <form className="space-y-8">
+      <form className="space-y-6">
         <div>
           <Typography variant="h6" className="mb-4" noMargin>
             Choose Your AI Provider
           </Typography>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div
               onClick={() => setValue('provider', 'openai')}
-              className={`cursor-pointer border-2 rounded-lg p-6 transition-all ${
-                watchProvider === 'openai'
-                  ? 'border-brand-blue bg-brand-blue/5 dark:bg-brand-blue/10'
+              className={`cursor-pointer border rounded-lg p-4 transition-colors ${watchProvider === 'openai'
+                  ? 'border-brand-blue/60 bg-brand-blue/5 dark:bg-brand-blue/10'
                   : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
-              }`}
+                }`}
             >
               <div className="flex items-center space-x-3 mb-3">
                 <div className="w-10 h-10 bg-gray-900 dark:bg-gray-800 rounded-lg flex items-center justify-center">
@@ -216,18 +215,17 @@ export const LLMSettings: React.FC<LLMSettingsProps> = () => {
                 </div>
               </div>
               <Typography variant="caption" color="muted">
-                Popular models including the latest GPT-4.1 with 1M context window, 
+                Popular models including the latest GPT-4.1 with 1M context window,
                 efficient GPT-4o mini, and specialized reasoning models.
               </Typography>
             </div>
 
             <div
               onClick={() => setValue('provider', 'anthropic')}
-              className={`cursor-pointer border-2 rounded-lg p-6 transition-all ${
-                watchProvider === 'anthropic'
-                  ? 'border-brand-blue bg-brand-blue/5 dark:bg-brand-blue/10'
+              className={`cursor-pointer border rounded-lg p-4 transition-colors ${watchProvider === 'anthropic'
+                  ? 'border-brand-blue/60 bg-brand-blue/5 dark:bg-brand-blue/10'
                   : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
-              }`}
+                }`}
             >
               <div className="flex items-center space-x-3 mb-3">
                 <div className="w-10 h-10 bg-orange-500 rounded-lg flex items-center justify-center">
@@ -243,7 +241,7 @@ export const LLMSettings: React.FC<LLMSettingsProps> = () => {
                 </div>
               </div>
               <Typography variant="caption" color="muted">
-                Advanced models known for safety, helpful reasoning, and excellent 
+                Advanced models known for safety, helpful reasoning, and excellent
                 performance on coding and creative tasks.
               </Typography>
             </div>
@@ -266,7 +264,7 @@ export const LLMSettings: React.FC<LLMSettingsProps> = () => {
             </Button>
           </div>
 
-          <div className="space-y-4">
+          <div className="space-y-3">
             <div>
               <Typography variant="body1" className="font-medium mb-2" noMargin>
                 API Key
@@ -276,8 +274,8 @@ export const LLMSettings: React.FC<LLMSettingsProps> = () => {
                   id={`${watchProvider}ApiKey`}
                   type="password"
                   placeholder={
-                    watchProvider === 'openai' 
-                      ? 'sk-...' 
+                    watchProvider === 'openai'
+                      ? 'sk-...'
                       : 'sk-ant-...'
                   }
                   {...register(`${watchProvider}ApiKey` as keyof LLMSettingsForm)}
@@ -291,8 +289,8 @@ export const LLMSettings: React.FC<LLMSettingsProps> = () => {
                 <div className="flex items-start space-x-2">
                   <Typography variant="caption" color="muted" className="flex-1">
                     Your API key is encrypted and stored securely using the system keychain.
-                    {watchProvider === 'openai' 
-                      ? ' OpenAI keys start with "sk-".' 
+                    {watchProvider === 'openai'
+                      ? ' OpenAI keys start with "sk-".'
                       : ' Anthropic keys start with "sk-ant-".'}
                   </Typography>
                   <a
@@ -336,11 +334,10 @@ export const LLMSettings: React.FC<LLMSettingsProps> = () => {
 
             {testResult && (
               <div
-                className={`p-4 rounded-lg flex items-center space-x-3 ${
-                  testResult.success
+                className={`p-4 rounded-lg flex items-center space-x-3 ${testResult.success
                     ? 'bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-300 border border-green-200 dark:border-green-800'
                     : 'bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-300 border border-red-200 dark:border-red-800'
-                }`}
+                  }`}
               >
                 {testResult.success ? (
                   <FiCheckCircle className="w-5 h-5 flex-shrink-0" />

@@ -167,8 +167,7 @@ export const MCPConfigScreen: React.FC<Props> = ({
                 />
               ) : (
                 <Text color={BRAND_COLORS.hedera.smoke}>
-                  {mcpConfig[field as keyof MCPConfig] ||
-                    `(${placeholders[index]})`}
+                  {String(mcpConfig[field as keyof MCPConfig] || `(${placeholders[index]})`)}
                 </Text>
               )}
             </Box>

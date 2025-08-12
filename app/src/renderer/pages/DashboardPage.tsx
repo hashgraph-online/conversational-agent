@@ -218,12 +218,9 @@ const DashboardPage: React.FC = () => {
           transition={{ duration: 0.5 }}
           className='text-center mb-12'
         >
-          <Typography
-            variant='h1'
-            className='font-bold text-5xl mb-4'
-          >
+          <Typography variant='h1' className='font-bold text-5xl mb-4'>
             <span className='bg-gradient-to-r from-[#5599fe] to-[#48df7b] bg-clip-text text-transparent'>
-              Your gateway to the Hedera Hashgraph.
+              Your personal decentralized AI assistant.
             </span>
           </Typography>
           <Typography
@@ -231,7 +228,8 @@ const DashboardPage: React.FC = () => {
             color='muted'
             className='max-w-2xl mx-auto'
           >
-            Chat with AI, manage extensions, and explore blockchain capabilities.
+            Chat with AI, manage extensions, and explore blockchain
+            capabilities.
           </Typography>
         </motion.div>
 

@@ -10,6 +10,16 @@ import { UpdateService } from './services/UpdateService';
 electronLog.transports.file.level = 'info';
 electronLog.transports.console.level = 'info';
 
+// Ensure the app name shows as HOL Desktop as early as possible (affects macOS dock hover in dev)
+try {
+  app.setName('HOL Desktop');
+  // Helps macOS About panel and other UI surfaces
+  app.setAboutPanelOptions({ applicationName: 'HOL Desktop' });
+
+  // Improves some OS displays and dev tools labels
+  process.title = 'HOL Desktop';
+} catch { }
+
 if (started) {
   app.quit();
 }
@@ -25,8 +35,8 @@ function createWindow() {
   logger.info('Preload path:', path.join(__dirname, 'preload.js'));
 
   const iconPath = app.isPackaged
-    ? path.join(__dirname, '../../assets/hol-dock-3.png')
-    : path.join(__dirname, '../../assets/hol-dock-3.png');
+    ? path.join(__dirname, '../../assets/hol-dock.png')
+    : path.join(__dirname, '../../assets/hol-dock.png');
 
   const icon = nativeImage.createFromPath(iconPath);
 
@@ -38,6 +48,7 @@ function createWindow() {
     show: true,
     center: true,
     icon: icon,
+    title: 'HOL Desktop',
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
@@ -108,10 +119,11 @@ app.on('ready', async () => {
   logger = new Logger({ module: 'MainProcess' });
   logger.info('App ready, initializing...');
 
+
   if (process.platform === 'darwin') {
     const iconPath = app.isPackaged
-      ? path.join(__dirname, '../../assets/hol-dock-3.png')
-      : path.join(__dirname, '../../assets/hol-dock-3.png');
+      ? path.join(__dirname, '../../assets/hol-dock.png')
+      : path.join(__dirname, '../../assets/hol-dock.png');
     logger.info('Dock icon path:', iconPath);
     logger.info('Dock icon exists:', require('fs').existsSync(iconPath));
 

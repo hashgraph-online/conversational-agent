@@ -1,28 +1,15 @@
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '../../lib/utils';
-import Typography from '../ui/Typography';
 import Logo from '../ui/Logo';
+import { FiChevronLeft, FiChevronRight, FiSend } from 'react-icons/fi';
 import {
-  FiHome,
-  FiMessageSquare,
-  FiServer,
-  FiPackage,
-  FiSettings,
-  FiHelpCircle,
-  FiUser,
-  FiChevronLeft,
-  FiChevronRight,
-} from 'react-icons/fi';
-import {
-  HiSparkles,
   HiChatBubbleBottomCenterText,
   HiServerStack,
   HiPuzzlePiece,
   HiUserCircle,
   HiCog6Tooth,
   HiQuestionMarkCircle,
-  HiSquares2X2,
   HiHeart,
 } from 'react-icons/hi2';
 
@@ -107,6 +94,15 @@ const secondaryNavItems: NavItem[] = [
     gradient: 'from-pink-500 to-rose-600',
     iconBg: 'from-pink-500 to-rose-600',
   },
+  {
+    id: 'telegram',
+    path: 'https://t.me/hashinals',
+    label: 'Telegram',
+    icon: FiSend,
+    description: 'Join our community',
+    gradient: 'from-cyan-500 to-blue-600',
+    iconBg: 'from-cyan-500 to-blue-600',
+  },
 ];
 
 const SidebarContent: React.FC<SidebarProps & { location: any }> = ({
@@ -125,11 +121,15 @@ const SidebarContent: React.FC<SidebarProps & { location: any }> = ({
     const Icon = item.icon;
     const active = isActive(item.path);
 
-    if (item.id === 'help') {
+    if (item.id === 'help' || item.id === 'telegram') {
+      const href =
+        item.id === 'help'
+          ? 'https://hashgraphonline.com/docs/standards/'
+          : item.path;
       return (
         <a
           key={item.id}
-          href='https://hashgraphonline.com/docs/standards/'
+          href={href}
           target='_blank'
           rel='noopener noreferrer'
           className={cn(
@@ -199,8 +199,7 @@ const SidebarContent: React.FC<SidebarProps & { location: any }> = ({
                   item.gradient || 'from-[#5599fe] to-[#a679f0]'
                 } text-white shadow-2xl shadow-[#5599fe]/30`
               : '',
-            !active &&
-              'group-hover:before:opacity-100 group-hover:shadow-lg'
+            !active && 'group-hover:before:opacity-100 group-hover:shadow-lg'
           )}
         >
           <div
@@ -213,7 +212,8 @@ const SidebarContent: React.FC<SidebarProps & { location: any }> = ({
                 : `bg-gradient-to-br ${
                     item.gradient || 'from-[#5599fe] to-[#a679f0]'
                   } opacity-70`,
-              !active && 'group-hover:scale-110 group-hover:rotate-3 group-hover:opacity-100'
+              !active &&
+                'group-hover:scale-110 group-hover:rotate-3 group-hover:opacity-100'
             )}
           />
           <Icon
@@ -267,7 +267,6 @@ const SidebarContent: React.FC<SidebarProps & { location: any }> = ({
         className
       )}
     >
-
       <div className='absolute inset-0 opacity-[0.03] dark:opacity-[0.02]'>
         <div className='absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-[#a679f0] to-[#5599fe] rounded-full blur-3xl animate-pulse' />
         <div
@@ -276,7 +275,6 @@ const SidebarContent: React.FC<SidebarProps & { location: any }> = ({
         />
       </div>
       <div className='relative p-4 border-b border-gray-200/50 dark:border-white/[0.06]'>
-
         <button
           onClick={() => setIsCollapsed(!isCollapsed)}
           className={cn(
@@ -299,12 +297,19 @@ const SidebarContent: React.FC<SidebarProps & { location: any }> = ({
 
         {isCollapsed ? (
           <Link to='/dashboard' className='flex justify-center pt-2 group'>
-            <Logo variant='icon' size='md-lg' className='transform transition-transform duration-200 group-hover:scale-105' />
+            <Logo
+              variant='icon'
+              size='md-lg'
+              className='transform transition-transform duration-200 group-hover:scale-105'
+            />
           </Link>
         ) : (
           <div className='flex justify-start px-4'>
             <Link to='/dashboard' className='group'>
-              <Logo size='lg' className='transform transition-transform duration-200 group-hover:scale-105' />
+              <Logo
+                size='lg'
+                className='transform transition-transform duration-200 group-hover:scale-105'
+              />
             </Link>
           </div>
         )}
