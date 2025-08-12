@@ -83,7 +83,7 @@ export const LegalGuard = ({ children }: LegalGuardProps) => {
           <div className='max-w-2xl w-full'>
             <div className='text-center mb-12'>
               <div className='w-24 h-24 bg-gradient-to-br from-[#a679f0] via-[#5599fe] to-[#48df7b] rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-lg p-5'>
-                <Logo size='lg' showText={false} variant='white' />
+                <Logo size='lg' />
               </div>
               <Typography
                 variant='h1'

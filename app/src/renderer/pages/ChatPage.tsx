@@ -774,18 +774,6 @@ const ChatPage: React.FC<ChatPageProps> = () => {
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.8, delay: 0.2 }}
-                >
-                  <Typography
-                    variant='h3'
-                    className='font-bold text-gray-900 dark:text-white text-3xl lg:text-4xl'
-                  >
-                    Welcome to HashgraphOnline
-                  </Typography>
-                </motion.div>
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.8, delay: 0.4 }}
                 >
                   <Typography
@@ -795,8 +783,7 @@ const ChatPage: React.FC<ChatPageProps> = () => {
                   >
                     I can help you with Hedera Hashgraph operations, HCS-1
                     inscriptions, HCS-20 ticks, account management, NFT minting,
-                    smart contracts, and more. Start by asking me a question or
-                    requesting help with a task.
+                    smart contracts, and more.
                   </Typography>
                 </motion.div>
               </div>

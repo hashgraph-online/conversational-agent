@@ -17,7 +17,7 @@ export class ReferenceIdGenerator {
   static generateId(content: Buffer): ReferenceId {
     const hash = createHash('sha256');
     hash.update(content);
-    return hash.digest('base64url');
+    return hash.digest('hex');
   }
   
   /**
@@ -31,11 +31,11 @@ export class ReferenceIdGenerator {
       return false;
     }
     
-    if (id.length !== 43) {
+    if (id.length !== 64) {
       return false;
     }
     
-    return /^[A-Za-z0-9_-]+$/.test(id);
+    return /^[a-f0-9]+$/.test(id);
   }
   
   /**
@@ -49,7 +49,7 @@ export class ReferenceIdGenerator {
       return null;
     }
     
-    const refFormatMatch = input.match(/^ref:\/\/([A-Za-z0-9_-]{43})$/);
+    const refFormatMatch = input.match(/^ref:\/\/([a-f0-9]{64})$/);
     if (refFormatMatch) {
       return refFormatMatch[1] as ReferenceId;
     }

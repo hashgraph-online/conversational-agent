@@ -46,3 +46,4 @@ export {
   ResolveEntitiesTool,
   ExtractEntitiesTool,
 } from './tools/EntityResolverTool';
+export { ContentStoreManager } from './services/ContentStoreManager';

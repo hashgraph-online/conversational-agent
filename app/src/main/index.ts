@@ -25,8 +25,8 @@ function createWindow() {
   logger.info('Preload path:', path.join(__dirname, 'preload.js'));
 
   const iconPath = app.isPackaged
-    ? path.join(__dirname, '../../assets/hol-app-icon-bubble.png')
-    : path.join(__dirname, '../../assets/hol-app-icon-bubble.png');
+    ? path.join(__dirname, '../../assets/hol-dock-3.png')
+    : path.join(__dirname, '../../assets/hol-dock-3.png');
 
   const icon = nativeImage.createFromPath(iconPath);
 
@@ -110,8 +110,8 @@ app.on('ready', async () => {
 
   if (process.platform === 'darwin') {
     const iconPath = app.isPackaged
-      ? path.join(__dirname, '../../assets/hol-app-icon-bubble.png')
-      : path.join(__dirname, '../../assets/hol-app-icon-bubble.png');
+      ? path.join(__dirname, '../../assets/hol-dock-3.png')
+      : path.join(__dirname, '../../assets/hol-dock-3.png');
     logger.info('Dock icon path:', iconPath);
     logger.info('Dock icon exists:', require('fs').existsSync(iconPath));
 

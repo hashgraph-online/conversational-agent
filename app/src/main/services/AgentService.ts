@@ -649,28 +649,14 @@ export class AgentService {
           }
         );
 
-        this.logger.info('Detailed agent structure check:', {
-          agentType: this.agent.constructor.name,
-          hasMemoryManagerDirect: !!this.agent.memoryManager,
-          memoryManagerType: typeof this.agent.memoryManager,
-          agentKeys: Object.keys(this.agent),
-          prototypeKeys: Object.getOwnPropertyNames(
-            Object.getPrototypeOf(this.agent)
-          ),
-          hasContentStorage: !!this.agent.memoryManager?.contentStorage,
-          contentStorageType: typeof this.agent.memoryManager?.contentStorage,
-          hasStoreMethod:
-            typeof this.agent.memoryManager?.contentStorage
-              ?.storeContentIfLarge,
+        const contentStoreManager = this.agent.getContentStoreManager();
+        
+        this.logger.info('Using ContentStoreManager for attachment storage:', {
+          hasContentStoreManager: !!contentStoreManager,
+          isInitialized: contentStoreManager?.isInitialized(),
         });
 
-        const memoryManager = this.agent.memoryManager;
-        const contentStorage = memoryManager?.contentStorage;
-
-        if (
-          contentStorage &&
-          typeof contentStorage.storeContentIfLarge === 'function'
-        ) {
+        if (contentStoreManager && contentStoreManager.isInitialized()) {
           const contentReferences: string[] = [];
 
           for (const attachment of attachments) {
@@ -687,7 +673,7 @@ export class AgentService {
                 contentType: attachment.type,
               });
 
-              const contentRef = await contentStorage.storeContentIfLarge(
+              const contentRef = await contentStoreManager.storeContentIfLarge(
                 buffer,
                 {
                   mimeType: attachment.type,
@@ -706,11 +692,11 @@ export class AgentService {
               if (contentRef) {
                 if (attachment.type.startsWith('image/')) {
                   contentReferences.push(
-                    `[Image File: ${attachment.name} - Content stored as reference ${contentRef.referenceId}]`
+                    `[Image File: ${attachment.name}] (content-ref:${contentRef.referenceId})`
                   );
                 } else {
                   contentReferences.push(
-                    `[File: ${attachment.name} - Content stored as reference ${contentRef.referenceId}]`
+                    `[File: ${attachment.name}] (content-ref:${contentRef.referenceId})`
                   );
                 }
 
