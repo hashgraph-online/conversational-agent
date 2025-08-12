@@ -1,153 +1,169 @@
-import {ConversationalAgent, type ConversationalAgentOptions, MCPServers, type MCPServerConfig} from '@hashgraphonline/conversational-agent';
+import {
+	ConversationalAgent,
+	type ConversationalAgentOptions,
+	MCPServers,
+	type MCPServerConfig,
+} from '@hashgraphonline/conversational-agent';
 import {type Config, type Message} from '../types';
 
 export class AgentManager {
-  private static instance: AgentManager;
-  private agent: ConversationalAgent | null = null;
-  private initializing = false;
-  private initialized = false;
+	private static instance: AgentManager;
+	private agent: ConversationalAgent | null = null;
+	private initializing = false;
+	private initialized = false;
 
-  private constructor() {}
+	private constructor() {}
 
-  static getInstance(): AgentManager {
-    if (!AgentManager.instance) {
-      AgentManager.instance = new AgentManager();
-    }
-    return AgentManager.instance;
-  }
+	static getInstance(): AgentManager {
+		if (!AgentManager.instance) {
+			AgentManager.instance = new AgentManager();
+		}
+		return AgentManager.instance;
+	}
 
-  /**
-   * Initialize the conversational agent
-   */
-  async initialize(config: Config & {mcpServers: MCPServerConfig[]}, mcpConfig: {
-    enableFilesystem: boolean;
-    filesystemPath: string;
-    customServers: MCPServerConfig[];
-  }): Promise<{agent: ConversationalAgent; welcomeMessages: Message[]}> {
-    if (this.agent && this.initialized) {
-      return {
-        agent: this.agent,
-        welcomeMessages: this.getWelcomeMessages(config, [])
-      };
-    }
+	/**
+	 * Initialize the conversational agent
+	 */
+	async initialize(
+		config: Config & {mcpServers: MCPServerConfig[]},
+		mcpConfig: {
+			enableFilesystem: boolean;
+			filesystemPath: string;
+			customServers: MCPServerConfig[];
+		},
+	): Promise<{agent: ConversationalAgent; welcomeMessages: Message[]}> {
+		if (this.agent && this.initialized) {
+			return {
+				agent: this.agent,
+				welcomeMessages: this.getWelcomeMessages(config, []),
+			};
+		}
 
-    if (this.initializing) {
-      throw new Error('Agent is already initializing');
-    }
+		if (this.initializing) {
+			throw new Error('Agent is already initializing');
+		}
 
-    this.initializing = true;
-    
-    try {
-      const mcpServers: MCPServerConfig[] = [];
+		this.initializing = true;
 
-      if (mcpConfig.enableFilesystem && mcpConfig.filesystemPath) {
-        mcpServers.push(MCPServers.filesystem(mcpConfig.filesystemPath));
-      }
+		try {
+			const mcpServers: MCPServerConfig[] = [];
 
-      mcpServers.push(...mcpConfig.customServers);
+			if (mcpConfig.enableFilesystem && mcpConfig.filesystemPath) {
+				mcpServers.push(MCPServers.filesystem(mcpConfig.filesystemPath));
+			}
 
-      const agentConfig: ConversationalAgentOptions = {
-        accountId: config.accountId,
-        privateKey: config.privateKey,
-        network: config.network as 'testnet' | 'mainnet',
-        openAIApiKey: config.openAIApiKey,
-        openAIModelName: 'gpt-4o-mini',
-        verbose: false,
-        disableLogging: true,
-        ...(mcpServers.length > 0 && {mcpServers}),
-      };
+			mcpServers.push(...mcpConfig.customServers);
 
-      const conversationalAgent = new ConversationalAgent(agentConfig);
-      await conversationalAgent.initialize();
-      
-      this.agent = conversationalAgent;
-      this.initialized = true;
-      
-      const welcomeMessages = this.getWelcomeMessages(config, mcpServers);
-      
-      return {agent: conversationalAgent, welcomeMessages};
-    } finally {
-      this.initializing = false;
-    }
-  }
+			const agentConfig: ConversationalAgentOptions = {
+				accountId: config.accountId,
+				privateKey: config.privateKey,
+				network: config.network as 'testnet' | 'mainnet',
+				openAIApiKey: config.openAIApiKey,
+				openAIModelName: 'gpt-4o-mini',
+				verbose: false,
+				disableLogging: true,
+				...(mcpServers.length > 0 && {mcpServers}),
+			};
 
-  /**
-   * Get welcome messages
-   */
-  private getWelcomeMessages(config: Config, mcpServers: MCPServerConfig[]): Message[] {
-    const welcomeMessages: Message[] = [
-      {
-        role: 'system',
-        content: `Connected to Hedera ${config.network}`,
-        timestamp: new Date(),
-      },
-    ];
+			const conversationalAgent = new ConversationalAgent(agentConfig);
+			await conversationalAgent.initialize();
 
-    if (mcpServers.length > 0) {
-      welcomeMessages.push({
-        role: 'system',
-        content: `MCP servers enabled: ${mcpServers.map(s => s.name).join(', ')}`,
-        timestamp: new Date(),
-      });
-    }
+			this.agent = conversationalAgent;
+			this.initialized = true;
 
-    welcomeMessages.push({
-      role: 'assistant',
-      content:
-        mcpServers.length > 0
-          ? "Hello! I'm your Conversational Agent powered by Hashgraph Online, with extended MCP capabilities. I can help you with:\n\n• HCS-10 agent registrations and HCS-11 profiles\n• Sending messages through HCS standards\n• Creating accounts, transferring HBAR, and managing tokens\n• Deploying smart contracts and interacting with them\n• Managing NFTs, token swaps, and staking operations\n• Scheduling transactions and consensus submissions\n• File operations and external tool integration\n\nHow can I assist you today?"
-          : "Hello! I'm your Conversational Agent powered by Hashgraph Online. I can help you with:\n\n• HCS-10 agent registrations and HCS-11 profiles\n• Sending messages through HCS standards\n• Creating accounts, transferring HBAR, and managing tokens\n• Deploying smart contracts and interacting with them\n• Managing NFTs, token swaps, and staking operations\n• Scheduling transactions and consensus submissions\n\nHow can I assist you today?",
-      timestamp: new Date(),
-    });
+			const welcomeMessages = this.getWelcomeMessages(config, mcpServers);
 
-    return welcomeMessages;
-  }
+			return {agent: conversationalAgent, welcomeMessages};
+		} finally {
+			this.initializing = false;
+		}
+	}
 
-  /**
-   * Send message to agent
-   */
-  async sendMessage(message: string, chatHistory: Array<{type: 'human' | 'ai'; content: string}>): Promise<{
-    message?: string;
-    output?: string;
-    error?: string;
-    transactionId?: string;
-    scheduleId?: string;
-    notes?: string[];
-  }> {
-    if (!this.agent) {
-      throw new Error('Agent not initialized');
-    }
+	/**
+	 * Get welcome messages
+	 */
+	private getWelcomeMessages(
+		config: Config,
+		mcpServers: MCPServerConfig[],
+	): Message[] {
+		const welcomeMessages: Message[] = [
+			{
+				role: 'system',
+				content: `Connected to Hedera ${config.network}`,
+				timestamp: new Date(),
+			},
+		];
 
-    return this.agent.processMessage(message, chatHistory);
-  }
+		if (mcpServers.length > 0) {
+			welcomeMessages.push({
+				role: 'system',
+				content: `MCP servers enabled: ${mcpServers
+					.map(s => s.name)
+					.join(', ')}`,
+				timestamp: new Date(),
+			});
+		}
 
-  /**
-   * Get current agent
-   */
-  getAgent(): ConversationalAgent | null {
-    return this.agent;
-  }
+		welcomeMessages.push({
+			role: 'assistant',
+			content:
+				mcpServers.length > 0
+					? "Hello! I'm your Conversational Agent powered by Hashgraph Online, with extended MCP capabilities. I can help you with:\n\n• HCS-10 agent registrations and HCS-11 profiles\n• Sending messages through HCS standards\n• Creating accounts, transferring HBAR, and managing tokens\n• Deploying smart contracts and interacting with them\n• Managing NFTs, token swaps, and staking operations\n• Scheduling transactions and consensus submissions\n• File operations and external tool integration\n\nHow can I assist you today?"
+					: "Hello! I'm your Conversational Agent powered by Hashgraph Online. I can help you with:\n\n• HCS-10 agent registrations and HCS-11 profiles\n• Sending messages through HCS standards\n• Creating accounts, transferring HBAR, and managing tokens\n• Deploying smart contracts and interacting with them\n• Managing NFTs, token swaps, and staking operations\n• Scheduling transactions and consensus submissions\n\nHow can I assist you today?",
+			timestamp: new Date(),
+		});
 
-  /**
-   * Check if agent is initialized
-   */
-  isInitialized(): boolean {
-    return this.initialized;
-  }
+		return welcomeMessages;
+	}
 
-  /**
-   * Check if agent is initializing
-   */
-  isInitializing(): boolean {
-    return this.initializing;
-  }
+	/**
+	 * Send message to agent
+	 */
+	async sendMessage(
+		message: string,
+		chatHistory: Array<{type: 'human' | 'ai'; content: string}>,
+	): Promise<{
+		message?: string;
+		output?: string;
+		error?: string;
+		transactionId?: string;
+		scheduleId?: string;
+		notes?: string[];
+	}> {
+		if (!this.agent) {
+			throw new Error('Agent not initialized');
+		}
 
-  /**
-   * Reset agent (for testing)
-   */
-  reset(): void {
-    this.agent = null;
-    this.initialized = false;
-    this.initializing = false;
-  }
+		return this.agent.processMessage(message, chatHistory);
+	}
+
+	/**
+	 * Get current agent
+	 */
+	getAgent(): ConversationalAgent | null {
+		return this.agent;
+	}
+
+	/**
+	 * Check if agent is initialized
+	 */
+	isInitialized(): boolean {
+		return this.initialized;
+	}
+
+	/**
+	 * Check if agent is initializing
+	 */
+	isInitializing(): boolean {
+		return this.initializing;
+	}
+
+	/**
+	 * Reset agent (for testing)
+	 */
+	reset(): void {
+		this.agent = null;
+		this.initialized = false;
+		this.initializing = false;
+	}
 }

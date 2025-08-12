@@ -132,17 +132,21 @@ export function setupAgentHandlers(): void {
       config: AgentConfig
     ): Promise<IPCResponse> => {
       try {
-        logger.info('IPC handler agent:initialize called with:', {
-          accountId: config.accountId,
-          privateKeyLength: config.privateKey?.length,
-          privateKeyStatus: '[REDACTED]',
-          network: config.network,
-          openAIKeyLength: config.openAIApiKey?.length,
-          modelName: config.modelName,
+        const configService = ConfigService.getInstance();
+        const storedConfig = await configService.load();
+        
+        const mergedConfig: AgentConfig = {
+          accountId: config.accountId || storedConfig.hedera.accountId,
+          privateKey: storedConfig.hedera.privateKey,
+          network: config.network || storedConfig.hedera.network,
+          openAIApiKey: config.llmProvider === 'anthropic' ? storedConfig.anthropic.apiKey : storedConfig.openai.apiKey,
+          modelName: config.modelName || (config.llmProvider === 'openai' ? storedConfig.openai.model : storedConfig.anthropic.model),
           operationalMode: config.operationalMode,
-          llmProvider: config.llmProvider,
-        });
-        const result = await agentService.initialize(config);
+          llmProvider: config.llmProvider || storedConfig.llmProvider,
+        };
+        
+        
+        const result = await agentService.initialize(mergedConfig);
         return result;
       } catch (error) {
         const errorMessage =

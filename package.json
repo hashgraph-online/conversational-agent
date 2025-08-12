@@ -5,6 +5,9 @@
   "main": "./dist/cjs/index.cjs",
   "module": "./dist/esm/index.js",
   "types": "./dist/types/index.d.ts",
+  "bin": {
+    "conversational-agent": "./bin/conversational-agent-cli.js"
+  },
   "exports": {
     ".": {
       "types": "./dist/types/index.d.ts",
@@ -18,6 +21,8 @@
     "./package.json": "./package.json"
   },
   "files": [
+    "bin",
+    "cli/dist",
     "dist",
     "src",
     "LICENSE",
@@ -31,6 +36,7 @@
     "build:cjs": "BUILD_FORMAT=cjs vite build",
     "build:umd": "BUILD_FORMAT=umd vite build",
     "build": "pnpm run clean && pnpm run build:es && pnpm run build:cjs",
+    "build:all": "pnpm run build && pnpm run cli:build",
     "prepublishOnly": "pnpm run build",
     "release": "pnpm publish --access public",
     "release:canary": "pnpm run prepublishOnly && pnpm publish --tag canary --access public",
@@ -39,7 +45,7 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "typecheck": "tsc --noEmit",
-    "cli:build": "pnpm run build && cd cli && pnpm install && pnpm build",
+    "cli:build": "cd cli && pnpm install && pnpm build",
     "cli": "tsx cli/scripts/run-cli.ts",
     "cli:dev": "cd cli && pnpm dev",
     "example:mcp-filesystem": "tsx examples/mcp-filesystem-demo.ts",

@@ -77,31 +77,16 @@ export class ConfigService {
       const configData = JSON.parse(encryptedData);
 
       if (safeStorage.isEncryptionAvailable()) {
-        this.logger.info('Decrypting sensitive fields...');
-        
         if (configData.hedera?.privateKey) {
           try {
-            this.logger.info('Checking Hedera private key:', {
-              keyLength: configData.hedera.privateKey.length,
-              keyStatus: '[REDACTED]'
-            });
-            
             if (this.isEncryptedValue(configData.hedera.privateKey)) {
               try {
                 const encryptedBuffer = Buffer.from(configData.hedera.privateKey, 'base64');
                 const decrypted = safeStorage.decryptString(encryptedBuffer);
-                this.logger.info('Decryption successful:', {
-                  decryptedLength: decrypted?.length,
-                  decryptedStatus: '[REDACTED]'
-                });
                 configData.hedera.privateKey = decrypted;
               } catch (decryptError) {
-                this.logger.warn('Failed to decrypt, key might already be decrypted:', {
-                  error: decryptError instanceof Error ? decryptError.message : 'Unknown error'
-                });
+                this.logger.warn('Failed to decrypt Hedera private key');
               }
-            } else {
-              this.logger.info('Private key is not encrypted, using as-is');
             }
           } catch (error) {
             this.logger.error('Error processing Hedera private key:', error);
@@ -112,10 +97,8 @@ export class ConfigService {
           try {
             if (this.isEncryptedValue(configData.openai.apiKey)) {
               const encryptedBuffer = Buffer.from(configData.openai.apiKey, 'base64');
-              configData.openai.apiKey = safeStorage.decryptString(encryptedBuffer);
-              this.logger.info('OpenAI API key decrypted successfully');
-            } else {
-              this.logger.info('OpenAI API key appears to already be decrypted');
+              const decrypted = safeStorage.decryptString(encryptedBuffer);
+              configData.openai.apiKey = decrypted;
             }
           } catch (error) {
             this.logger.error('Failed to decrypt OpenAI API key', error);
@@ -127,9 +110,6 @@ export class ConfigService {
             if (this.isEncryptedValue(configData.anthropic.apiKey)) {
               const encryptedBuffer = Buffer.from(configData.anthropic.apiKey, 'base64');
               configData.anthropic.apiKey = safeStorage.decryptString(encryptedBuffer);
-              this.logger.info('Anthropic API key decrypted successfully');
-            } else {
-              this.logger.info('Anthropic API key appears to already be decrypted');
             }
           } catch (error) {
             this.logger.error('Failed to decrypt Anthropic API key', error);
@@ -139,8 +119,6 @@ export class ConfigService {
         this.logger.warn('Encryption not available, returning encrypted values');
       }
 
-      this.logger.info('Config loaded successfully');
-      this.logger.info('Returning config with privateKey length:', configData.hedera?.privateKey?.length);
       
       return this.deepMergeWithDefaults(configData);
     } catch (error) {
@@ -412,7 +390,6 @@ export class ConfigService {
     if (!value || typeof value !== 'string') {
       return false;
     }
-
     
     if (value.startsWith('sk-') || value.startsWith('sk-ant-')) {
       return false;
@@ -422,59 +399,7 @@ export class ConfigService {
       return false;
     }
     
-    if (value.startsWith('302e020100300506032b') ||
-        value.startsWith('3030020100300706052b') ||
-        value.startsWith('3074020101') ||
-        value.startsWith('3077020101')) {
-      return false;
-    }
-    
-    if (value.startsWith('0x')) {
-      return false;
-    }
-
-    const base64Regex = /^[A-Za-z0-9+/]+=*$/;
-    if (!base64Regex.test(value)) {
-      return false;
-    }
-    
-    if (value.match(/[a-zA-Z]{10,}[0-9]{10,}/) || value.match(/alreadyDecrypted/i)) {
-      return false;
-    }
-    
-    if (value.length > 100) {
-      const firstChar = value[0];
-      const repeatingCount = value.split('').filter(c => c === firstChar).length;
-      if (repeatingCount / value.length > 0.9) {
-        return false;
-      }
-    }
-
-    try {
-      const decoded = Buffer.from(value, 'base64');
-      const decodedStr = decoded.toString('utf8');
-      
-      try {
-        const parsed = JSON.parse(decodedStr);
-        if (parsed.encrypted === true && parsed.data) {
-          return true;
-        }
-      } catch {
-      }
-      
-      const printableRatio = decodedStr.split('').filter(c => c.charCodeAt(0) >= 32 && c.charCodeAt(0) <= 126).length / decodedStr.length;
-      if (printableRatio < 0.5) {
-        return true;
-      }
-      
-      if (decodedStr.includes('encrypted_')) {
-        return true;
-      }
-      
-      return false;
-    } catch {
-      return false;
-    }
+    return true;
   }
 
   /**

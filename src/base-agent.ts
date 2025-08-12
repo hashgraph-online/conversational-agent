@@ -199,11 +199,15 @@ export abstract class BaseAgent {
         );
       } else {
         parts.push(
-          `\nOPERATIONAL MODE: 'returnBytes'. Your goal is to provide transaction bytes directly. ` +
+          `\nOPERATIONAL MODE: 'returnBytes'. Your goal is to provide transaction bytes when possible. ` +
             `When a user asks for a transaction to be prepared (e.g., for them to sign, or for scheduling without the default scheduling flow), ` +
-            `you MUST call the appropriate tool. If you want raw bytes for the user to sign for their own account ${
+            `you MUST call the appropriate tool. ` +
+            `IMPORTANT: Only use metaOption 'returnBytes: true' for tools that explicitly support it (like HBAR transfers, token operations). ` +
+            `Many tools (inscriptions, HCS-2, HCS-20, etc.) do NOT support returnBytes and will execute directly - this is expected behavior. ` +
+            `For tools without returnBytes support, simply call them with their standard parameters. ` +
+            `If you need raw bytes for the user to sign for their own account ${
               userAccId || 'if specified'
-            }, ensure the tool constructs the transaction body accordingly and use metaOption 'returnBytes: true' if available, or ensure the builder is configured for the user.`
+            }, ensure the tool constructs the transaction body accordingly when returnBytes IS supported.`
         );
       }
     }

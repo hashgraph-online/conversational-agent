@@ -318,8 +318,8 @@ export class LangChainAgent extends BaseAgent {
       llm = new ChatOpenAI({
         apiKey,
         modelName,
-        temperature: isGPT5Model ? 1 : this.config.ai?.temperature ?? 0.1,
         callbacks: this.tokenTracker ? [this.tokenTracker] : [],
+        ...(isGPT5Model ? { temperature: 1 } : {}),
       });
     }
 
@@ -465,9 +465,11 @@ export class LangChainAgent extends BaseAgent {
       this.mcpManager = new MCPClientManager(this.logger);
     }
 
-    this.logger.info(`Starting background MCP server connections for ${this.config.mcp.servers.length} servers...`);
+    this.logger.info(
+      `Starting background MCP server connections for ${this.config.mcp.servers.length} servers...`
+    );
 
-    this.config.mcp.servers.forEach(serverConfig => {
+    this.config.mcp.servers.forEach((serverConfig) => {
       this.connectServerInBackground(serverConfig);
     });
 
@@ -479,11 +481,11 @@ export class LangChainAgent extends BaseAgent {
    */
   private connectServerInBackground(serverConfig: any): void {
     const serverName = serverConfig.name;
-    
+
     setTimeout(async () => {
       try {
         this.logger.info(`Background connecting to MCP server: ${serverName}`);
-        
+
         const status = await this.mcpManager!.connectServer(serverConfig);
         this.mcpConnectionStatus.set(serverName, status);
 
@@ -502,7 +504,9 @@ export class LangChainAgent extends BaseAgent {
           }
 
           if (this.initialized && this.executor) {
-            this.logger.info(`Recreating executor with ${this.tools.length} total tools`);
+            this.logger.info(
+              `Recreating executor with ${this.tools.length} total tools`
+            );
             await this.createExecutor();
           }
         } else {
@@ -515,17 +519,16 @@ export class LangChainAgent extends BaseAgent {
           `Background connection failed for MCP server ${serverName}:`,
           error
         );
-        
+
         this.mcpConnectionStatus.set(serverName, {
           connected: false,
           serverName,
           tools: [],
-          error: error instanceof Error ? error.message : 'Connection failed'
+          error: error instanceof Error ? error.message : 'Connection failed',
         });
       }
     }, 1000);
   }
-
 
   /**
    * Check if a string is valid JSON

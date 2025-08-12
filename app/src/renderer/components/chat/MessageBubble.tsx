@@ -386,7 +386,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
                   {isUser ? (
                     <FiUser className='w-4 h-4 text-gray-700 dark:text-white' />
                   ) : (
-                    <Logo size="sm" variant="dark" className="w-5 h-5" />
+                    <Logo size="sm" variant="icon" className="w-5 h-5" />
                   )}
                 </div>
                 <Typography variant='h6' className='font-medium'>
@@ -521,9 +521,8 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
                 )
               ) : (
                 <Logo
-                  showText={false}
                   size='sm'
-                  variant='dark'
+                  variant='icon'
                   className='w-5 h-5'
                 />
               )}

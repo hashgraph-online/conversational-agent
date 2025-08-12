@@ -171,10 +171,16 @@ export class ConversationalAgent {
           temperature: DEFAULT_TEMPERATURE,
         });
       } else {
+        const modelName = openAIModelName || 'gpt-4o-mini';
+        const isGPT5Model =
+          modelName.toLowerCase().includes('gpt-5') ||
+          modelName.toLowerCase().includes('gpt5');
         llm = new ChatOpenAI({
           apiKey: openAIApiKey,
           modelName: openAIModelName,
-          temperature: DEFAULT_TEMPERATURE,
+          ...(isGPT5Model
+            ? { temperature: 1 }
+            : { temperature: DEFAULT_TEMPERATURE }),
         });
       }
 
