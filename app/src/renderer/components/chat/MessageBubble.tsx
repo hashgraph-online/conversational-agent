@@ -520,7 +520,11 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
                   <FiUser className='w-4 h-4 text-gray-700 dark:text-white' />
                 )
               ) : (
-                <Logo size='sm' variant='icon' className='w-5 h-5' />
+                <Logo
+                  size='sm'
+                  variant='icon'
+                  className='w-5 h-5'
+                />
               )}
             </div>
           </div>

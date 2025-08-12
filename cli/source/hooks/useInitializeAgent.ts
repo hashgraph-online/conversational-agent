@@ -5,58 +5,67 @@ import {type Config} from '../types';
 import {type MCPServerConfig} from '@hashgraphonline/conversational-agent';
 
 interface InitializeAgentProps {
-  configManager: ConfigManager;
-  agentManager: AgentManager;
-  actions: {
-    setScreen: (screen: any) => void;
-    setMessages: (messages: any[]) => void;
-    setError: (error: string | null) => void;
-  };
+	configManager: ConfigManager;
+	agentManager: AgentManager;
+	actions: {
+		setScreen: (screen: any) => void;
+		setMessages: (messages: any[]) => void;
+		setError: (error: string | null) => void;
+	};
 }
 
 export const useInitializeAgent = ({
-  configManager,
-  agentManager,
-  actions,
+	configManager,
+	agentManager,
+	actions,
 }: InitializeAgentProps) => {
-  const initializingRef = useRef(false);
+	const initializingRef = useRef(false);
 
-  const initializeAgent = useCallback(async (
-    currentConfig: Config,
-    mcpConfig: {
-      enableFilesystem: boolean;
-      filesystemPath: string;
-      customServers: MCPServerConfig[];
-    }
-  ) => {
-    if (agentManager.isInitialized() || agentManager.isInitializing() || initializingRef.current) {
-      return;
-    }
+	const initializeAgent = useCallback(
+		async (
+			currentConfig: Config,
+			mcpConfig: {
+				enableFilesystem: boolean;
+				filesystemPath: string;
+				customServers: MCPServerConfig[];
+			},
+		) => {
+			if (
+				agentManager.isInitialized() ||
+				agentManager.isInitializing() ||
+				initializingRef.current
+			) {
+				return;
+			}
 
-    initializingRef.current = true;
-    
-    actions.setScreen('loading');
+			initializingRef.current = true;
 
-    try {
-      await configManager.saveConfig(currentConfig);
-      
-      const {welcomeMessages} = await agentManager.initialize(
-        {...currentConfig, mcpServers: configManager.getMCPServers()},
-        mcpConfig
-      );
-      
-      actions.setMessages(welcomeMessages);
-      
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
-      actions.setScreen('chat');
-    } catch (err) {
-      actions.setError(err instanceof Error ? err.message : 'Failed to initialize agent');
-      actions.setScreen('setup');
-    } finally {
-      initializingRef.current = false;
-    }
-  }, [configManager, agentManager, actions]);
+			actions.setScreen('loading');
 
-  return initializeAgent;
+			try {
+				await configManager.saveConfig(currentConfig);
+
+				const {welcomeMessages} = await agentManager.initialize(
+					{...currentConfig, mcpServers: configManager.getMCPServers()},
+					mcpConfig,
+				);
+
+				actions.setMessages(welcomeMessages);
+
+				await new Promise(resolve => setTimeout(resolve, 100));
+
+				actions.setScreen('chat');
+			} catch (err) {
+				actions.setError(
+					err instanceof Error ? err.message : 'Failed to initialize agent',
+				);
+				actions.setScreen('setup');
+			} finally {
+				initializingRef.current = false;
+			}
+		},
+		[configManager, agentManager, actions],
+	);
+
+	return initializeAgent;
 };

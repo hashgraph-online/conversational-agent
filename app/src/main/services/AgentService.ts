@@ -96,7 +96,9 @@ export class AgentService {
         this.lastConfig.openAIApiKey !== config.openAIApiKey ||
         this.lastConfig.accountId !== config.accountId ||
         this.lastConfig.privateKey !== config.privateKey ||
-        this.lastConfig.operationalMode !== config.operationalMode;
+        this.lastConfig.operationalMode !== config.operationalMode ||
+        this.lastConfig.modelName !== config.modelName ||
+        this.lastConfig.llmProvider !== config.llmProvider;
 
       if (!configChanged) {
         return {
@@ -110,8 +112,12 @@ export class AgentService {
 
       this.logger.info('Config changed, reinitializing agent...', {
         modeChanged: this.lastConfig.operationalMode !== config.operationalMode,
+        modelChanged: this.lastConfig.modelName !== config.modelName,
+        providerChanged: this.lastConfig.llmProvider !== config.llmProvider,
         oldMode: this.lastConfig.operationalMode,
         newMode: config.operationalMode,
+        oldModel: this.lastConfig.modelName,
+        newModel: config.modelName,
       });
       this.agent = null;
       this.initialized = false;
@@ -269,32 +275,13 @@ export class AgentService {
         });
       }
 
-      this.logger.info('AgentService.initialize called with config:', {
-        accountId: config.accountId,
-        privateKeyLength: config.privateKey?.length,
-        privateKeyStatus: '[REDACTED]',
-        network: config.network,
-        openAIKeyLength: config.openAIApiKey?.length,
-        modelName: config.modelName,
-        operationalMode: config.operationalMode,
-        llmProvider: config.llmProvider,
-        mcpServerCount: mcpServers?.length || 0,
-        enabledMcpServers:
-          mcpServers?.filter((s) => s.autoConnect === true).length || 0,
-        mcpServers: mcpServers?.map((s) => ({
-          name: s.name,
-          command: s.command,
-          args: s.args,
-        })),
-      });
 
       let modelName = config.modelName || 'gpt-4o-mini';
-      if (modelName.startsWith('openai/')) {
+      if (config.llmProvider === 'openai' && modelName.startsWith('openai/')) {
         modelName = modelName.replace('openai/', '');
-        this.logger.info('Stripped OpenRouter prefix from model name:', {
-          original: config.modelName,
-          cleaned: modelName,
-        });
+      }
+      if (config.llmProvider === 'anthropic' && modelName.startsWith('anthropic/')) {
+        modelName = modelName.replace('anthropic/', '');
       }
 
       const agentConfig: SafeAgentConfig = {
