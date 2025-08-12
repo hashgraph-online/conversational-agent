@@ -10,10 +10,7 @@ export default defineConfig({
       },
       external: [
         'electron',
-        'better-sqlite3',
-        '@hashgraphonline/conversational-agent',
-        '@hashgraphonline/standards-agent-kit',
-        '@hashgraphonline/standards-sdk'
+        'better-sqlite3'
       ],
     },
     outDir: '.vite/build',

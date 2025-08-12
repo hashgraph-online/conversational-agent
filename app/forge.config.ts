@@ -11,7 +11,10 @@ const config: ForgeConfig = {
     icon: './assets/hol-app-icon-bubble',
     appBundleId: 'com.hashgraphonline.conversational-agent',
     appCategoryType: 'public.app-category.productivity',
-    osxSign: {} // Empty object to skip code signing
+    osxSign: {}, // Empty object to skip code signing
+    asar: {
+      unpack: '**/*.node'
+    }
   },
   rebuildConfig: {},
   makers: [
