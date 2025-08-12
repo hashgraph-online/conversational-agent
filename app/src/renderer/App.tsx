@@ -16,7 +16,7 @@ import { NotificationContainer } from './components/notifications/NotificationCo
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { LegalGuard } from './components/ui/LegalGuard';
 
-interface AppProps {}
+interface AppProps { }
 
 const App: React.FC<AppProps> = () => {
   return (
