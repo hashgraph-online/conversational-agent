@@ -22,6 +22,12 @@ declare module '@hashgraphonline/conversational-agent' {
     [key: string]: any;
   }
 
+  export interface ContentStoreManager {
+    isInitialized(): boolean;
+    storeContentIfLarge(buffer: Buffer, metadata: any): Promise<any>;
+    [key: string]: any;
+  }
+
   export class ConversationalAgent {
     constructor(options: ConversationalAgentOptions);
     memoryManager?: {
@@ -43,5 +49,6 @@ declare module '@hashgraphonline/conversational-agent' {
     executeToolCall(toolCall: any): Promise<any>;
     getAvailableTools(): any[];
     connectMCPServers(servers?: MCPServerConfig[]): Promise<void>;
+    getContentStoreManager(): ContentStoreManager | undefined;
   }
 }

@@ -128,7 +128,8 @@ export class SafeConversationalAgent extends ConversationalAgent {
    * Get the ContentStoreManager instance
    */
   getContentStoreManager(): ContentStoreManager | undefined {
-    return this.contentStoreManager;
+    // SafeConversationalAgent extends ConversationalAgent, so we call super
+    return super.getContentStoreManager?.();
   }
 
   /**

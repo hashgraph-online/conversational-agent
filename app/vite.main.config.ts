@@ -14,7 +14,7 @@ export default defineConfig({
       ],
     },
     outDir: '.vite/build',
-    target: 'node18',
+    target: 'node20', // Electron 37 uses Node 22, but node20 is safer for compatibility
   },
   resolve: {
     conditions: ['node'],
