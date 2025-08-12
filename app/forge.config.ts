@@ -3,7 +3,6 @@ import { MakerSquirrel } from '@electron-forge/maker-squirrel';
 import { MakerZIP } from '@electron-forge/maker-zip';
 import { MakerDeb } from '@electron-forge/maker-deb';
 import { MakerRpm } from '@electron-forge/maker-rpm';
-import { MakerPKG } from '@electron-forge/maker-pkg';
 import { VitePlugin } from '@electron-forge/plugin-vite';
 
 const config: ForgeConfig = {
@@ -16,28 +15,32 @@ const config: ForgeConfig = {
   },
   rebuildConfig: {},
   makers: [
-    // Squirrel has Wine issues on macOS ARM
-    // new MakerSquirrel({
-    //   name: 'conversational_agent',
-    //   setupIcon: './assets/hol-app-icon-bubble.ico',
-    //   authors: 'Hashgraph Online',
-    //   description: 'Desktop application for HashgraphOnline'
-    // }, ['win32']),
-    new MakerZIP({}, ['darwin', 'win32']),
+    // Windows - Squirrel.Windows installer
+    new MakerSquirrel({
+      name: 'HashgraphOnline',
+      setupIcon: './assets/hol-app-icon-bubble.ico',
+      authors: 'Hashgraph Online',
+      description: 'Desktop application for HashgraphOnline',
+      noMsi: true
+    }, ['win32']),
+    // ZIP archives for all platforms (primary for macOS)
+    new MakerZIP({}, ['darwin', 'win32', 'linux']),
+    // Linux - RPM package
     new MakerRpm({
       options: {
         categories: ['Utility'],
         description: 'Desktop application for HashgraphOnline',
         icon: './assets/hol-app-bubble.png'
       }
-    }),
+    }, ['linux']),
+    // Linux - DEB package
     new MakerDeb({
       options: {
         categories: ['Utility'],
         description: 'Desktop application for HashgraphOnline',
         icon: './assets/hol-app-bubble.png'
       }
-    })
+    }, ['linux'])
   ],
   plugins: [
     new VitePlugin({

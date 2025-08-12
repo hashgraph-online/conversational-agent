@@ -1,130 +1,275 @@
-# Conversational Agent Desktop App
+# Hashgraph Online Desktop App
 
 A modern desktop application for the Hashgraph Online Conversational Agent, built with Electron, React, and TypeScript.
 
-## Quick Start
+## 🚀 Quick Start
 
 ### Prerequisites
 
-- Node.js 20+ 
-- pnpm 8+
+- **Node.js** 18+ (20+ recommended)
+- **pnpm** 8+ (auto-installed by setup script if missing)
+- **Git**
 
 ### Installation
+
+#### Option 1: Automated Setup (Recommended) 🎯
 
 ```bash
 # Clone the repository
 git clone https://github.com/hashgraph-online/conversational-agent
 cd conversational-agent/app
 
-# Install dependencies
+# Run the interactive setup
+./setup.sh
+
+# Or run with specific commands:
+./setup.sh --full    # Complete setup + build
+./setup.sh --dev     # Setup + start dev server
+./setup.sh --help    # See all options
+```
+
+**Setup Script Options:**
+| Command | Description |
+|---------|-------------|
+| `./setup.sh` | Interactive menu with all options |
+| `./setup.sh --full` | Complete setup (legal files + install + build) |
+| `./setup.sh --install` | Install dependencies only |
+| `./setup.sh --legal` | Setup legal files only |
+| `./setup.sh --build` | Build for current platform |
+| `./setup.sh --dev` | Start development server |
+
+#### Option 2: Using Node.js Scripts
+
+```bash
+# Clone and navigate to app
+git clone https://github.com/hashgraph-online/conversational-agent
+cd conversational-agent/app
+
+# Setup legal files using Node.js script
+node scripts/setup-legal.js
+
+# Install and build
 pnpm install
+pnpm build
 ```
 
-### Development
+#### Option 3: Manual Setup
 
 ```bash
-# Start development server
-pnpm dev
+# Clone repository
+git clone https://github.com/hashgraph-online/conversational-agent
+cd conversational-agent/app
 
-# Run tests
-pnpm test
+# Setup legal files manually
+cp terms.md.example terms.md
+cp privacy.md.example privacy.md
+mkdir -p public
+cp terms.md.example public/terms.md
+cp privacy.md.example public/privacy.md
 
-# Type checking
-pnpm typecheck
-
-# View component stories
-pnpm storybook
+# Install and build
+pnpm install
+pnpm build
 ```
 
-### Building
+## 📝 Legal Files Configuration
+
+The app requires terms of service and privacy policy files:
+
+| Source File | Target Locations |
+|-------------|------------------|
+| `terms.md.example` | → `terms.md`<br>→ `public/terms.md` |
+| `privacy.md.example` | → `privacy.md`<br>→ `public/privacy.md` |
+
+**Important:** Customize these files for your organization before distribution!
+
+## 💻 Development
+
+### Start Development Server
 
 ```bash
-# Build for current platform
+pnpm start   # Starts Electron app in dev mode
+# or
+pnpm dev     # Same as above
+```
+
+**Development Mode Features:**
+- ✅ Auto-opens Electron window
+- ✅ Runs on http://localhost:5173 (Vite dev server)
+- ✅ Hot module replacement enabled
+- ✅ DevTools available for debugging
+- ✅ Auto-restart on code changes
+
+### Other Development Commands
+
+```bash
+pnpm test          # Run tests
+pnpm test:watch    # Run tests in watch mode
+pnpm test:coverage # Run tests with coverage
+pnpm typecheck     # Type checking
+pnpm storybook     # View component stories
+```
+
+## 📦 Building for Production
+
+### Build Commands
+
+```bash
+# Step 1: Build the application
 pnpm build
 
-# Build for specific platforms
-pnpm dist:mac     # macOS
-pnpm dist:win     # Windows
-pnpm dist:linux   # Linux
+# Step 2: Create distribution package for your platform
+pnpm dist:mac     # macOS distribution
+pnpm dist:win     # Windows distribution  
+pnpm dist:linux   # Linux distribution
+
+# Or use setup script (auto-detects platform)
+./setup.sh --build
 ```
 
-## Configuration
+### Build Output Structure
+
+```
+out/
+├── Hashgraph Online-{platform}-{arch}/
+│   ├── Hashgraph Online.app     # macOS executable
+│   ├── Hashgraph Online.exe     # Windows executable
+│   └── hashgraph-online         # Linux executable
+│
+└── make/                         # Distribution packages
+    ├── zip/                      # macOS
+    │   └── darwin/
+    │       └── {arch}/
+    │           └── *.zip         # Distributable ZIP
+    │
+    ├── squirrel.windows/         # Windows
+    │   └── {arch}/
+    │       └── *.exe             # Setup installer
+    │
+    └── deb/                      # Linux
+        └── {arch}/
+            └── *.deb             # Debian package
+```
+
+### Platform-Specific Output Locations
+
+#### 🍎 macOS
+
+| Build Type | Location | Usage |
+|------------|----------|-------|
+| **App Bundle** | `out/Hashgraph Online-darwin-arm64/Hashgraph Online.app` | Double-click to run |
+| **Distribution** | `out/make/zip/darwin/arm64/*.zip` | Share with users |
+
+**Installation:** Unzip and drag `.app` to Applications folder
+
+#### 🪟 Windows
+
+| Build Type | Location | Usage |
+|------------|----------|-------|
+| **Executable** | `out/Hashgraph Online-win32-x64/Hashgraph Online.exe` | Direct execution |
+| **Installer** | `out/make/squirrel.windows/x64/*.exe` | Distribute to users |
+
+**Installation:** Run the installer `.exe`
+
+#### 🐧 Linux
+
+| Build Type | Location | Usage |
+|------------|----------|-------|
+| **AppImage** | `out/make/*.AppImage` | Portable, no install needed |
+| **Deb Package** | `out/make/deb/x64/*.deb` | For Debian/Ubuntu |
+
+**Installation:** 
+- AppImage: Make executable and run
+- Deb: `sudo dpkg -i package.deb`
+
+## ⚙️ Configuration
 
 The app requires configuration of:
 
-1. **Hedera Network Credentials**
-   - Account ID (format: 0.0.xxxxx)
-   - Private Key (ED25519 or ECDSA)
-   - Network selection (Testnet/Mainnet)
+### 1. Hedera Network Credentials
+- Account ID (format: `0.0.xxxxx`)
+- Private Key (ED25519 or ECDSA)
+- Network selection (Testnet/Mainnet)
 
-2. **OpenAI API**
-   - API Key (starts with 'sk-')
-   - Model selection (gpt-4o, gpt-4, gpt-3.5-turbo)
+### 2. OpenAI API
+- API Key (starts with `sk-`)
+- Model selection (`gpt-4o`, `gpt-4`, `gpt-3.5-turbo`)
 
-3. **MCP Servers** (Optional)
-   - Filesystem access
-   - GitHub integration
-   - Database connections
-   - Custom servers
+### 3. MCP Servers (Optional)
+- Filesystem access
+- GitHub integration
+- Database connections
+- Custom servers
 
+## 🛠️ Troubleshooting
 
+### Common Issues & Solutions
 
-### Manual Building
+| Issue | Solution |
+|-------|----------|
+| **Missing legal files error** | Run `./setup.sh --legal` or `node scripts/setup-legal.js` |
+| **Build fails on macOS** | Install Xcode tools: `xcode-select --install`<br>Clear cache: `rm -rf out/ .vite/` |
+| **pnpm not found** | Run `npm install -g pnpm` or use setup script |
+| **Electron fails to start** | Clear and reinstall: `rm -rf node_modules && pnpm install` |
+| **Port 5173 in use** | Kill process: `lsof -ti:5173 \| xargs kill` |
 
-```bash
-# Install dependencies
-pnpm install
+## 📁 Project Structure
 
-# Build the app
-pnpm build
-
-# Package for distribution
-pnpm dist
+```
+app/
+├── src/
+│   ├── main/              # Electron main process
+│   ├── preload/           # Preload scripts
+│   └── renderer/          # React application
+│       ├── components/    # UI components
+│       ├── pages/         # App pages
+│       └── store/         # State management
+│
+├── scripts/
+│   ├── setup-legal.js     # Legal files setup (Node.js)
+│   └── prepare-icons.js   # Icon generation script
+│
+├── setup.sh               # Automated setup script (Bash)
+├── terms.md.example       # Terms template
+├── privacy.md.example     # Privacy template
+├── package.json           # Project configuration
+└── forge.config.ts        # Electron Forge config
 ```
 
-Built packages will be in the `dist/` directory:
-- **macOS**: `.dmg` installer
-- **Windows**: `.exe` installer  
-- **Linux**: `.AppImage` and `.deb` packages
+## 🔧 Available Scripts
 
-## Platform Support
+| Script | Description |
+|--------|-------------|
+| `pnpm start` | Start development server |
+| `pnpm dev` | Alias for start |
+| `pnpm build` | Build application |
+| `pnpm dist:mac` | Build macOS distribution |
+| `pnpm dist:win` | Build Windows distribution |
+| `pnpm dist:linux` | Build Linux distribution |
+| `pnpm test` | Run tests |
+| `pnpm typecheck` | Check TypeScript types |
+| `pnpm storybook` | Launch Storybook |
 
-### macOS
-- Requires macOS 10.15+ (Catalina)
-- Native keychain integration
-- Automatic dark mode detection
-- Code signing for Gatekeeper
+## 🏗️ Built With
 
-### Windows
-- Requires Windows 10+
-- Windows Credential Manager integration
-- NSIS installer with uninstaller
-- Code signing for SmartScreen
-
-### Linux
-- AppImage for universal compatibility
-- Debian package for Ubuntu/Debian
-- XDG desktop integration
-- Secret Service API for credentials
-
-## Testing
-
-```bash
-# Run all tests
-pnpm test
-
-# Run tests with coverage
-pnpm test:coverage
-
-# Run tests in watch mode
-pnpm test:watch
-```
-
-## Built With
-
-- [Electron](https://electronjs.org) - Cross-platform desktop apps
+- [Electron](https://electronjs.org) - Cross-platform desktop framework
 - [React](https://reactjs.org) - UI library
-- [Vite](https://vitejs.dev) - Build tool
+- [Vite](https://vitejs.dev) - Build tool & dev server
+- [TypeScript](https://www.typescriptlang.org) - Type safety
 - [Tailwind CSS](https://tailwindcss.com) - Styling
 - [Zustand](https://github.com/pmndrs/zustand) - State management
 - [@hashgraphonline/conversational-agent](https://www.npmjs.com/package/@hashgraphonline/conversational-agent) - AI agent library
+
+## 📋 System Requirements
+
+### macOS
+- macOS 10.15+ (Catalina or later)
+- Apple Silicon (M1/M2/M3) or Intel processor
+
+### Windows
+- Windows 10 or later
+- 64-bit processor
+
+### Linux
+- Ubuntu 18.04+, Fedora 32+, Debian 10+
+- 64-bit processor

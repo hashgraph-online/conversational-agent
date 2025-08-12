@@ -325,7 +325,7 @@ export class AgentService {
         this.logger.info(`Initiating background MCP connections for ${mcpServers.length} servers...`);
         
         setTimeout(() => {
-          underlyingAgent.connectMCPServers().catch(error => {
+          underlyingAgent.connectMCPServers().catch((error: any) => {
             this.logger.error('Failed to initiate MCP server connections:', error);
           });
         }, 100);

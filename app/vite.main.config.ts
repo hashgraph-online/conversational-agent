@@ -8,8 +8,16 @@ export default defineConfig({
       output: {
         entryFileNames: 'main.js',
       },
+      external: [
+        'electron',
+        'better-sqlite3',
+        '@hashgraphonline/conversational-agent',
+        '@hashgraphonline/standards-agent-kit',
+        '@hashgraphonline/standards-sdk'
+      ],
     },
     outDir: '.vite/build',
+    target: 'node18',
   },
   resolve: {
     conditions: ['node'],

@@ -54,3 +54,20 @@ coverage/
 thumbs.db
 .eslintcache
 .vite
+
+# Legal files (generated from examples)
+terms.md
+privacy.md
+public/terms.md
+public/privacy.md
+
+# Build artifacts
+build/logos/
+build/preload.js
+build/privacy.md
+build/terms.md
+build/entitlements.mac.plist
+build/icon.icns
+
+# Generated type definitions
+src/types/hashgraphonline-conversational-agent.d.ts
