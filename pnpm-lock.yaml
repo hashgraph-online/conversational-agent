@@ -12,8 +12,8 @@ importers:
         specifier: ^2.69.0
         version: 2.69.0(bn.js@5.2.2)(react-native@0.80.1(@babel/core@7.28.0)(@types/react@19.1.9)(react@19.1.1))
       '@hashgraphonline/standards-agent-kit':
-        specifier: ^0.2.129
-        version: 0.2.129(ea37e42c3f1f5235691f33b010df700c)
+        specifier: ^0.2.131
+        version: 0.2.131(ea37e42c3f1f5235691f33b010df700c)
       '@hashgraphonline/standards-sdk':
         specifier: ^0.0.181
         version: 0.0.181(@types/react@19.1.9)(@walletconnect/qrcode-modal@1.8.0)(@walletconnect/types@2.21.7(ioredis@5.6.1))(@walletconnect/utils@2.21.7(ioredis@5.6.1)(typescript@5.8.3)(zod@3.25.76))(@walletconnect/web3wallet@1.16.1(encoding@0.1.13)(ioredis@5.6.1)(typescript@5.8.3)(zod@3.25.76))(bn.js@5.2.2)(react-native@0.80.1(@babel/core@7.28.0)(@types/react@19.1.9)(react@19.1.1))(react@19.1.1)(typescript@5.8.3)
@@ -777,8 +777,8 @@ packages:
   '@hashgraphonline/hashinal-wc@1.0.102':
     resolution: {integrity: sha512-kA1sebQOwoYeXanZv6vI0/ODyAM6v6Wm45O7g8t2HMEZKgSmvt8bav/NgH96GNCqonWFXp1w4Dd5qRx3bwVBow==}
 
-  '@hashgraphonline/standards-agent-kit@0.2.129':
-    resolution: {integrity: sha512-LGsFkkQxszz9KCfJc7jLTNOkRQExyZkUGFkOUi1eyA/Gi1VdY0dF3Q2iMDmwY9hMX1KjSUW2hdWNtlaZvZ9NAg==}
+  '@hashgraphonline/standards-agent-kit@0.2.131':
+    resolution: {integrity: sha512-PUKB6Mk687cEBgZGJvZgizeoEZ0m0Ta9i6jp3F1nxdj7NNNjpgybD9xJCVdTKPb0u2DYXUZhYUbkymJqmsV62g==}
     engines: {node: '>=18.0.0'}
 
   '@hashgraphonline/standards-sdk@0.0.162':
@@ -7783,7 +7783,7 @@ snapshots:
       - utf-8-validate
       - zod
 
-  '@hashgraphonline/standards-agent-kit@0.2.129(ea37e42c3f1f5235691f33b010df700c)':
+  '@hashgraphonline/standards-agent-kit@0.2.131(ea37e42c3f1f5235691f33b010df700c)':
     dependencies:
       '@hashgraph/sdk': 2.69.0(bn.js@5.2.2)(react-native@0.80.1(@babel/core@7.28.0)(@types/react@19.1.9)(react@19.1.1))
       '@hashgraphonline/standards-sdk': 0.0.181(@types/react@19.1.9)(@walletconnect/qrcode-modal@1.8.0)(@walletconnect/types@2.21.7(ioredis@5.6.1))(@walletconnect/utils@2.21.7(ioredis@5.6.1)(typescript@5.8.3)(zod@3.25.76))(@walletconnect/web3wallet@1.16.1(encoding@0.1.13)(ioredis@5.6.1)(typescript@5.8.3)(zod@3.25.76))(bn.js@5.2.2)(react-native@0.80.1(@babel/core@7.28.0)(@types/react@19.1.9)(react@19.1.1))(react@19.1.1)(typescript@5.8.3)
