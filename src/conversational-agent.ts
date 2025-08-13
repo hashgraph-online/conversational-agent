@@ -97,7 +97,7 @@ export class ConversationalAgent {
   public stateManager: IStateManager;
   private options: ConversationalAgentOptions;
   public logger: Logger;
-  protected contentStoreManager?: ContentStoreManager;
+  public contentStoreManager?: ContentStoreManager;
   public memoryManager?: SmartMemoryManager | undefined;
   private entityTools?: {
     resolveEntities: ResolveEntitiesTool;
@@ -151,15 +151,10 @@ export class ConversationalAgent {
     this.validateOptions(accountId, privateKey);
 
     try {
-      const privateKeyInstance = await this.detectPrivateKeyType(
-        accountId!,
-        privateKey!,
-        network
-      );
-
+      
       const serverSigner = new ServerSigner(
         accountId!,
-        privateKeyInstance,
+        privateKey!,
         network as MirrorNetwork
       );
 
@@ -326,6 +321,18 @@ export class ConversationalAgent {
   private validateOptions(accountId?: string, privateKey?: string): void {
     if (!accountId || !privateKey) {
       throw new Error('Account ID and private key are required');
+    }
+    
+    if (typeof accountId !== 'string') {
+      throw new Error(`Account ID must be a string, received ${typeof accountId}`);
+    }
+    
+    if (typeof privateKey !== 'string') {
+      throw new Error(`Private key must be a string, received ${typeof privateKey}: ${JSON.stringify(privateKey)}`);
+    }
+    
+    if (privateKey.length < 10) {
+      throw new Error('Private key appears to be invalid (too short)');
     }
   }
 
@@ -557,29 +564,6 @@ export class ConversationalAgent {
     });
   }
 
-  /**
-   * Detect the private key type by querying the account info from mirror node
-   * @param {string} accountId - The Hedera account ID
-   * @param {string} privateKey - The private key string
-   * @param {NetworkType} network - The Hedera Hashgraph
-   * @returns {Promise<PrivateKey>} The appropriate PrivateKey instance
-   */
-  private async detectPrivateKeyType(
-    accountId: string,
-    privateKey: string,
-    network: NetworkType
-  ): Promise<PrivateKey> {
-    const mirrorNode = new HederaMirrorNode(network as 'testnet' | 'mainnet');
-    const accountInfo = await mirrorNode.requestAccount(accountId);
-
-    const keyType = accountInfo?.key?._type || '';
-
-    if (keyType?.toLowerCase()?.includes('ecdsa')) {
-      return PrivateKey.fromStringECDSA(privateKey);
-    } else {
-      return PrivateKey.fromStringED25519(privateKey);
-    }
-  }
 
   /**
    * Resolve entity references using LLM-based resolver
