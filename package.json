@@ -92,11 +92,11 @@
   },
   "dependencies": {
     "@hashgraph/sdk": "^2.69.0",
-    "@hashgraphonline/standards-agent-kit": "0.2.127",
-    "@hashgraphonline/standards-sdk": "^0.0.180",
+    "@hashgraphonline/standards-agent-kit": "^0.2.129",
+    "@hashgraphonline/standards-sdk": "^0.0.181",
     "@langchain/anthropic": "^0.3.26",
-    "@langchain/core": "^0.3.66",
-    "@langchain/openai": "^0.6.3",
+    "@langchain/core": "^0.3.7",
+    "@langchain/openai": "^0.6.7",
     "@modelcontextprotocol/sdk": "^1.17.0",
     "axios": "^1.11.0",
     "bignumber.js": "^9.3.1",
@@ -104,7 +104,7 @@
     "ethers": "^6.15.0",
     "hedera-agent-kit": "^2.0.3",
     "langchain": "^0.3.3",
-    "tiktoken": "^1.0.21",
+    "tiktoken": "^1.0.22",
     "zod": "^3.23.8"
   },
   "repository": {

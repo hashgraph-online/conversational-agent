@@ -12,20 +12,20 @@ importers:
         specifier: ^2.69.0
         version: 2.69.0(bn.js@5.2.2)(react-native@0.80.1(@babel/core@7.28.0)(@types/react@19.1.9)(react@19.1.1))
       '@hashgraphonline/standards-agent-kit':
-        specifier: 0.2.127
-        version: 0.2.127(ea37e42c3f1f5235691f33b010df700c)
+        specifier: ^0.2.129
+        version: 0.2.129(ea37e42c3f1f5235691f33b010df700c)
       '@hashgraphonline/standards-sdk':
-        specifier: ^0.0.180
-        version: 0.0.180(@types/react@19.1.9)(@walletconnect/qrcode-modal@1.8.0)(@walletconnect/types@2.21.7(ioredis@5.6.1))(@walletconnect/utils@2.21.7(ioredis@5.6.1)(typescript@5.8.3)(zod@3.25.76))(@walletconnect/web3wallet@1.16.1(encoding@0.1.13)(ioredis@5.6.1)(typescript@5.8.3)(zod@3.25.76))(bn.js@5.2.2)(react-native@0.80.1(@babel/core@7.28.0)(@types/react@19.1.9)(react@19.1.1))(react@19.1.1)(typescript@5.8.3)
+        specifier: ^0.0.181
+        version: 0.0.181(@types/react@19.1.9)(@walletconnect/qrcode-modal@1.8.0)(@walletconnect/types@2.21.7(ioredis@5.6.1))(@walletconnect/utils@2.21.7(ioredis@5.6.1)(typescript@5.8.3)(zod@3.25.76))(@walletconnect/web3wallet@1.16.1(encoding@0.1.13)(ioredis@5.6.1)(typescript@5.8.3)(zod@3.25.76))(bn.js@5.2.2)(react-native@0.80.1(@babel/core@7.28.0)(@types/react@19.1.9)(react@19.1.1))(react@19.1.1)(typescript@5.8.3)
       '@langchain/anthropic':
         specifier: ^0.3.26
         version: 0.3.26(@langchain/core@0.3.66(openai@5.12.2(ws@8.18.2)(zod@3.25.76)))
       '@langchain/core':
-        specifier: ^0.3.66
+        specifier: ^0.3.7
         version: 0.3.66(openai@5.12.2(ws@8.18.2)(zod@3.25.76))
       '@langchain/openai':
-        specifier: ^0.6.3
-        version: 0.6.3(@langchain/core@0.3.66(openai@5.12.2(ws@8.18.2)(zod@3.25.76)))(ws@8.18.2)
+        specifier: ^0.6.7
+        version: 0.6.7(@langchain/core@0.3.66(openai@5.12.2(ws@8.18.2)(zod@3.25.76)))(ws@8.18.2)
       '@modelcontextprotocol/sdk':
         specifier: ^1.17.0
         version: 1.17.0
@@ -48,8 +48,8 @@ importers:
         specifier: ^0.3.3
         version: 0.3.30(@langchain/anthropic@0.3.26(@langchain/core@0.3.66(openai@5.12.2(ws@8.18.2)(zod@3.25.76))))(@langchain/core@0.3.66(openai@5.12.2(ws@8.18.2)(zod@3.25.76)))(axios@1.11.0)(openai@5.12.2(ws@8.18.2)(zod@3.25.76))(ws@8.18.2)
       tiktoken:
-        specifier: ^1.0.21
-        version: 1.0.21
+        specifier: ^1.0.22
+        version: 1.0.22
       zod:
         specifier: ^3.23.8
         version: 3.25.76
@@ -777,8 +777,8 @@ packages:
   '@hashgraphonline/hashinal-wc@1.0.102':
     resolution: {integrity: sha512-kA1sebQOwoYeXanZv6vI0/ODyAM6v6Wm45O7g8t2HMEZKgSmvt8bav/NgH96GNCqonWFXp1w4Dd5qRx3bwVBow==}
 
-  '@hashgraphonline/standards-agent-kit@0.2.127':
-    resolution: {integrity: sha512-d1pZvMuCkhwuQ9JUOkCpx2SMiFqL0VfzQhgvZNuUxX/i/eZoKAROJrAJi8pTpJqhnfWl4Gm4rkKt6T8H1PdKrw==}
+  '@hashgraphonline/standards-agent-kit@0.2.129':
+    resolution: {integrity: sha512-LGsFkkQxszz9KCfJc7jLTNOkRQExyZkUGFkOUi1eyA/Gi1VdY0dF3Q2iMDmwY9hMX1KjSUW2hdWNtlaZvZ9NAg==}
     engines: {node: '>=18.0.0'}
 
   '@hashgraphonline/standards-sdk@0.0.162':
@@ -787,8 +787,8 @@ packages:
   '@hashgraphonline/standards-sdk@0.0.163':
     resolution: {integrity: sha512-3OopreaannHKl0ET/FmuDcTrLHxIRfh4c478HZvzzzkOK1WLKzFE8H1gZxU8Faa4gv9aIqQ2Vtmw2Tx/YNzKFg==}
 
-  '@hashgraphonline/standards-sdk@0.0.180':
-    resolution: {integrity: sha512-6iL3wXH2PpS+sj2909N79DDRW8IH6f2NRElOoRNJZYeeuy4E+y9OtclPfXgKiTL6jpKy0b7E9YsgMoJpRIiPOw==}
+  '@hashgraphonline/standards-sdk@0.0.181':
+    resolution: {integrity: sha512-8s0HaCzYoZVhaAr4LmBZdCC7WyPnpxZBFD940HG0wDo7VwVgE73hfCXKe3Vm8E98oNmFpTkg270lYBpHOoC1ag==}
 
   '@huggingface/jinja@0.1.3':
     resolution: {integrity: sha512-9KsiorsdIK8+7VmlamAT7Uh90zxAhC/SeKaKc80v58JhtPYuwaJpmR/ST7XAUxrHAFqHTCoTH5aJnJDwSL6xIQ==}
@@ -1333,11 +1333,11 @@ packages:
     peerDependencies:
       '@langchain/core': '>=0.3.58 <0.4.0'
 
-  '@langchain/openai@0.6.3':
-    resolution: {integrity: sha512-dSNuXDTJitDzN8D2wFNqWVELDbBRhMpJiFeiWpHjfPuq7R6wSjzNNY/Uk6x+FLpvbOs/zKNWy5+0q0p3KrCjRQ==}
+  '@langchain/openai@0.6.7':
+    resolution: {integrity: sha512-mNT9AdfEvDjlWU76hEl1HgTFkgk7yFKdIRgQz3KXKZhEERXhAwYJNgPFq8+HIpgxYSnc12akZ1uo8WPS98ErPQ==}
     engines: {node: '>=18'}
     peerDependencies:
-      '@langchain/core': '>=0.3.58 <0.4.0'
+      '@langchain/core': '>=0.3.68 <0.4.0'
 
   '@langchain/textsplitters@0.1.0':
     resolution: {integrity: sha512-djI4uw9rlkAb5iMhtLED+xJebDdAG935AdP4eRTB02R7OB/act55Bj9wsskhZsvuyQRpO4O1wQOp85s6T6GWmw==}
@@ -5965,8 +5965,8 @@ packages:
   throat@5.0.0:
     resolution: {integrity: sha512-fcwX4mndzpLQKBS1DVYhGAcYaYt7vsHNIvQV+WXMvnow5cgjPphq5CaayLaGsjRdSCKZFNGt7/GYAuXaNOiYCA==}
 
-  tiktoken@1.0.21:
-    resolution: {integrity: sha512-/kqtlepLMptX0OgbYD9aMYbM7EFrMZCL7EoHM8Psmg2FuhXoo/bH64KqOiZGGwa6oS9TPdSEDKBnV2LuB8+5vQ==}
+  tiktoken@1.0.22:
+    resolution: {integrity: sha512-PKvy1rVF1RibfF3JlXBSP0Jrcw2uq3yXdgcEXtKTYn3QJ/cBRBHDnrJ5jHky+MENZ6DIPwNUGWpkVx+7joCpNA==}
 
   timers-browserify@2.0.12:
     resolution: {integrity: sha512-9phl76Cqm6FhSX9Xe1ZUAMLtm1BLkKj2Qd5ApyWkXzsMRaA7dgr81kf4wJmQf/hAvg8EEyJxDo3du/0KlhPiKQ==}
@@ -7783,13 +7783,13 @@ snapshots:
       - utf-8-validate
       - zod
 
-  '@hashgraphonline/standards-agent-kit@0.2.127(ea37e42c3f1f5235691f33b010df700c)':
+  '@hashgraphonline/standards-agent-kit@0.2.129(ea37e42c3f1f5235691f33b010df700c)':
     dependencies:
       '@hashgraph/sdk': 2.69.0(bn.js@5.2.2)(react-native@0.80.1(@babel/core@7.28.0)(@types/react@19.1.9)(react@19.1.1))
-      '@hashgraphonline/standards-sdk': 0.0.180(@types/react@19.1.9)(@walletconnect/qrcode-modal@1.8.0)(@walletconnect/types@2.21.7(ioredis@5.6.1))(@walletconnect/utils@2.21.7(ioredis@5.6.1)(typescript@5.8.3)(zod@3.25.76))(@walletconnect/web3wallet@1.16.1(encoding@0.1.13)(ioredis@5.6.1)(typescript@5.8.3)(zod@3.25.76))(bn.js@5.2.2)(react-native@0.80.1(@babel/core@7.28.0)(@types/react@19.1.9)(react@19.1.1))(react@19.1.1)(typescript@5.8.3)
+      '@hashgraphonline/standards-sdk': 0.0.181(@types/react@19.1.9)(@walletconnect/qrcode-modal@1.8.0)(@walletconnect/types@2.21.7(ioredis@5.6.1))(@walletconnect/utils@2.21.7(ioredis@5.6.1)(typescript@5.8.3)(zod@3.25.76))(@walletconnect/web3wallet@1.16.1(encoding@0.1.13)(ioredis@5.6.1)(typescript@5.8.3)(zod@3.25.76))(bn.js@5.2.2)(react-native@0.80.1(@babel/core@7.28.0)(@types/react@19.1.9)(react@19.1.1))(react@19.1.1)(typescript@5.8.3)
       '@langchain/community': 0.3.50(@aws-crypto/sha256-js@5.2.0)(@aws-sdk/credential-provider-node@3.864.0)(@browserbasehq/sdk@2.6.0(encoding@0.1.13))(@browserbasehq/stagehand@1.14.0(@playwright/test@1.54.2)(deepmerge@4.3.1)(dotenv@17.2.1)(encoding@0.1.13)(openai@5.12.2(ws@8.18.2)(zod@3.25.76))(zod@3.25.76))(@ibm-cloud/watsonx-ai@1.6.10)(@langchain/anthropic@0.3.26(@langchain/core@0.3.66(openai@5.12.2(ws@8.18.2)(zod@3.25.76))))(@langchain/core@0.3.66(openai@5.12.2(ws@8.18.2)(zod@3.25.76)))(@smithy/util-utf8@2.3.0)(axios@1.11.0)(chromadb@2.4.6(encoding@0.1.13)(ws@8.18.2)(zod@3.25.76))(cohere-ai@7.18.0(encoding@0.1.13))(crypto-js@4.2.0)(encoding@0.1.13)(fast-xml-parser@5.2.5)(ibm-cloud-sdk-core@5.4.2)(ignore@5.3.2)(ioredis@5.6.1)(jsdom@26.1.0)(jsonwebtoken@9.0.2)(lodash@4.17.21)(openai@5.12.2(ws@8.18.2)(zod@3.25.76))(playwright@1.54.2)(weaviate-client@3.8.0(encoding@0.1.13))(ws@8.18.2)
       '@langchain/core': 0.3.66(openai@5.12.2(ws@8.18.2)(zod@3.25.76))
-      '@langchain/openai': 0.6.3(@langchain/core@0.3.66(openai@5.12.2(ws@8.18.2)(zod@3.25.76)))(ws@8.18.2)
+      '@langchain/openai': 0.6.7(@langchain/core@0.3.66(openai@5.12.2(ws@8.18.2)(zod@3.25.76)))(ws@8.18.2)
       '@octokit/rest': 21.1.1
       axios: 1.11.0(debug@4.4.1)
       chromadb: 2.4.6(encoding@0.1.13)(ws@8.18.2)(zod@3.25.76)
@@ -8080,7 +8080,7 @@ snapshots:
       - uploadthing
       - utf-8-validate
 
-  '@hashgraphonline/standards-sdk@0.0.180(@types/react@19.1.9)(@walletconnect/qrcode-modal@1.8.0)(@walletconnect/types@2.21.7(ioredis@5.6.1))(@walletconnect/utils@2.21.7(ioredis@5.6.1)(typescript@5.8.3)(zod@3.25.76))(@walletconnect/web3wallet@1.16.1(encoding@0.1.13)(ioredis@5.6.1)(typescript@5.8.3)(zod@3.25.76))(bn.js@5.2.2)(react-native@0.80.1(@babel/core@7.28.0)(@types/react@19.1.9)(react@19.1.1))(react@19.1.1)(typescript@5.8.3)':
+  '@hashgraphonline/standards-sdk@0.0.181(@types/react@19.1.9)(@walletconnect/qrcode-modal@1.8.0)(@walletconnect/types@2.21.7(ioredis@5.6.1))(@walletconnect/utils@2.21.7(ioredis@5.6.1)(typescript@5.8.3)(zod@3.25.76))(@walletconnect/web3wallet@1.16.1(encoding@0.1.13)(ioredis@5.6.1)(typescript@5.8.3)(zod@3.25.76))(bn.js@5.2.2)(react-native@0.80.1(@babel/core@7.28.0)(@types/react@19.1.9)(react@19.1.1))(react@19.1.1)(typescript@5.8.3)':
     dependencies:
       '@hashgraph/hedera-wallet-connect': 1.5.1(@hashgraph/sdk@2.69.0(bn.js@5.2.2)(react-native@0.80.1(@babel/core@7.28.0)(@types/react@19.1.9)(react@19.1.1)))(@walletconnect/qrcode-modal@1.8.0)(@walletconnect/types@2.21.7(ioredis@5.6.1))(@walletconnect/utils@2.21.7(ioredis@5.6.1)(typescript@5.8.3)(zod@3.25.76))(@walletconnect/web3wallet@1.16.1(encoding@0.1.13)(ioredis@5.6.1)(typescript@5.8.3)(zod@3.25.76))
       '@hashgraph/proto': 2.20.0
@@ -8326,7 +8326,7 @@ snapshots:
       '@browserbasehq/stagehand': 1.14.0(@playwright/test@1.54.2)(deepmerge@4.3.1)(dotenv@17.2.1)(encoding@0.1.13)(openai@5.12.2(ws@8.18.2)(zod@3.25.76))(zod@3.25.76)
       '@ibm-cloud/watsonx-ai': 1.6.10
       '@langchain/core': 0.3.66(openai@5.12.2(ws@8.18.2)(zod@3.25.76))
-      '@langchain/openai': 0.6.3(@langchain/core@0.3.66(openai@5.12.2(ws@8.18.2)(zod@3.25.76)))(ws@8.18.2)
+      '@langchain/openai': 0.6.7(@langchain/core@0.3.66(openai@5.12.2(ws@8.18.2)(zod@3.25.76)))(ws@8.18.2)
       '@langchain/weaviate': 0.2.1(@langchain/core@0.3.66(openai@5.12.2(ws@8.18.2)(zod@3.25.76)))(encoding@0.1.13)
       binary-extensions: 2.3.0
       expr-eval: 2.0.2
@@ -8383,7 +8383,7 @@ snapshots:
       camelcase: 6.3.0
       decamelize: 1.2.0
       js-tiktoken: 1.0.20
-      langsmith: 0.3.48(openai@5.12.2(ws@8.18.2)(zod@3.25.76))
+      langsmith: 0.3.58(openai@5.12.2(ws@8.18.2)(zod@3.25.76))
       mustache: 4.2.0
       p-queue: 6.6.2
       p-retry: 4.6.2
@@ -8434,11 +8434,11 @@ snapshots:
     transitivePeerDependencies:
       - ws
 
-  '@langchain/openai@0.6.3(@langchain/core@0.3.66(openai@5.12.2(ws@8.18.2)(zod@3.25.76)))(ws@8.18.2)':
+  '@langchain/openai@0.6.7(@langchain/core@0.3.66(openai@5.12.2(ws@8.18.2)(zod@3.25.76)))(ws@8.18.2)':
     dependencies:
       '@langchain/core': 0.3.66(openai@5.12.2(ws@8.18.2)(zod@3.25.76))
       js-tiktoken: 1.0.20
-      openai: 5.10.2(ws@8.18.2)(zod@3.25.76)
+      openai: 5.12.2(ws@8.18.2)(zod@3.25.76)
       zod: 3.25.76
     transitivePeerDependencies:
       - ws
@@ -9394,7 +9394,7 @@ snapshots:
 
   '@types/node-fetch@2.6.13':
     dependencies:
-      '@types/node': 18.19.122
+      '@types/node': 24.2.1
       form-data: 4.0.4
 
   '@types/node@18.19.122':
@@ -9680,7 +9680,7 @@ snapshots:
       '@ethersproject/transactions': 5.8.0
       '@stablelib/random': 1.0.2
       '@stablelib/sha256': 1.0.1
-      '@walletconnect/core': 2.17.1(ioredis@5.6.1)
+      '@walletconnect/core': 2.21.7(ioredis@5.6.1)(typescript@5.8.3)(zod@3.25.76)
       '@walletconnect/events': 1.0.1
       '@walletconnect/heartbeat': 1.2.2
       '@walletconnect/jsonrpc-utils': 1.0.8
@@ -9934,7 +9934,7 @@ snapshots:
       '@walletconnect/safe-json': 1.0.2
       '@walletconnect/time': 1.0.2
       tslib: 1.14.1
-      uint8arrays: 3.1.0
+      uint8arrays: 3.1.1
 
   '@walletconnect/relay-auth@1.1.0':
     dependencies:
@@ -12565,7 +12565,7 @@ snapshots:
   langchain@0.3.30(@langchain/anthropic@0.3.26(@langchain/core@0.3.66(openai@5.12.2(ws@8.18.2)(zod@3.25.76))))(@langchain/core@0.3.66(openai@5.12.2(ws@8.18.2)(zod@3.25.76)))(axios@1.11.0)(openai@5.12.2(ws@8.18.2)(zod@3.25.76))(ws@8.18.2):
     dependencies:
       '@langchain/core': 0.3.66(openai@5.12.2(ws@8.18.2)(zod@3.25.76))
-      '@langchain/openai': 0.6.3(@langchain/core@0.3.66(openai@5.12.2(ws@8.18.2)(zod@3.25.76)))(ws@8.18.2)
+      '@langchain/openai': 0.6.7(@langchain/core@0.3.66(openai@5.12.2(ws@8.18.2)(zod@3.25.76)))(ws@8.18.2)
       '@langchain/textsplitters': 0.1.0(@langchain/core@0.3.66(openai@5.12.2(ws@8.18.2)(zod@3.25.76)))
       js-tiktoken: 1.0.20
       js-yaml: 4.1.0
@@ -14412,7 +14412,7 @@ snapshots:
 
   throat@5.0.0: {}
 
-  tiktoken@1.0.21: {}
+  tiktoken@1.0.22: {}
 
   timers-browserify@2.0.12:
     dependencies:
