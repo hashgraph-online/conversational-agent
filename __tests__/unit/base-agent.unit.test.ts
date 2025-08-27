@@ -1,73 +1,121 @@
-import { describe, test, expect, vi, beforeEach } from 'vitest';
+import { describe, test, expect, beforeEach } from '@jest/globals';
 import { BaseAgent, LangChainAgent, createAgent } from '../../src';
 import { LangChainProvider } from '../../src/providers';
 import { ChatOpenAI } from '@langchain/openai';
+import { BaseChatModel } from '@langchain/core/language_models/chat_models';
+import { createMockServerSigner, createMockTool, createMockAgentExecutor, MockStructuredToolInterface, MockAgentExecutorInterface } from '../mock-factory';
+import { TEST_RESPONSE_MESSAGES, TEST_MCP_DATA, TEST_FRAMEWORK_VALUES, TEST_TOOL_VALUES } from '../test-constants';
 
-vi.mock('hedera-agent-kit', async () => {
-  const actual = await vi.importActual('hedera-agent-kit');
-  return {
-    ...actual,
-    ServerSigner: vi.fn().mockImplementation(() => ({
-      getAccountId: () => ({ toString: () => '0.0.12345' }),
-      getNetwork: () => 'testnet',
-    })),
-    HederaAgentKit: vi.fn().mockImplementation(function(this: any) {
-      this.initialize = vi.fn().mockResolvedValue(undefined);
-      this.getAggregatedLangChainTools = vi.fn().mockReturnValue([]);
-      this.operationalMode = 'returnBytes';
-    }),
-    getAllHederaCorePlugins: vi.fn().mockReturnValue([]),
-    TokenUsageCallbackHandler: vi.fn().mockImplementation(function(this: any) {
-      this.getLatestTokenUsage = vi.fn().mockReturnValue(null);
-      this.getTotalTokenUsage = vi.fn().mockReturnValue({ promptTokens: 0, completionTokens: 0, totalTokens: 0 });
-      this.getTokenUsageHistory = vi.fn().mockReturnValue([]);
-      this.reset = vi.fn();
-    }),
-    calculateTokenCostSync: vi.fn().mockReturnValue({ totalCost: 0 }),
-  };
-});
+// Mock BasePlugin before importing anything that uses it
+jest.mock('hedera-agent-kit', () => ({
+  BasePlugin: class MockBasePlugin {
+    context = {
+      logger: {
+        info: jest.fn(),
+        warn: jest.fn(),
+        error: jest.fn(),
+        debug: jest.fn(),
+      },
+      config: {},
+    };
 
-vi.mock('@langchain/openai', () => ({
-  ChatOpenAI: vi.fn().mockImplementation(() => ({
-    invoke: vi.fn().mockResolvedValue('Test response'),
-    stream: vi.fn().mockResolvedValue([]),
+    async initialize(context: any) {
+      this.context = { ...this.context, ...context };
+    }
+
+    async cleanup() {}
+  },
+  BaseServiceBuilder: class MockBaseServiceBuilder {
+    constructor(hederaKit: any) {
+      this.hederaKit = hederaKit;
+    }
+    hederaKit: any;
+  },
+  HederaAgentKit: jest.fn().mockImplementation(() => ({
+    initialize: jest.fn().mockResolvedValue(undefined),
+    getAggregatedLangChainTools: jest.fn().mockReturnValue([]),
+    operationalMode: 'returnBytes',
   })),
 }));
 
-vi.mock('langchain/agents', () => ({
-  createOpenAIToolsAgent: vi.fn().mockResolvedValue({}),
-  AgentExecutor: vi.fn().mockImplementation(function(this: any) {
-    this.invoke = vi.fn().mockResolvedValue({
+interface MockHederaKit {
+  initialize: jest.Mock;
+  getAggregatedLangChainTools: jest.Mock;
+  operationalMode: string;
+}
+
+interface MockTokenUsageCallbackHandler {
+  getLatestTokenUsage: jest.Mock;
+  getTotalTokenUsage: jest.Mock;
+  getTokenUsageHistory: jest.Mock;
+  reset: jest.Mock;
+}
+
+
+interface MockStreamModel {
+  stream: jest.Mock;
+}
+
+
+jest.mock('hedera-agent-kit', async () => {
+  const actual = await (jest.requireActual as jest.Mock)('hedera-agent-kit') as Record<string, unknown>;
+  return {
+    ...actual,
+    ServerSigner: jest.fn().mockImplementation(() => createMockServerSigner()),
+    HederaAgentKit: jest.fn().mockImplementation(function(this: MockHederaKit) {
+      this.initialize = jest.fn().mockResolvedValue(undefined);
+      this.getAggregatedLangChainTools = jest.fn().mockReturnValue([]);
+      this.operationalMode = 'returnBytes';
+    }),
+    getAllHederaCorePlugins: jest.fn().mockReturnValue([]),
+    TokenUsageCallbackHandler: jest.fn().mockImplementation(function(this: MockTokenUsageCallbackHandler) {
+      this.getLatestTokenUsage = jest.fn().mockReturnValue(null);
+      this.getTotalTokenUsage = jest.fn().mockReturnValue({ promptTokens: 0, completionTokens: 0, totalTokens: 0 });
+      this.getTokenUsageHistory = jest.fn().mockReturnValue([]);
+      this.reset = jest.fn();
+    }),
+    calculateTokenCostSync: jest.fn().mockReturnValue({ totalCost: 0 }),
+  };
+});
+
+jest.mock('@langchain/openai', () => ({
+  ChatOpenAI: jest.fn().mockImplementation(() => ({
+    invoke: jest.fn().mockResolvedValue('Test response'),
+    stream: jest.fn().mockResolvedValue([]),
+  })),
+}));
+
+jest.mock('langchain/agents', () => ({
+  createOpenAIToolsAgent: jest.fn().mockResolvedValue({}),
+  AgentExecutor: jest.fn().mockImplementation(function(this: MockAgentExecutor) {
+    this.invoke = jest.fn().mockResolvedValue({
       output: 'Test response',
       intermediateSteps: [],
     });
   }),
 }));
 
-vi.mock('@langchain/core/prompts', () => ({
+jest.mock('@langchain/core/prompts', () => ({
   ChatPromptTemplate: {
-    fromMessages: vi.fn().mockReturnValue({}),
+    fromMessages: jest.fn().mockReturnValue({}),
   },
-  MessagesPlaceholder: vi.fn().mockImplementation((name: string) => ({ name })),
+  MessagesPlaceholder: jest.fn().mockImplementation((name: string) => ({ name })),
 }));
 
-vi.mock('@hashgraphonline/standards-sdk', () => ({
-  Logger: vi.fn().mockImplementation(() => ({
-    info: vi.fn(),
-    error: vi.fn(),
-    debug: vi.fn(),
-    warn: vi.fn(),
+jest.mock('@hashgraphonline/standards-sdk', () => ({
+  Logger: jest.fn().mockImplementation(() => ({
+    info: jest.fn(),
+    error: jest.fn(),
+    debug: jest.fn(),
+    warn: jest.fn(),
   })),
 }));
 
 describe('BaseAgent Unit Tests', () => {
-  const mockSigner = {
-    getAccountId: () => ({ toString: () => '0.0.12345' }),
-    getNetwork: () => 'testnet',
-  };
+  const mockSigner = createMockServerSigner();
 
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
   });
 
   describe('BaseAgent Abstract Class', () => {
@@ -115,8 +163,8 @@ describe('BaseAgent Unit Tests', () => {
         },
       });
 
-      await expect(agent.chat('test message')).rejects.toThrow(
-        'Agent not initialized. Call boot() first.'
+      await expect(agent.chat(TEST_RESPONSE_MESSAGES.TEST_MESSAGE)).rejects.toThrow(
+        TEST_RESPONSE_MESSAGES.INIT_ERROR
       );
     });
 
@@ -129,7 +177,7 @@ describe('BaseAgent Unit Tests', () => {
       });
 
       await agent.boot();
-      const response = await agent.chat('test message');
+      const response = await agent.chat(TEST_RESPONSE_MESSAGES.TEST_MESSAGE);
 
       expect(response).toHaveProperty('output');
       expect(typeof response.output).toBe('string');
@@ -209,14 +257,15 @@ describe('BaseAgent Unit Tests', () => {
 
       await agent.boot();
 
-      agent['executor'] = {
-        invoke: vi.fn().mockRejectedValue(new Error('Test error')),
-      } as any;
+      const mockExecutor = createMockAgentExecutor({
+        invoke: jest.fn().mockRejectedValue(new Error(TEST_RESPONSE_MESSAGES.TEST_ERROR)),
+      });
+      agent['executor'] = mockExecutor as MockAgentExecutorInterface;
 
-      const response = await agent.chat('test message');
+      const response = await agent.chat(TEST_RESPONSE_MESSAGES.TEST_MESSAGE);
 
       expect(response).toHaveProperty('error');
-      expect(response.output).toBe('Sorry, I encountered an error processing your request.');
+      expect(response.output).toBe(TEST_RESPONSE_MESSAGES.PROCESSING_ERROR);
     });
   });
 
@@ -248,23 +297,23 @@ describe('BaseAgent Unit Tests', () => {
       expect(() => {
         createAgent({
           signer: mockSigner,
-          framework: 'vercel' as any,
+          framework: TEST_FRAMEWORK_VALUES.VERCEL,
         });
-      }).toThrow('Vercel AI SDK support coming soon');
+      }).toThrow(TEST_RESPONSE_MESSAGES.VERCEL_AI_COMING_SOON);
 
       expect(() => {
         createAgent({
           signer: mockSigner,
-          framework: 'baml' as any,
+          framework: TEST_FRAMEWORK_VALUES.BAML,
         });
-      }).toThrow('BAML support coming soon');
+      }).toThrow(TEST_RESPONSE_MESSAGES.BAML_COMING_SOON);
 
       expect(() => {
         createAgent({
           signer: mockSigner,
-          framework: 'unknown' as any,
+          framework: 'unknown' as 'langchain',
         });
-      }).toThrow('Unknown framework: unknown');
+      }).toThrow(`${TEST_RESPONSE_MESSAGES.UNKNOWN_FRAMEWORK_PREFIX}unknown`);
     });
   });
 
@@ -278,15 +327,15 @@ describe('BaseAgent Unit Tests', () => {
     });
 
     test('LangChainProvider streams responses', async () => {
-      const mockModel = {
-        stream: vi.fn().mockResolvedValue(['chunk1', 'chunk2']),
-      } as any;
+      const mockModel: MockStreamModel = {
+        stream: jest.fn().mockResolvedValue(['chunk1', 'chunk2']),
+      };
       
-      const provider = new LangChainProvider(mockModel);
+      const provider = new LangChainProvider(mockModel as unknown as BaseChatModel);
       const stream = provider.stream?.('test prompt');
 
       if (stream) {
-        const chunks = [];
+        const chunks: string[] = [];
         for await (const chunk of stream) {
           chunks.push(chunk);
         }
@@ -310,17 +359,17 @@ describe('BaseAgent Unit Tests', () => {
           apiKey: 'test-key',
         },
         filtering: {
-          namespaceWhitelist: ['hcs-10'],
+          namespaceWhitelist: [TEST_TOOL_VALUES.HCS_10_NAMESPACE],
         },
       });
 
       const mockTools = [
-        { name: 'tool1', namespace: 'hcs-10' },
-        { name: 'tool2', namespace: 'hcs-2' },
-        { name: 'tool3' },
+        createMockTool('tool1', TEST_TOOL_VALUES.HCS_10_NAMESPACE),
+        createMockTool('tool2', TEST_TOOL_VALUES.HCS_2_NAMESPACE),
+        createMockTool('tool3'),
       ];
 
-      const filtered = agent['filterTools'](mockTools as any);
+      const filtered = agent['filterTools'](mockTools as MockStructuredToolInterface[]);
       expect(filtered).toHaveLength(2);
     });
 
@@ -331,19 +380,19 @@ describe('BaseAgent Unit Tests', () => {
           apiKey: 'test-key',
         },
         filtering: {
-          toolBlacklist: ['unwanted-tool'],
+          toolBlacklist: [TEST_TOOL_VALUES.UNWANTED_TOOL],
         },
       });
 
       const mockTools = [
-        { name: 'good-tool' },
-        { name: 'unwanted-tool' },
-        { name: 'another-tool' },
+        createMockTool(TEST_TOOL_VALUES.GOOD_TOOL),
+        createMockTool(TEST_TOOL_VALUES.UNWANTED_TOOL),
+        createMockTool(TEST_TOOL_VALUES.ANOTHER_TOOL),
       ];
 
-      const filtered = agent['filterTools'](mockTools as any);
+      const filtered = agent['filterTools'](mockTools as MockStructuredToolInterface[]);
       expect(filtered).toHaveLength(2);
-      expect(filtered.find(t => t.name === 'unwanted-tool')).toBeUndefined();
+      expect(filtered.find(t => t.name === TEST_TOOL_VALUES.UNWANTED_TOOL)).toBeUndefined();
     });
 
     test('Filters tools by custom predicate', async () => {
@@ -358,12 +407,12 @@ describe('BaseAgent Unit Tests', () => {
       });
 
       const mockTools = [
-        { name: 'keep-this' },
-        { name: 'remove-this' },
-        { name: 'keep-that' },
+        createMockTool(TEST_TOOL_VALUES.KEEP_THIS),
+        createMockTool(TEST_TOOL_VALUES.REMOVE_THIS),
+        createMockTool(TEST_TOOL_VALUES.KEEP_THAT),
       ];
 
-      const filtered = agent['filterTools'](mockTools as any);
+      const filtered = agent['filterTools'](mockTools as MockStructuredToolInterface[]);
       expect(filtered).toHaveLength(2);
       expect(filtered.every(t => t.name.startsWith('keep-'))).toBe(true);
     });
@@ -380,7 +429,7 @@ describe('BaseAgent Unit Tests', () => {
 
       const prompt = agent['buildSystemPrompt']();
       expect(prompt).toContain('You are a helpful Hedera assistant');
-      expect(prompt).toContain('0.0.12345');
+      expect(prompt).toContain(TEST_MCP_DATA.DEFAULT_ACCOUNT_ID);
     });
 
     test('Includes user account ID in prompt', async () => {
@@ -414,6 +463,23 @@ describe('BaseAgent Unit Tests', () => {
       const prompt = agent['buildSystemPrompt']();
       expect(prompt).toContain('Custom preamble');
       expect(prompt).toContain('Custom postamble');
+    });
+
+    test('Includes metadata quality principles', async () => {
+      const agent = new LangChainAgent({
+        signer: mockSigner,
+        ai: {
+          apiKey: 'test-key',
+        },
+      });
+
+      const prompt = agent['buildSystemPrompt']();
+      expect(prompt).toContain('METADATA QUALITY PRINCIPLES');
+      expect(prompt).toContain('Prioritize meaningful, valuable content over technical file information');
+      expect(prompt).toContain('Focus on attributes that add value for end users and collectors');
+      expect(prompt).toContain('Avoid auto-generating meaningless technical attributes');
+      expect(prompt).toContain('When fields are missing or inadequate, use forms to collect quality metadata');
+      expect(prompt).toContain('Encourage descriptive names, collectible traits, and storytelling elements');
     });
   });
 

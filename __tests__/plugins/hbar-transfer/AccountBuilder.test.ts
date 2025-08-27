@@ -1,60 +1,84 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { AccountBuilder } from '../../../src/plugins/hbar-transfer/AccountBuilder';
-import { HederaAgentKit } from 'hedera-agent-kit';
-import { Logger } from '@hashgraphonline/standards-sdk';
+import { describe, expect, beforeEach } from '@jest/globals';
+import { AccountBuilder } from '../../../src/plugins/hbar/AccountBuilder';
 import { TransferTransaction, Hbar, AccountId } from '@hashgraph/sdk';
-import BigNumber from 'bignumber.js';
 
-vi.mock('@hashgraph/sdk');
+jest.mock('@hashgraph/sdk');
+
+interface MockLogger {
+  info: jest.Mock;
+  warn: jest.Mock;
+  error: jest.Mock;
+  debug: jest.Mock;
+}
+
+interface MockTransaction {
+  addHbarTransfer: jest.Mock;
+  setTransactionMemo: jest.Mock;
+}
+
+interface MockHederaKit {
+  account: string;
+  client: object;
+  operationalMode: string;
+  userAccountId: string;
+  logger: MockLogger;
+}
+
+
+interface BuilderWithLogger {
+  logger: MockLogger;
+}
 
 describe('AccountBuilder', () => {
   let builder: AccountBuilder;
-  let mockHederaKit: any;
-  let mockLogger: any;
-  let mockTransaction: any;
+  let mockHederaKit: MockHederaKit;
+  let mockLogger: MockLogger;
+  let mockTransaction: MockTransaction;
 
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
 
     mockLogger = {
-      info: vi.fn(),
-      warn: vi.fn(),
-      error: vi.fn(),
-      debug: vi.fn(),
-    } as any;
+      info: jest.fn(),
+      warn: jest.fn(),
+      error: jest.fn(),
+      debug: jest.fn(),
+    };
 
     mockTransaction = {
-      addHbarTransfer: vi.fn().mockReturnThis(),
-      setTransactionMemo: vi.fn().mockReturnThis(),
-    } as any;
+      addHbarTransfer: jest.fn().mockReturnThis(),
+      setTransactionMemo: jest.fn().mockReturnThis(),
+    };
 
-    vi.mocked(TransferTransaction).mockImplementation(() => mockTransaction);
+    jest.mocked(TransferTransaction).mockImplementation(() => mockTransaction as unknown as TransferTransaction);
     
-    vi.mocked(Hbar.fromString).mockImplementation((amount: string) => ({
+    jest.mocked(Hbar.fromString).mockImplementation((amount: string) => ({
       toString: () => `${amount} ℏ`,
       toTinybars: () => BigInt(Math.round(parseFloat(amount) * 100000000)),
       negated: () => ({
         toString: () => `-${amount} ℏ`,
         toTinybars: () => BigInt(Math.round(parseFloat(amount) * -100000000)),
       }),
-    }));
+    } as unknown as import('@hashgraph/sdk').Hbar));
 
-    vi.mocked(AccountId.fromString).mockImplementation((id: string) => ({
+    jest.mocked(AccountId.fromString).mockImplementation((id: string) => ({
       toString: () => id,
-    }));
+    } as unknown as import('@hashgraph/sdk').AccountId));
 
     mockHederaKit = {
       operationalMode: 'standard',
       userAccountId: '0.0.123',
       logger: mockLogger,
-    } as any;
+      account: '0.0.123',
+      client: {},
+    };
 
-    builder = new AccountBuilder(mockHederaKit);
-    (builder as any).logger = mockLogger;
+    builder = new AccountBuilder(mockHederaKit as unknown as import('hedera-agent-kit').HederaAgentKit);
+    (builder as unknown as BuilderWithLogger).logger = mockLogger;
   });
 
   describe('transferHbar', () => {
-    it('should handle decimal HBAR amounts correctly', () => {
+    test('should handle decimal HBAR amounts correctly', () => {
       const params = {
         transfers: [
           { accountId: '0.0.800', amount: 1 },
@@ -74,7 +98,7 @@ describe('AccountBuilder', () => {
       expect(mockTransaction.setTransactionMemo).toHaveBeenCalledWith('Test decimal amounts');
     });
 
-    it('should handle string HBAR amounts', () => {
+    test('should handle string HBAR amounts', () => {
       const params = {
         transfers: [
           { accountId: '0.0.800', amount: '1.25' },
@@ -89,7 +113,7 @@ describe('AccountBuilder', () => {
       expect(mockTransaction.addHbarTransfer).toHaveBeenCalledTimes(2);
     });
 
-    it('should log processing details with HBAR unit', () => {
+    test('should log processing details with HBAR unit', () => {
       const params = {
         transfers: [
           { accountId: '0.0.800', amount: 1 },
@@ -103,7 +127,7 @@ describe('AccountBuilder', () => {
       );
     });
 
-    it('should handle the problematic large number case', () => {
+    test('should handle the problematic large number case', () => {
       const params = {
         transfers: [
           { accountId: '0.0.800', amount: 10000000 },
@@ -118,7 +142,7 @@ describe('AccountBuilder', () => {
       );
     });
 
-    it('should handle very small decimal amounts', () => {
+    test('should handle very small decimal amounts', () => {
       const params = {
         transfers: [
           { accountId: '0.0.800', amount: 0.00000001 },
@@ -132,7 +156,7 @@ describe('AccountBuilder', () => {
       expect(Hbar.fromString).toHaveBeenCalledWith('-0.00000001');
     });
 
-    it('should process multiple transfers correctly', () => {
+    test('should process multiple transfers correctly', () => {
       const params = {
         transfers: [
           { accountId: '0.0.800', amount: -2 },
@@ -150,8 +174,8 @@ describe('AccountBuilder', () => {
       expect(mockTransaction.addHbarTransfer).toHaveBeenCalledTimes(3);
     });
 
-    it('should handle scheduled transfer mode for user-initiated transfers', () => {
-      mockHederaKit.operationalMode = 'provideBytes' as any;
+    test('should handle scheduled transfer mode for user-initiated transfers', () => {
+      mockHederaKit.operationalMode = 'provideBytes';
       
       const params = {
         transfers: [
@@ -167,7 +191,7 @@ describe('AccountBuilder', () => {
       );
     });
 
-    it('should throw error for empty transfers', () => {
+    test('should throw error for empty transfers', () => {
       const params = {
         transfers: [],
       };

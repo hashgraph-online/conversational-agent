@@ -1,25 +1,39 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it as _it, expect, beforeEach } from '@jest/globals';
 import { z } from 'zod';
 import { convertMCPToolToLangChain } from '../../../../src/mcp/adapters/langchain';
-import { MCPClientManager } from '../../../../src/mcp/MCPClientManager';
+import { MCPClientManager as _MCPClientManager } from '../../../../src/mcp/mcp-client-manager';
 import type { MCPToolInfo } from '../../../../src/mcp/types';
 
-vi.mock('../../../../src/mcp/MCPClientManager');
+jest.mock('../../../../src/mcp/mcp-client-manager');
+
+jest.mock('@hashgraphonline/standards-sdk', () => ({
+  ContentStoreService: {
+    getInstance: jest.fn(),
+    setInstance: jest.fn(),
+  },
+  shouldUseReference: jest.fn(() => false),
+}));
+
+interface MockMCPManager {
+  executeTool: jest.Mock;
+}
+
+const TEST_SERVER_NAME = 'test-server';
 
 describe('LangChain MCP Adapter', () => {
-  let mockMCPManager: any;
+  let mockMCPManager: MockMCPManager;
 
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
     mockMCPManager = {
-      executeTool: vi.fn(),
+      executeTool: jest.fn(),
     };
   });
 
   describe('convertMCPToolToLangChain', () => {
-    it('should convert a simple MCP tool to LangChain format', async () => {
+    test('should convert a simple MCP tool to LangChain format', async () => {
       const mcpTool: MCPToolInfo = {
-        serverName: 'test-server',
+        serverName: TEST_SERVER_NAME,
         name: 'test_tool',
         description: 'A test tool',
         inputSchema: {
@@ -39,7 +53,7 @@ describe('LangChain MCP Adapter', () => {
       expect(langchainTool.name).toBe('test_server_test_tool');
       expect(langchainTool.description).toBe('A test tool');
 
-      const schema = langchainTool.schema as z.ZodObject<any>;
+      const schema = langchainTool.schema as z.ZodObject<Record<string, z.ZodTypeAny>>;
       expect(schema).toBeDefined();
       expect(schema.parse({ message: 'hello' })).toEqual({ message: 'hello' });
       expect(() => schema.parse({})).toThrow();
@@ -47,10 +61,10 @@ describe('LangChain MCP Adapter', () => {
       mockMCPManager.executeTool.mockResolvedValueOnce({ result: 'success' });
       const result = await langchainTool.func({ message: 'test' });
       expect(result).toBe('{"result":"success"}');
-      expect(mockMCPManager.executeTool).toHaveBeenCalledWith('test-server', 'test_tool', { message: 'test' });
+      expect(mockMCPManager.executeTool).toHaveBeenCalledWith(TEST_SERVER_NAME, 'test_tool', { message: 'test' });
     });
 
-    it('should handle complex nested schemas', async () => {
+    test('should handle complex nested schemas', async () => {
       const mcpTool: MCPToolInfo = {
         serverName: 'complex-server',
         name: 'complex_tool',
@@ -83,7 +97,7 @@ describe('LangChain MCP Adapter', () => {
       };
 
       const langchainTool = convertMCPToolToLangChain(mcpTool, mockMCPManager);
-      const schema = langchainTool.schema as z.ZodObject<any>;
+      const schema = langchainTool.schema as z.ZodObject<Record<string, z.ZodTypeAny>>;
 
       const validInput = {
         user: {
@@ -101,9 +115,9 @@ describe('LangChain MCP Adapter', () => {
       expect(() => schema.parse({ settings: {} })).toThrow();
     });
 
-    it('should handle tools with no input schema', () => {
+    test('should handle tools with no input schema', () => {
       const mcpTool: MCPToolInfo = {
-        serverName: 'test-server',
+        serverName: TEST_SERVER_NAME,
         name: 'no_input_tool',
         description: 'A tool with no inputs',
         inputSchema: {
@@ -113,14 +127,14 @@ describe('LangChain MCP Adapter', () => {
       };
 
       const langchainTool = convertMCPToolToLangChain(mcpTool, mockMCPManager);
-      const schema = langchainTool.schema as z.ZodObject<any>;
+      const schema = langchainTool.schema as z.ZodObject<Record<string, z.ZodTypeAny>>;
 
       expect(schema.parse({})).toEqual({});
     });
 
-    it('should handle tool execution errors', async () => {
+    test('should handle tool execution errors', async () => {
       const mcpTool: MCPToolInfo = {
-        serverName: 'test-server',
+        serverName: TEST_SERVER_NAME,
         name: 'error_tool',
         description: 'A tool that fails',
         inputSchema: {
@@ -137,9 +151,9 @@ describe('LangChain MCP Adapter', () => {
       expect(result).toContain('Error executing MCP tool error_tool: Tool failed');
     });
 
-    it('should handle array results from MCP tools', async () => {
+    test('should handle array results from MCP tools', async () => {
       const mcpTool: MCPToolInfo = {
-        serverName: 'test-server',
+        serverName: TEST_SERVER_NAME,
         name: 'array_tool',
         description: 'Returns an array',
         inputSchema: {
@@ -156,9 +170,9 @@ describe('LangChain MCP Adapter', () => {
       expect(result).toBe('["item1","item2","item3"]');
     });
 
-    it('should handle primitive results from MCP tools', async () => {
+    test('should handle primitive results from MCP tools', async () => {
       const mcpTool: MCPToolInfo = {
-        serverName: 'test-server',
+        serverName: TEST_SERVER_NAME,
         name: 'string_tool',
         description: 'Returns a string',
         inputSchema: {
@@ -175,9 +189,9 @@ describe('LangChain MCP Adapter', () => {
       expect(result).toBe('Simple string result');
     });
 
-    it('should handle enum types in schema', () => {
+    test('should handle enum types in schema', () => {
       const mcpTool: MCPToolInfo = {
-        serverName: 'test-server',
+        serverName: TEST_SERVER_NAME,
         name: 'enum_tool',
         description: 'Tool with enum parameter',
         inputSchema: {
@@ -194,15 +208,15 @@ describe('LangChain MCP Adapter', () => {
       };
 
       const langchainTool = convertMCPToolToLangChain(mcpTool, mockMCPManager);
-      const schema = langchainTool.schema as z.ZodObject<any>;
+      const schema = langchainTool.schema as z.ZodObject<Record<string, z.ZodTypeAny>>;
 
       expect(schema.parse({ status: 'active' })).toEqual({ status: 'active' });
       expect(() => schema.parse({ status: 'invalid' })).toThrow();
     });
 
-    it('should handle nullable types', () => {
+    test('should handle nullable types', () => {
       const mcpTool: MCPToolInfo = {
-        serverName: 'test-server',
+        serverName: TEST_SERVER_NAME,
         name: 'nullable_tool',
         description: 'Tool with nullable parameter',
         inputSchema: {
@@ -217,7 +231,7 @@ describe('LangChain MCP Adapter', () => {
       };
 
       const langchainTool = convertMCPToolToLangChain(mcpTool, mockMCPManager);
-      const schema = langchainTool.schema as z.ZodObject<any>;
+      const schema = langchainTool.schema as z.ZodObject<Record<string, z.ZodTypeAny>>;
 
       expect(schema.parse({ optionalValue: 'test' })).toEqual({ optionalValue: 'test' });
       expect(schema.parse({ optionalValue: null })).toEqual({ optionalValue: null });

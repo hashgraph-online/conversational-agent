@@ -1,15 +1,15 @@
 import {useRef, useCallback} from 'react';
 import {ConfigManager} from '../managers/ConfigManager';
 import {AgentManager} from '../managers/AgentManager';
-import {type Config} from '../types';
+import {type Config, type Screen, type Message} from '../types';
 import {type MCPServerConfig} from '@hashgraphonline/conversational-agent';
 
 interface InitializeAgentProps {
 	configManager: ConfigManager;
 	agentManager: AgentManager;
 	actions: {
-		setScreen: (screen: any) => void;
-		setMessages: (messages: any[]) => void;
+		setScreen: (screen: Screen) => void;
+		setMessages: (messages: Message[]) => void;
 		setError: (error: string | null) => void;
 	};
 }

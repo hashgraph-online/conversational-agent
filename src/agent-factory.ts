@@ -1,5 +1,5 @@
 import { BaseAgent, type HederaAgentConfiguration } from './base-agent';
-import { LangChainAgent } from './langchain-agent';
+import { LangChainAgent } from './langchain/langchain-agent';
 
 export function createAgent(
   config: HederaAgentConfiguration & {

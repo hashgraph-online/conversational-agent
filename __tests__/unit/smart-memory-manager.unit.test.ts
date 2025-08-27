@@ -1,6 +1,8 @@
-import { SmartMemoryManager } from '../../src/memory/SmartMemoryManager';
+import { SmartMemoryManager } from '../../src/memory/smart-memory-manager';
+import {
+  TEST_MEMORY_MESSAGES
+} from '../test-constants';
 import { HumanMessage, AIMessage, SystemMessage } from '@langchain/core/messages';
-import type { BaseMessage } from '@langchain/core/messages';
 
 describe('SmartMemoryManager', () => {
   let memoryManager: SmartMemoryManager;
@@ -32,12 +34,12 @@ describe('SmartMemoryManager', () => {
 
   describe('addMessage', () => {
     it('should add message to active memory', () => {
-      const message = new HumanMessage('Test message');
+      const message = new HumanMessage(TEST_MEMORY_MESSAGES.TEST_MESSAGE_1);
       memoryManager.addMessage(message);
       
       const messages = memoryManager.getMessages();
       expect(messages).toHaveLength(1);
-      expect(messages[0].content).toBe('Test message');
+      expect(messages[0].content).toBe(TEST_MEMORY_MESSAGES.TEST_MESSAGE_1);
     });
 
     it('should handle conversation flow with human and AI messages', () => {
@@ -124,7 +126,7 @@ describe('SmartMemoryManager', () => {
     });
 
     it('should optionally clear storage as well', () => {
-      memoryManager.addMessage(new HumanMessage('Test message'));
+      memoryManager.addMessage(new HumanMessage(TEST_MEMORY_MESSAGES.TEST_MESSAGE_1));
       
       const smallManager = new SmartMemoryManager({ maxTokens: 50, reserveTokens: 10 });
       for (let i = 0; i < 10; i++) {
@@ -227,7 +229,7 @@ describe('SmartMemoryManager', () => {
   describe('getMemoryStats', () => {
     it('should return memory statistics', () => {
       memoryManager.setSystemPrompt('Test system prompt');
-      memoryManager.addMessage(new HumanMessage('Test message'));
+      memoryManager.addMessage(new HumanMessage(TEST_MEMORY_MESSAGES.TEST_MESSAGE_1));
       
       const stats = memoryManager.getMemoryStats();
       

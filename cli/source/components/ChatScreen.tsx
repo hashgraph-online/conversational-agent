@@ -7,9 +7,9 @@ import {StatusBadge} from './StatusBadge';
 import {BRAND_COLORS, type Config, type Message} from '../types';
 
 /**
- * Chat screen component
+ * Props for the ChatScreen component
  */
-export const ChatScreen: React.FC<{
+interface ChatScreenProps {
 	config: Config;
 	messages: Message[];
 	input: string;
@@ -18,7 +18,12 @@ export const ChatScreen: React.FC<{
 	sendMessage: (message: string) => void;
 	showLogs: boolean;
 	logs: string[];
-}> = React.memo(
+}
+
+/**
+ * Chat screen component
+ */
+export const ChatScreen: React.FC<ChatScreenProps> = React.memo(
 	({
 		config,
 		messages,

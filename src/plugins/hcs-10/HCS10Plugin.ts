@@ -22,6 +22,41 @@ import {
 } from '@hashgraphonline/standards-agent-kit';
 import { HCS10Client } from '@hashgraphonline/standards-sdk';
 
+interface HCS10ClientManager {
+  initializeConnectionsManager(client: HCS10Client): void;
+}
+
+/**
+ * Extracts private key string from operator key
+ */
+function extractPrivateKey(opKey: unknown): string {
+  const key = opKey as {
+    toString?: () => string;
+    toStringRaw?: () => string;
+  };
+  
+  if (typeof key?.toStringRaw === 'function') {
+    return key.toStringRaw();
+  }
+  
+  if (typeof key?.toString === 'function') {
+    return key.toString();
+  }
+  
+  return String(key);
+}
+
+function hasInitializeConnectionsManager(
+  stateManager: IStateManager
+): stateManager is IStateManager & HCS10ClientManager {
+  return (
+    typeof stateManager === 'object' &&
+    stateManager !== null &&
+    'initializeConnectionsManager' in stateManager &&
+    typeof stateManager.initializeConnectionsManager === 'function'
+  );
+}
+
 export class HCS10Plugin extends BasePlugin {
   id = 'hcs-10';
   name = 'HCS-10 Plugin';
@@ -58,15 +93,8 @@ export class HCS10Plugin extends BasePlugin {
       let outboundTopicId = '';
 
       try {
-        const opKey = hederaKit.signer.getOperatorPrivateKey() as {
-          toString?: () => string;
-          toStringRaw?: () => string;
-        };
-        const privateKey = typeof opKey?.toStringRaw === 'function'
-          ? opKey.toStringRaw()
-          : typeof opKey?.toString === 'function'
-            ? opKey.toString()
-            : String(opKey);
+        const opKey = hederaKit.signer.getOperatorPrivateKey();
+        const privateKey = extractPrivateKey(opKey);
 
         const hcs10Client = new HCS10Client({
           network: hederaKit.network as 'mainnet' | 'testnet',
@@ -93,15 +121,8 @@ export class HCS10Plugin extends BasePlugin {
         inboundTopicId,
         outboundTopicId,
         privateKey: ((): string => {
-          const opKey = hederaKit.signer.getOperatorPrivateKey() as {
-            toString?: () => string;
-            toStringRaw?: () => string;
-          };
-          return typeof opKey?.toStringRaw === 'function'
-            ? opKey.toStringRaw()
-            : typeof opKey?.toString === 'function'
-              ? opKey.toString()
-              : String(opKey);
+          const opKey = hederaKit.signer.getOperatorPrivateKey();
+          return extractPrivateKey(opKey);
         })(),
       });
 
@@ -111,15 +132,8 @@ export class HCS10Plugin extends BasePlugin {
 
       if (this.stateManager && !this.stateManager.getConnectionsManager()) {
         try {
-          const opKey = hederaKit.signer.getOperatorPrivateKey() as {
-            toString?: () => string;
-            toStringRaw?: () => string;
-          };
-          const privateKey = typeof opKey?.toStringRaw === 'function'
-            ? opKey.toStringRaw()
-            : typeof opKey?.toString === 'function'
-              ? opKey.toString()
-              : String(opKey);
+          const opKey = hederaKit.signer.getOperatorPrivateKey();
+          const privateKey = extractPrivateKey(opKey);
           const hcs10Client = new HCS10Client({
             network: hederaKit.network as 'mainnet' | 'testnet',
             operatorId: accountId,
@@ -127,7 +141,11 @@ export class HCS10Plugin extends BasePlugin {
             logLevel: 'error',
           });
 
-          this.stateManager.initializeConnectionsManager(hcs10Client as any);
+          if (hasInitializeConnectionsManager(this.stateManager)) {
+            this.stateManager.initializeConnectionsManager(hcs10Client);
+          } else {
+            this.context.logger.warn('StateManager does not support connection manager initialization');
+          }
           this.context.logger.info(
             'ConnectionsManager initialized in HCS10Plugin'
           );

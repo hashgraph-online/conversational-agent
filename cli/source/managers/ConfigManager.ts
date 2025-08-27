@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import { Logger } from '@hashgraphonline/standards-sdk';
 import {MCPServers, type MCPServerConfig} from '@hashgraphonline/conversational-agent';
 import {type Config} from '../types';
 
@@ -7,8 +8,11 @@ export class ConfigManager {
   private static instance: ConfigManager;
   private _config: Config & {mcpServers: MCPServerConfig[]} | null = null;
   private _mcpServers: MCPServerConfig[] | null = null;
+  private logger: Logger;
 
-  private constructor() {}
+  private constructor() {
+    this.logger = new Logger({ module: 'ConfigManager' });
+  }
 
   static getInstance(): ConfigManager {
     if (!ConfigManager.instance) {
@@ -40,7 +44,10 @@ export class ConfigManager {
         return this._mcpServers;
       }
     } catch (err) {
-      console.error('Failed to load MCP config:', err);
+      this.logger.error('Failed to load MCP config', {
+        configPath,
+        error: err instanceof Error ? err.message : String(err)
+      });
     }
 
     const defaultServers = [MCPServers.filesystem(process.cwd())];
@@ -64,7 +71,11 @@ export class ConfigManager {
       fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
       this._mcpServers = servers;
     } catch (err) {
-      console.error('Failed to save MCP config:', err);
+      this.logger.error('Failed to save MCP config', {
+        configPath,
+        serversCount: servers.length,
+        error: err instanceof Error ? err.message : String(err)
+      });
     }
   }
 

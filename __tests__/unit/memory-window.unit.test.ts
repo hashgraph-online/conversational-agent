@@ -1,5 +1,5 @@
-import { MemoryWindow } from '../../src/memory/MemoryWindow';
-import { TokenCounter } from '../../src/memory/TokenCounter';
+import { MemoryWindow } from '../../src/memory/memory-window';
+import { TokenCounter } from '../../src/memory/token-counter';
 import { HumanMessage, AIMessage } from '@langchain/core/messages';
 import type { BaseMessage } from '@langchain/core/messages';
 
@@ -8,6 +8,7 @@ describe('MemoryWindow', () => {
   const tokenCounter = new TokenCounter('gpt-4o');
   const maxTokens = 200;
   const reserveTokens = 50;
+  const TEST_MESSAGE_TEXT = 'Test message';
 
   beforeEach(() => {
     memoryWindow = new MemoryWindow(maxTokens, reserveTokens, tokenCounter);
@@ -173,7 +174,7 @@ describe('MemoryWindow', () => {
     });
 
     it('should return immutable copy of messages', () => {
-      const message = new HumanMessage('Test message');
+      const message = new HumanMessage(TEST_MESSAGE_TEXT);
       memoryWindow.addMessage(message);
       
       const messages1 = memoryWindow.getMessages();
@@ -237,7 +238,7 @@ describe('MemoryWindow', () => {
     it('should decrease as messages are added', () => {
       const initialCapacity = memoryWindow.getRemainingTokenCapacity();
       
-      memoryWindow.addMessage(new HumanMessage('Test message'));
+      memoryWindow.addMessage(new HumanMessage(TEST_MESSAGE_TEXT));
       
       const capacityAfterMessage = memoryWindow.getRemainingTokenCapacity();
       expect(capacityAfterMessage).toBeLessThan(initialCapacity);
@@ -271,7 +272,7 @@ describe('MemoryWindow', () => {
         memoryWindow.addMessage(new HumanMessage('Adding message to fill memory'));
       }
       
-      const testMessage = new HumanMessage('Test message');
+      const testMessage = new HumanMessage(TEST_MESSAGE_TEXT);
       const capacity = memoryWindow.getRemainingTokenCapacity();
       const messageTokens = tokenCounter.countMessageTokens(testMessage);
       

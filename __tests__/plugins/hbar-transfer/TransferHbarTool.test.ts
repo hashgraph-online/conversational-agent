@@ -1,52 +1,85 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { TransferHbarTool } from '../../../src/plugins/hbar-transfer/TransferHbarTool';
-import { AccountBuilder } from '../../../src/plugins/hbar-transfer/AccountBuilder';
-import { HederaAgentKit } from 'hedera-agent-kit';
-import { Logger } from '@hashgraphonline/standards-sdk';
-import { TransferTransaction, Hbar, AccountId } from '@hashgraph/sdk';
+import { describe, expect, beforeEach } from '@jest/globals';
+import { TransferHbarTool } from '../../../src/plugins/hbar/TransferHbarTool';
+import { TransferTransaction } from '@hashgraph/sdk';
 
-vi.mock('@hashgraph/sdk');
-vi.mock('hedera-agent-kit');
+jest.mock('@hashgraph/sdk');
+jest.mock('hedera-agent-kit');
+
+const TEST_MEMO = 'Test transfer';
+
+interface MockLogger {
+  info: jest.Mock;
+  warn: jest.Mock;
+  error: jest.Mock;
+}
+
+interface MockTransaction {
+  addHbarTransfer: jest.Mock;
+  setTransactionMemo: jest.Mock;
+}
+
+interface MockHederaKit {
+  operationalMode: string;
+  userAccountId: string;
+}
+
+
+
+interface MockBuilder {
+  transferHbar: jest.Mock;
+  setCurrentTransaction: jest.Mock;
+  clearNotes: jest.Mock;
+  addNote: jest.Mock;
+  logger: MockLogger;
+}
+
+interface ToolWithServiceBuilder {
+  getServiceBuilder(): MockBuilder;
+}
+
+interface ToolWithCallBuilder {
+  callBuilderMethod(builder: MockBuilder, params: unknown): Promise<void>;
+}
 
 describe('TransferHbarTool', () => {
   let tool: TransferHbarTool;
-  let mockHederaKit: any;
-  let mockLogger: any;
-  let mockTransaction: any;
+  let mockHederaKit: MockHederaKit;
+  let mockLogger: MockLogger;
+  let mockTransaction: MockTransaction;
 
   beforeEach(() => {
     mockLogger = {
-      info: vi.fn(),
-      warn: vi.fn(),
-      error: vi.fn(),
-    } as any;
+      info: jest.fn(),
+      warn: jest.fn(),
+      error: jest.fn(),
+    };
 
     mockTransaction = {
-      addHbarTransfer: vi.fn().mockReturnThis(),
-      setTransactionMemo: vi.fn().mockReturnThis(),
-    } as any;
+      addHbarTransfer: jest.fn().mockReturnThis(),
+      setTransactionMemo: jest.fn().mockReturnThis(),
+    };
 
-    vi.mocked(TransferTransaction).mockImplementation(() => mockTransaction);
+    jest.mocked(TransferTransaction).mockImplementation(() => mockTransaction as unknown as TransferTransaction);
 
     mockHederaKit = {
       operationalMode: 'standard',
       userAccountId: '0.0.123',
-    } as any;
+    };
 
     tool = new TransferHbarTool({
-      hederaKit: mockHederaKit,
+      hederaKit: mockHederaKit as unknown,
       logger: mockLogger,
-    });
+    } as unknown as ConstructorParameters<typeof TransferHbarTool>[0]);
   });
 
   describe('Schema Validation', () => {
-    it('should accept decimal HBAR amounts', () => {
+    test('should accept decimal HBAR amounts', () => {
       const input = {
         transfers: [
           { accountId: '0.0.800', amount: 1 },
           { accountId: '0.0.801', amount: 0.5 },
         ],
-        memo: 'Test transfer',
+        memo: TEST_MEMO,
       };
 
       const result = tool.specificInputSchema.safeParse(input);
@@ -57,7 +90,7 @@ describe('TransferHbarTool', () => {
       }
     });
 
-    it('should accept string HBAR amounts', () => {
+    test('should accept string HBAR amounts', () => {
       const input = {
         transfers: [
           { accountId: '0.0.800', amount: '1.25' },
@@ -73,17 +106,17 @@ describe('TransferHbarTool', () => {
       }
     });
 
-    it('should reject invalid transfer arrays', () => {
+    test('should reject invalid transfer arrays', () => {
       const input = {
         transfers: [],
-        memo: 'Test transfer',
+        memo: TEST_MEMO,
       };
 
       const result = tool.specificInputSchema.safeParse(input);
       expect(result.success).toBe(false);
     });
 
-    it('should handle large numbers that were mistakenly used as tinybars', () => {
+    test('should handle large numbers that were mistakenly used as tinybars', () => {
       const input = {
         transfers: [
           { accountId: '0.0.800', amount: 10000000 },
@@ -99,38 +132,38 @@ describe('TransferHbarTool', () => {
   });
 
   describe('Tool Description', () => {
-    it('should have clear description about decimal HBAR format', () => {
+    test('should have clear description about decimal HBAR format', () => {
       expect(tool.description).toContain('HBAR');
       expect(tool.description).toContain('transfers');
       
       const schema = tool.specificInputSchema.shape.transfers;
-      const schemaDescription = (schema as any)._def.description;
+      const schemaDescription = (schema as {_def?: {description?: string}})._def?.description;
       expect(schemaDescription).toBeDefined();
     });
 
-    it('should specify the correct tool name', () => {
+    test('should specify the correct tool name', () => {
       expect(tool.name).toBe('hedera-account-transfer-hbar-v2');
     });
   });
 
   describe('AccountBuilder Integration', () => {
-    it('should create AccountBuilder with correct HBAR amounts', async () => {
-      const mockBuilder = {
-        transferHbar: vi.fn().mockReturnThis(),
-        setCurrentTransaction: vi.fn(),
-        clearNotes: vi.fn(),
-        addNote: vi.fn(),
+    test('should create AccountBuilder with correct HBAR amounts', async () => {
+      const mockBuilder: MockBuilder = {
+        transferHbar: jest.fn().mockReturnThis(),
+        setCurrentTransaction: jest.fn(),
+        clearNotes: jest.fn(),
+        addNote: jest.fn(),
         logger: mockLogger,
-      } as any;
+      };
 
-      vi.spyOn(tool as any, 'getServiceBuilder').mockReturnValue(mockBuilder);
+      jest.spyOn(tool as unknown as ToolWithServiceBuilder, 'getServiceBuilder').mockReturnValue(mockBuilder);
 
-      await (tool as any).callBuilderMethod(mockBuilder, {
+      await (tool as unknown as ToolWithCallBuilder).callBuilderMethod(mockBuilder, {
         transfers: [
           { accountId: '0.0.800', amount: 1 },
           { accountId: '0.0.801', amount: -1 },
         ],
-        memo: 'Test transfer',
+        memo: TEST_MEMO,
       });
 
       expect(mockBuilder.transferHbar).toHaveBeenCalledWith({
@@ -138,13 +171,13 @@ describe('TransferHbarTool', () => {
           { accountId: '0.0.800', amount: 1 },
           { accountId: '0.0.801', amount: -1 },
         ],
-        memo: 'Test transfer',
+        memo: TEST_MEMO,
       });
     });
   });
 
   describe('Edge Cases', () => {
-    it('should handle negative amounts for debits', () => {
+    test('should handle negative amounts for debits', () => {
       const input = {
         transfers: [
           { accountId: '0.0.800', amount: -5 },
@@ -160,7 +193,7 @@ describe('TransferHbarTool', () => {
       }
     });
 
-    it('should handle very small decimal amounts', () => {
+    test('should handle very small decimal amounts', () => {
       const input = {
         transfers: [
           { accountId: '0.0.800', amount: 0.00000001 },
@@ -176,7 +209,7 @@ describe('TransferHbarTool', () => {
       }
     });
 
-    it('should handle multi-party transfers', () => {
+    test('should handle multi-party transfers', () => {
       const input = {
         transfers: [
           { accountId: '0.0.800', amount: -5 },

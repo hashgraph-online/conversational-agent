@@ -112,7 +112,7 @@ export default defineConfig(async (): Promise<UserConfig> => {
     dts({
       insertTypesEntry: true,
       include: ['src/**/*.ts'],
-      exclude: ['**/*.d.ts', 'tests/**/*', 'vite.config.ts'],
+      exclude: ['**/*.d.ts', 'tests/**/*', 'vite.config.ts', 'src/examples/**/*', 'src/scripts/**/*'],
       outDir: getTypesOutputDirectory(format, outputDir),
     }),
   ];

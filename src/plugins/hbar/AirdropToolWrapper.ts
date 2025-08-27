@@ -106,7 +106,11 @@ export class AirdropToolWrapper extends StructuredTool {
   }
 
   private async getTokenInfo(tokenId: string): Promise<TokenInfo> {
-    return await this.queryTokenInfo(tokenId);
+    try {
+      return await this.queryTokenInfo(tokenId);
+    } catch (error) {
+      throw error;
+    }
   }
 
   private async queryTokenInfo(tokenId: string): Promise<TokenInfo> {

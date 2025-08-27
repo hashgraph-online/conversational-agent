@@ -3,17 +3,17 @@ import {
   getAllHederaCorePlugins,
   BasePlugin,
 } from 'hedera-agent-kit';
-import {
-  HederaMirrorNode,
-  Logger,
-  type NetworkType,
-} from '@hashgraphonline/standards-sdk';
+import { Logger, type NetworkType } from '@hashgraphonline/standards-sdk';
 import { createAgent } from './agent-factory';
 import { LangChainProvider } from './providers';
 import type { ChatResponse, ConversationContext } from './base-agent';
 import { ChatOpenAI } from '@langchain/openai';
 import { ChatAnthropic } from '@langchain/anthropic';
-import { HumanMessage, AIMessage } from '@langchain/core/messages';
+import {
+  HumanMessage,
+  AIMessage,
+  SystemMessage,
+} from '@langchain/core/messages';
 import type { AgentOperationalMode, MirrorNodeConfig } from 'hedera-agent-kit';
 import { HCS10Plugin } from './plugins/hcs-10/HCS10Plugin';
 import { HCS2Plugin } from './plugins/hcs-2/HCS2Plugin';
@@ -21,16 +21,16 @@ import { InscribePlugin } from './plugins/inscribe/InscribePlugin';
 import { HbarPlugin } from './plugins/hbar/HbarPlugin';
 import { OpenConvaiState } from '@hashgraphonline/standards-agent-kit';
 import type { IStateManager } from '@hashgraphonline/standards-agent-kit';
-import { PrivateKey } from '@hashgraph/sdk';
 import { getSystemMessage } from './config/system-message';
 import type { MCPServerConfig, MCPConnectionStatus } from './mcp/types';
-import { ContentStoreManager } from './services/ContentStoreManager';
+import { ContentStoreManager } from './services/content-store-manager';
 import { SmartMemoryManager, type SmartMemoryConfig } from './memory';
 import {
   createEntityTools,
   ResolveEntitiesTool,
   ExtractEntitiesTool,
-} from './tools/EntityResolverTool';
+} from './tools/entity-resolver-tool';
+import type { FormSubmission } from './forms/types';
 
 export type ToolDescriptor = {
   name: string;
@@ -38,7 +38,7 @@ export type ToolDescriptor = {
 };
 
 export type ChatHistoryItem = {
-  type: 'human' | 'ai';
+  type: 'human' | 'ai' | 'system';
   content: string;
 };
 
@@ -89,6 +89,8 @@ export interface ConversationalAgentOptions {
  * @returns A new instance of the ConversationalAgent class.
  */
 export class ConversationalAgent {
+  private static readonly NOT_INITIALIZED_ERROR =
+    'Agent not initialized. Call initialize() first.';
   protected agent?: AgentInstance;
   public hcs10Plugin: HCS10Plugin;
   public hcs2Plugin: HCS2Plugin;
@@ -151,7 +153,6 @@ export class ConversationalAgent {
     this.validateOptions(accountId, privateKey);
 
     try {
-      
       const serverSigner = new ServerSigner(
         accountId!,
         privateKey!,
@@ -179,12 +180,18 @@ export class ConversationalAgent {
         });
       }
 
+      this.logger.info('Preparing plugins...');
       const allPlugins = this.preparePlugins();
+      this.logger.info('Creating agent config...');
       const agentConfig = this.createAgentConfig(serverSigner, llm, allPlugins);
 
+      this.logger.info('Creating agent...');
       this.agent = createAgent(agentConfig);
+      this.logger.info('Agent created');
 
+      this.logger.info('Configuring HCS10 plugin...');
       this.configureHCS10Plugin(allPlugins);
+      this.logger.info('HCS10 plugin configured');
 
       this.contentStoreManager = new ContentStoreManager();
       await this.contentStoreManager.initialize();
@@ -192,7 +199,11 @@ export class ConversationalAgent {
         'ContentStoreManager initialized for content reference support'
       );
 
+      this.logger.info('About to call agent.boot()');
+      this.logger.info('🔥 About to call agent.boot()');
       await this.agent.boot();
+      this.logger.info('agent.boot() completed');
+      this.logger.info('🔥 agent.boot() completed');
 
       if (this.agent) {
         const cfg = agentConfig;
@@ -250,7 +261,7 @@ export class ConversationalAgent {
    */
   getAgent(): ReturnType<typeof createAgent> {
     if (!this.agent) {
-      throw new Error('Agent not initialized. Call initialize() first.');
+      throw new Error(ConversationalAgent.NOT_INITIALIZED_ERROR);
     }
     return this.agent;
   }
@@ -280,33 +291,61 @@ export class ConversationalAgent {
     }
 
     try {
-      const resolvedMessage = this.memoryManager
-        ? await this.resolveEntitiesInMessage(message)
-        : message;
+      const resolvedMessage = message;
 
       const messages = chatHistory.map((msg) => {
-        if (msg.type === 'human') {
-          return new HumanMessage(msg.content);
-        } else {
-          return new AIMessage(msg.content);
+        const content = msg.content;
+        if (msg.type === 'system') {
+          return new SystemMessage(content);
         }
+        return msg.type === 'human'
+          ? new HumanMessage(content)
+          : new AIMessage(content);
       });
 
-      const context: ConversationContext = {
-        messages,
-      };
-
+      const context: ConversationContext = { messages };
       const response = await this.agent.chat(resolvedMessage, context);
 
-      if (this.memoryManager) {
+      if (
+        this.memoryManager &&
+        this.options.operationalMode !== 'returnBytes'
+      ) {
         await this.extractAndStoreEntities(response, message);
       }
 
       this.logger.info('Message processed successfully');
-
       return response;
     } catch (error) {
       this.logger.error('Error processing message:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Process form submission through the conversational agent
+   * @param {FormSubmission} submission - The form submission data
+   * @returns {Promise<ChatResponse>} The agent's response after processing the form
+   * @throws {Error} If agent is not initialized or doesn't support form processing
+   */
+  async processFormSubmission(
+    submission: FormSubmission
+  ): Promise<ChatResponse> {
+    if (!this.agent) {
+      throw new Error(ConversationalAgent.NOT_INITIALIZED_ERROR);
+    }
+
+    try {
+      this.logger.info('Processing form submission:', {
+        formId: submission.formId,
+        toolName: submission.toolName,
+        parameterKeys: Object.keys(submission.parameters || {}),
+        hasContext: !!submission.context,
+      });
+      const response = await this.agent.processFormSubmission(submission);
+      this.logger.info('Form submission processed successfully');
+      return response;
+    } catch (error) {
+      this.logger.error('Error processing form submission:', error);
       throw error;
     }
   }
@@ -322,15 +361,21 @@ export class ConversationalAgent {
     if (!accountId || !privateKey) {
       throw new Error('Account ID and private key are required');
     }
-    
+
     if (typeof accountId !== 'string') {
-      throw new Error(`Account ID must be a string, received ${typeof accountId}`);
+      throw new Error(
+        `Account ID must be a string, received ${typeof accountId}`
+      );
     }
-    
+
     if (typeof privateKey !== 'string') {
-      throw new Error(`Private key must be a string, received ${typeof privateKey}: ${JSON.stringify(privateKey)}`);
+      throw new Error(
+        `Private key must be a string, received ${typeof privateKey}: ${JSON.stringify(
+          privateKey
+        )}`
+      );
     }
-    
+
     if (privateKey.length < 10) {
       throw new Error('Private key appears to be invalid (too short)');
     }
@@ -564,54 +609,6 @@ export class ConversationalAgent {
     });
   }
 
-
-  /**
-   * Resolve entity references using LLM-based resolver
-   * @param content - Message content to resolve
-   * @returns Resolved message content with entity IDs replaced
-   */
-  private async resolveEntitiesInMessage(content: string): Promise<string> {
-    if (!this.memoryManager || !this.entityTools) {
-      return content;
-    }
-
-    try {
-      const entities = this.memoryManager.getEntityAssociations();
-
-      if (entities.length === 0) {
-        this.logger.info('No entities in memory, skipping resolution');
-        return content;
-      }
-
-      this.logger.info(
-        `Starting LLM-based entity resolution for: "${content.substring(
-          0,
-          100
-        )}..."`
-      );
-
-      const resolvedContent = await this.entityTools.resolveEntities.call({
-        message: content,
-        entities: entities.map((e) => ({
-          entityId: e.entityId,
-          entityName: e.entityName,
-          entityType: e.entityType,
-        })),
-      });
-
-      if (resolvedContent !== content) {
-        this.logger.info(
-          `Entity resolution completed. Original: "${content}" -> Resolved: "${resolvedContent}"`
-        );
-      }
-
-      return resolvedContent;
-    } catch (error) {
-      this.logger.error('Entity resolution failed:', error);
-      throw error;
-    }
-  }
-
   /**
    * Extract and store entities from agent responses
    * @param response - Agent response containing potential entity information
@@ -639,17 +636,35 @@ export class ConversationalAgent {
         const entities = JSON.parse(entitiesJson);
 
         for (const entity of entities) {
-          this.logger.info(
-            `Storing entity: ${entity.name} (${entity.type}) -> ${entity.id}`
-          );
+          if (
+            entity &&
+            typeof entity === 'object' &&
+            'name' in entity &&
+            'type' in entity &&
+            'id' in entity
+          ) {
+            this.logger.info(
+              `Storing entity: ${entity.name} (${entity.type}) -> ${entity.id}`
+            );
 
-          const transactionId = this.extractTransactionId(response);
-          this.memoryManager.storeEntityAssociation(
-            entity.id,
-            entity.name,
-            entity.type,
-            transactionId
-          );
+            const transactionId = this.extractTransactionId(response);
+            const idStr = String(entity.id);
+            const isHederaId = /^0\.0\.[0-9]+$/.test(idStr);
+            if (!isHederaId) {
+              this.logger.warn('Skipping non-ID entity from extraction', {
+                id: idStr,
+                name: String(entity.name),
+                type: String(entity.type),
+              });
+            } else {
+              this.memoryManager.storeEntityAssociation(
+                idStr,
+                String(entity.name),
+                String(entity.type),
+                transactionId
+              );
+            }
+          }
         }
 
         if (entities.length > 0) {
@@ -684,7 +699,10 @@ export class ConversationalAgent {
         response &&
         'transactionId' in response
       ) {
-        return (response as { transactionId?: string }).transactionId;
+        const responseWithTxId = response as { transactionId?: unknown };
+        return typeof responseWithTxId.transactionId === 'string'
+          ? responseWithTxId.transactionId
+          : undefined;
       }
       if (typeof response === 'string') {
         const match = response.match(
@@ -776,7 +794,8 @@ export class ConversationalAgent {
     }
 
     if (response && typeof response === 'object' && 'output' in response) {
-      return String(response.output);
+      const responseWithOutput = response as { output: unknown };
+      return String(responseWithOutput.output);
     }
 
     return JSON.stringify(response);

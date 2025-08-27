@@ -1,8 +1,5 @@
-export { TokenCounter } from './TokenCounter';
-export { MemoryWindow } from './MemoryWindow';
-export { ContentStorage } from './ContentStorage';
-export { SmartMemoryManager } from './SmartMemoryManager';
-
-export type { SmartMemoryConfig, SearchOptions, MemoryStats, EntityAssociation, EntityResolutionOptions } from './SmartMemoryManager';
-export type { AddMessageResult } from './MemoryWindow';
-export type { StorageStats } from './ContentStorage';
+export * from './smart-memory-manager';
+export * from './token-counter';
+export * from './memory-window';
+export * from './content-storage';
+export * from './reference-id-generator';

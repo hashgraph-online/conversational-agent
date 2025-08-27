@@ -24,6 +24,6 @@
     "isolatedModules": true,
     "noEmit": true
   },
-  "include": ["src/**/*", "tests/**/*", "vite.config.ts", "vitest.config.ts"],
-  "exclude": ["node_modules", "dist"]
+  "include": ["src/**/*", "tests/**/*", "vite.config.ts", "vitest.config.ts", "__tests__/**/*"],
+  "exclude": ["node_modules", "dist", "scripts/**/*"]
 }

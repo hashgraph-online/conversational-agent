@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeAll, afterAll } from 'vitest';
+import { describe, test, expect, beforeAll, afterAll } from '@jest/globals';
 import { ConversationalAgent } from '../../src';
 import { Logger } from '@hashgraphonline/standards-sdk';
 import dotenv from 'dotenv';
@@ -8,7 +8,9 @@ dotenv.config();
 /**
  * Integration tests for ConversationalAgent with actual network transactions
  */
-describe.skipIf(!process.env.HEDERA_ACCOUNT_ID || !process.env.HEDERA_PRIVATE_KEY || !process.env.OPENAI_API_KEY)('ConversationalAgent Integration Tests', () => {
+const shouldSkipTests = !process.env.HEDERA_ACCOUNT_ID || !process.env.HEDERA_PRIVATE_KEY || !process.env.OPENAI_API_KEY;
+const testDescription = shouldSkipTests ? describe.skip : describe;
+testDescription('ConversationalAgent Integration Tests', () => {
   let agent: ConversationalAgent;
   let logger: Logger;
   

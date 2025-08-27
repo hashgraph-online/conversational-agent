@@ -76,8 +76,7 @@ export class HbarPlugin extends BasePlugin {
   }
 
   override getTools(): HederaTool[] {
-    // @ts-ignore
-    return this.tools;
+    return this.tools as unknown as HederaTool[];
   }
 
   async shutdown(): Promise<void> {

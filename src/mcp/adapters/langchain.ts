@@ -1,8 +1,11 @@
 import { DynamicStructuredTool } from '@langchain/core/tools';
 import { z } from 'zod';
 import type { MCPToolInfo, MCPServerConfig } from '../types';
-import type { MCPClientManager } from '../MCPClientManager';
-import { ContentStoreService, shouldUseReference } from '@hashgraphonline/standards-sdk';
+import type { MCPClientManager } from '../mcp-client-manager';
+import {
+  ContentStoreService,
+  shouldUseReference,
+} from '@hashgraphonline/standards-sdk';
 import type { ContentSource } from '../../types/content-reference';
 
 /**
@@ -20,12 +23,15 @@ export function convertMCPToolToLangChain(
     '_'
   );
 
-  let description = tool.description || `MCP tool ${tool.name} from ${tool.serverName}`;
-  
+  let description =
+    tool.description || `MCP tool ${tool.name} from ${tool.serverName}`;
+
   if (serverConfig?.toolDescriptions?.[tool.name]) {
-    description = `${description}\n\n${serverConfig.toolDescriptions[tool.name]}`;
+    description = `${description}\n\n${
+      serverConfig.toolDescriptions[tool.name]
+    }`;
   }
-  
+
   if (serverConfig?.additionalContext) {
     description = `${description}\n\nContext: ${serverConfig.additionalContext}`;
   }
@@ -43,7 +49,7 @@ export function convertMCPToolToLangChain(
         );
 
         let responseText = '';
-        
+
         if (typeof result === 'string') {
           responseText = result;
         } else if (
@@ -72,23 +78,26 @@ export function convertMCPToolToLangChain(
         }
 
         const responseBuffer = Buffer.from(responseText, 'utf8');
-        
+
         const MCP_REFERENCE_THRESHOLD = 10 * 1024;
-        const shouldStoreMCPContent = responseBuffer.length > MCP_REFERENCE_THRESHOLD;
-        
+        const shouldStoreMCPContent =
+          responseBuffer.length > MCP_REFERENCE_THRESHOLD;
+
         if (shouldStoreMCPContent || shouldUseReference(responseBuffer)) {
           const contentStore = ContentStoreService.getInstance();
           if (contentStore) {
             try {
-              const referenceId = await contentStore.storeContent(responseBuffer, {
-                contentType: 'text' as ContentSource,
-                source: 'mcp',
-                mcpToolName: `${tool.serverName}_${tool.name}`,
-                originalSize: responseBuffer.length
-              });
+              const referenceId = await contentStore.storeContent(
+                responseBuffer,
+                {
+                  contentType: 'text' as ContentSource,
+                  source: 'mcp',
+                  mcpToolName: `${tool.serverName}_${tool.name}`,
+                  originalSize: responseBuffer.length,
+                }
+              );
               return `content-ref:${referenceId}`;
-            } catch (storeError) {
-            }
+            } catch {}
           }
         }
 

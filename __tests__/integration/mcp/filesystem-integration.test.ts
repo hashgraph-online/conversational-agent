@@ -1,15 +1,15 @@
-import { describe, test, expect, beforeEach, afterEach } from 'vitest';
+import { describe, test, expect, beforeEach, afterEach } from '@jest/globals';
 import { ConversationalAgent } from '../../../src/conversational-agent';
-import { MCPServers } from '../../../src/mcp/helpers';
 import { mkdirSync, existsSync, rmSync, writeFileSync, readFileSync } from 'node:fs';
 import * as fsPromises from 'node:fs/promises';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 import * as os from 'os';
+import { TEST_MCP_DATA } from '../../test-constants';
 
 const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+const testDirname = dirname(__filename);
 
 describe('MCP Filesystem Integration', () => {
   let agent: ConversationalAgent;
@@ -20,15 +20,15 @@ describe('MCP Filesystem Integration', () => {
     mkdirSync(testDir, { recursive: true });
 
     agent = new ConversationalAgent({
-      accountId: '0.0.12345',
-      privateKey: 'mock-private-key',
+      accountId: TEST_MCP_DATA.DEFAULT_ACCOUNT_ID,
+      privateKey: TEST_MCP_DATA.MOCK_PRIVATE_KEY,
       openAIApiKey: 'sk-test',
       mcpServers: [
         {
-          name: 'filesystem',
-          command: 'npx',
-          args: ['-y', '@modelcontextprotocol/server-filesystem', testDir],
-          transport: 'stdio',
+          name: TEST_MCP_DATA.FILESYSTEM_SERVER,
+          command: TEST_MCP_DATA.NPX_COMMAND,
+          args: [TEST_MCP_DATA.MINUS_Y_FLAG, TEST_MCP_DATA.SERVER_FILESYSTEM_PACKAGE, testDir],
+          transport: TEST_MCP_DATA.STDIO_TRANSPORT,
           autoConnect: true,
         },
       ],
@@ -40,7 +40,7 @@ describe('MCP Filesystem Integration', () => {
       if (agent) {
         await agent.getAgent().shutdown();
       }
-    } catch (error) {
+    } catch (_error) {
     }
 
     if (existsSync(testDir)) {
@@ -50,20 +50,20 @@ describe('MCP Filesystem Integration', () => {
 
   test('Can create agent with MCP filesystem server', async () => {
     if (!process.env.OPENAI_API_KEY) {
-      console.log('Skipping test: OPENAI_API_KEY not set');
+      console.log(TEST_MCP_DATA.OPENAI_SKIP_MESSAGE);
       return;
     }
 
     agent = new ConversationalAgent({
-      accountId: process.env.HEDERA_ACCOUNT_ID || '0.0.12345',
-      privateKey: process.env.HEDERA_PRIVATE_KEY || 'mock-key',
+      accountId: process.env.HEDERA_ACCOUNT_ID || TEST_MCP_DATA.DEFAULT_ACCOUNT_ID,
+      privateKey: process.env.HEDERA_PRIVATE_KEY || TEST_MCP_DATA.MOCK_KEY,
       openAIApiKey: process.env.OPENAI_API_KEY,
       mcpServers: [
         {
-          name: 'filesystem',
-          command: 'npx',
-          args: ['-y', '@modelcontextprotocol/server-filesystem', testDir],
-          transport: 'stdio',
+          name: TEST_MCP_DATA.FILESYSTEM_SERVER,
+          command: TEST_MCP_DATA.NPX_COMMAND,
+          args: [TEST_MCP_DATA.MINUS_Y_FLAG, TEST_MCP_DATA.SERVER_FILESYSTEM_PACKAGE, testDir],
+          transport: TEST_MCP_DATA.STDIO_TRANSPORT,
           autoConnect: true,
         },
       ],
@@ -85,20 +85,20 @@ describe('MCP Filesystem Integration', () => {
 
   test('Can read file contents through MCP', async () => {
     if (!process.env.OPENAI_API_KEY) {
-      console.log('Skipping test: OPENAI_API_KEY not set');
+      console.log(TEST_MCP_DATA.OPENAI_SKIP_MESSAGE);
       return;
     }
 
     agent = new ConversationalAgent({
-      accountId: process.env.HEDERA_ACCOUNT_ID || '0.0.12345',
-      privateKey: process.env.HEDERA_PRIVATE_KEY || 'mock-key',
+      accountId: process.env.HEDERA_ACCOUNT_ID || TEST_MCP_DATA.DEFAULT_ACCOUNT_ID,
+      privateKey: process.env.HEDERA_PRIVATE_KEY || TEST_MCP_DATA.MOCK_KEY,
       openAIApiKey: process.env.OPENAI_API_KEY,
       mcpServers: [
         {
-          name: 'filesystem',
-          command: 'npx',
-          args: ['-y', '@modelcontextprotocol/server-filesystem', testDir],
-          transport: 'stdio',
+          name: TEST_MCP_DATA.FILESYSTEM_SERVER,
+          command: TEST_MCP_DATA.NPX_COMMAND,
+          args: [TEST_MCP_DATA.MINUS_Y_FLAG, TEST_MCP_DATA.SERVER_FILESYSTEM_PACKAGE, testDir],
+          transport: TEST_MCP_DATA.STDIO_TRANSPORT,
           autoConnect: true,
         },
       ],
@@ -121,20 +121,20 @@ describe('MCP Filesystem Integration', () => {
 
   test('Can write file through MCP', async () => {
     if (!process.env.OPENAI_API_KEY) {
-      console.log('Skipping test: OPENAI_API_KEY not set');
+      console.log(TEST_MCP_DATA.OPENAI_SKIP_MESSAGE);
       return;
     }
 
     agent = new ConversationalAgent({
-      accountId: process.env.HEDERA_ACCOUNT_ID || '0.0.12345',
-      privateKey: process.env.HEDERA_PRIVATE_KEY || 'mock-key',
+      accountId: process.env.HEDERA_ACCOUNT_ID || TEST_MCP_DATA.DEFAULT_ACCOUNT_ID,
+      privateKey: process.env.HEDERA_PRIVATE_KEY || TEST_MCP_DATA.MOCK_KEY,
       openAIApiKey: process.env.OPENAI_API_KEY,
       mcpServers: [
         {
-          name: 'filesystem',
-          command: 'npx',
-          args: ['-y', '@modelcontextprotocol/server-filesystem', testDir],
-          transport: 'stdio',
+          name: TEST_MCP_DATA.FILESYSTEM_SERVER,
+          command: TEST_MCP_DATA.NPX_COMMAND,
+          args: [TEST_MCP_DATA.MINUS_Y_FLAG, TEST_MCP_DATA.SERVER_FILESYSTEM_PACKAGE, testDir],
+          transport: TEST_MCP_DATA.STDIO_TRANSPORT,
           autoConnect: true,
         },
       ],
@@ -159,20 +159,20 @@ describe('MCP Filesystem Integration', () => {
 
   test('Handles non-existent file gracefully', async () => {
     if (!process.env.OPENAI_API_KEY) {
-      console.log('Skipping test: OPENAI_API_KEY not set');
+      console.log(TEST_MCP_DATA.OPENAI_SKIP_MESSAGE);
       return;
     }
 
     agent = new ConversationalAgent({
-      accountId: process.env.HEDERA_ACCOUNT_ID || '0.0.12345',
-      privateKey: process.env.HEDERA_PRIVATE_KEY || 'mock-key',
+      accountId: process.env.HEDERA_ACCOUNT_ID || TEST_MCP_DATA.DEFAULT_ACCOUNT_ID,
+      privateKey: process.env.HEDERA_PRIVATE_KEY || TEST_MCP_DATA.MOCK_KEY,
       openAIApiKey: process.env.OPENAI_API_KEY,
       mcpServers: [
         {
-          name: 'filesystem',
-          command: 'npx',
-          args: ['-y', '@modelcontextprotocol/server-filesystem', testDir],
-          transport: 'stdio',
+          name: TEST_MCP_DATA.FILESYSTEM_SERVER,
+          command: TEST_MCP_DATA.NPX_COMMAND,
+          args: [TEST_MCP_DATA.MINUS_Y_FLAG, TEST_MCP_DATA.SERVER_FILESYSTEM_PACKAGE, testDir],
+          transport: TEST_MCP_DATA.STDIO_TRANSPORT,
           autoConnect: true,
         },
       ],

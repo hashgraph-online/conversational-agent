@@ -1,0 +1,29 @@
+{
+  "rootDir": ".",
+  "testMatch": ["**/__tests__/**/*.test.ts", "**/tests/**/*.test.ts"],
+  "transform": {
+    "^.+\\.(t|j)sx?$": "@swc/jest"
+  },
+  "testEnvironment": "node",
+  "setupFilesAfterEnv": ["./jest.setup.js"],
+  "testPathIgnorePatterns": ["/node_modules/", "/dist/", "/cli/"],
+  "modulePathIgnorePatterns": ["/cli/"],
+  "moduleNameMapper": {
+    "^@/(.*)$": "<rootDir>/src/$1",
+    "^hedera-agent-kit$": "<rootDir>/__tests__/setup/hedera-agent-kit-mock.js"
+  },
+  "transformIgnorePatterns": [
+    "node_modules/(?!(@hashgraph|@hashgraphonline|@langchain|@grpc)/)"
+  ],
+  "testTimeout": 60000,
+  "collectCoverageFrom": [
+    "src/**/*.{ts,tsx}",
+    "!src/**/*.d.ts",
+    "!src/**/__tests__/**",
+    "!src/**/tests/**"
+  ],
+  "coverageDirectory": "coverage",
+  "coverageReporters": ["text", "lcov", "html"],
+  "verbose": true,
+  "maxWorkers": 1
+}

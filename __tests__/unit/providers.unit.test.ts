@@ -1,55 +1,60 @@
-import { describe, test, expect, vi } from 'vitest';
+import { describe, test, expect } from '@jest/globals';
 import { LangChainProvider } from '../../src/providers';
+import type { BaseChatModel } from '@langchain/core/language_models/chat_models';
+import { TEST_PROVIDER_CONSTANTS } from '../test-constants';
 
-vi.mock('@langchain/openai', () => ({
-  ChatOpenAI: vi.fn().mockImplementation(() => ({
-    invoke: vi.fn().mockResolvedValue('Test response'),
-    stream: vi.fn().mockResolvedValue(['chunk1', 'chunk2']),
+const TEST_RESPONSE = 'Test response';
+const TEST_PROMPT = TEST_PROVIDER_CONSTANTS.CHAT_MODEL_INVOKE;
+
+jest.mock('@langchain/openai', () => ({
+  ChatOpenAI: jest.fn().mockImplementation(() => ({
+    invoke: jest.fn().mockResolvedValue(TEST_RESPONSE),
+    stream: jest.fn().mockResolvedValue(['chunk1', 'chunk2']),
   })),
 }));
 
 describe('AI Providers Unit Tests', () => {
   describe('LangChainProvider', () => {
     const mockModel = {
-      invoke: vi.fn().mockResolvedValue('Test response'),
-      stream: vi.fn().mockResolvedValue(['chunk1', 'chunk2']),
+      invoke: jest.fn().mockResolvedValue(TEST_RESPONSE),
+      stream: jest.fn().mockResolvedValue(['chunk1', 'chunk2']),
     };
 
     test('Creates provider instance successfully', () => {
-      const provider = new LangChainProvider(mockModel as any);
+      const provider = new LangChainProvider(mockModel as unknown as BaseChatModel);
       expect(provider).toBeDefined();
     });
 
     test('Generates string response', async () => {
-      const provider = new LangChainProvider(mockModel as any);
-      const response = await provider.generate('test prompt');
+      const provider = new LangChainProvider(mockModel as unknown as BaseChatModel);
+      const response = await provider.generate(TEST_PROMPT);
       
-      expect(response).toBe('Test response');
-      expect(mockModel.invoke).toHaveBeenCalledWith('test prompt', undefined);
+      expect(response).toBe(TEST_RESPONSE);
+      expect(mockModel.invoke).toHaveBeenCalledWith(TEST_PROMPT, undefined);
     });
 
     test('Generates response with options', async () => {
-      const provider = new LangChainProvider(mockModel as any);
+      const provider = new LangChainProvider(mockModel as unknown as BaseChatModel);
       const options = { temperature: 0.5 };
       
-      await provider.generate('test prompt', options);
-      expect(mockModel.invoke).toHaveBeenCalledWith('test prompt', options);
+      await provider.generate(TEST_PROMPT, options);
+      expect(mockModel.invoke).toHaveBeenCalledWith(TEST_PROMPT, options);
     });
 
     test('Handles non-string response from model', async () => {
       const modelWithObject = {
-        invoke: vi.fn().mockResolvedValue({ content: 'Response object' }),
+        invoke: jest.fn().mockResolvedValue({ content: 'Response object' }),
       };
       
-      const provider = new LangChainProvider(modelWithObject as any);
-      const response = await provider.generate('test prompt');
+      const provider = new LangChainProvider(modelWithObject as unknown as BaseChatModel);
+      const response = await provider.generate(TEST_PROMPT);
       
       expect(response).toBe('[object Object]');
     });
 
     test('Streams responses successfully', async () => {
-      const provider = new LangChainProvider(mockModel as any);
-      const stream = provider.stream?.('test prompt');
+      const provider = new LangChainProvider(mockModel as unknown as BaseChatModel);
+      const stream = provider.stream?.(TEST_PROVIDER_CONSTANTS.CHAT_MODEL_INVOKE);
       
       expect(stream).toBeDefined();
       
@@ -60,33 +65,33 @@ describe('AI Providers Unit Tests', () => {
         }
         
         expect(chunks).toEqual(['chunk1', 'chunk2']);
-        expect(mockModel.stream).toHaveBeenCalledWith('test prompt', undefined);
+        expect(mockModel.stream).toHaveBeenCalledWith(TEST_PROVIDER_CONSTANTS.CHAT_MODEL_INVOKE, undefined);
       }
     });
 
     test('Streams with options', async () => {
-      const provider = new LangChainProvider(mockModel as any);
+      const provider = new LangChainProvider(mockModel as unknown as BaseChatModel);
       const options = { temperature: 0.7 };
       
-      const stream = provider.stream?.('test prompt', options);
+      const stream = provider.stream?.(TEST_PROVIDER_CONSTANTS.CHAT_MODEL_INVOKE, options);
       
       if (stream) {
-              for await (const chunk of stream) {
+              for await (const _chunk of stream) {
       }
-        expect(mockModel.stream).toHaveBeenCalledWith('test prompt', options);
+        expect(mockModel.stream).toHaveBeenCalledWith(TEST_PROVIDER_CONSTANTS.CHAT_MODEL_INVOKE, options);
       }
     });
 
     test('Handles non-string chunks in stream', async () => {
       const modelWithObjectChunks = {
-        stream: vi.fn().mockResolvedValue([
+        stream: jest.fn().mockResolvedValue([
           { content: 'chunk1' },
           { content: 'chunk2' },
         ]),
       };
       
-      const provider = new LangChainProvider(modelWithObjectChunks as any);
-      const stream = provider.stream?.('test prompt');
+      const provider = new LangChainProvider(modelWithObjectChunks as unknown as BaseChatModel);
+      const stream = provider.stream?.(TEST_PROVIDER_CONSTANTS.CHAT_MODEL_INVOKE);
       
       if (stream) {
         const chunks = [];
@@ -99,17 +104,17 @@ describe('AI Providers Unit Tests', () => {
     });
 
     test('Returns underlying model', () => {
-      const provider = new LangChainProvider(mockModel as any);
+      const provider = new LangChainProvider(mockModel as unknown as BaseChatModel);
       expect(provider.getModel()).toBe(mockModel);
     });
 
     test('Stream method exists', () => {
-      const provider = new LangChainProvider(mockModel as any);
+      const provider = new LangChainProvider(mockModel as unknown as BaseChatModel);
       expect(typeof provider.stream).toBe('function');
     });
 
     test('GetModel method exists', () => {
-      const provider = new LangChainProvider(mockModel as any);
+      const provider = new LangChainProvider(mockModel as unknown as BaseChatModel);
       expect(typeof provider.getModel).toBe('function');
     });
   });
@@ -117,10 +122,10 @@ describe('AI Providers Unit Tests', () => {
   describe('Provider Interfaces', () => {
     test('VercelAIProvider interface has correct structure', () => {
       const mockVercelProvider: import('../../src/providers').VercelAIProvider = {
-        generate: vi.fn(),
-        stream: vi.fn(),
-        getModel: vi.fn(),
-        streamText: vi.fn(),
+        generate: jest.fn(),
+        stream: jest.fn(),
+        getModel: jest.fn(),
+        streamText: jest.fn(),
       };
       
       expect(typeof mockVercelProvider.generate).toBe('function');
@@ -129,10 +134,10 @@ describe('AI Providers Unit Tests', () => {
 
     test('BAMLProvider interface has correct structure', () => {
       const mockBAMLProvider: import('../../src/providers').BAMLProvider = {
-        generate: vi.fn(),
-        stream: vi.fn(),
-        getModel: vi.fn(),
-        executeFunction: vi.fn(),
+        generate: jest.fn(),
+        stream: jest.fn(),
+        getModel: jest.fn(),
+        executeFunction: jest.fn(),
       };
       
       expect(typeof mockBAMLProvider.generate).toBe('function');
@@ -141,7 +146,7 @@ describe('AI Providers Unit Tests', () => {
 
     test('AIProvider base interface has correct structure', () => {
       const mockAIProvider: import('../../src/providers').AIProvider = {
-        generate: vi.fn(),
+        generate: jest.fn(),
       };
       
       expect(typeof mockAIProvider.generate).toBe('function');

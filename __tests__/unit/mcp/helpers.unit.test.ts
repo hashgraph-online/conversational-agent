@@ -1,10 +1,14 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it as _it, expect } from '@jest/globals';
 import { MCPServers, validateServerConfig, createMCPConfig } from '../../../src/mcp/helpers';
 import type { MCPServerConfig } from '../../../src/mcp/types';
 
+type PartialServerConfig = Partial<MCPServerConfig> & Record<string, unknown>;
+
+const TEST_COMMAND = 'test-command';
+
 describe('MCP Helpers', () => {
   describe('MCPServers', () => {
-    it('should create filesystem server config', () => {
+    test('should create filesystem server config', () => {
       const config = MCPServers.filesystem('/tmp/test');
       
       expect(config).toEqual({
@@ -21,7 +25,7 @@ describe('MCP Helpers', () => {
       });
     });
 
-    it('should create github server config without token', () => {
+    test('should create github server config without token', () => {
       const config = MCPServers.github();
       
       expect(config).toEqual({
@@ -34,7 +38,7 @@ describe('MCP Helpers', () => {
       });
     });
 
-    it('should create github server config with token', () => {
+    test('should create github server config with token', () => {
       const config = MCPServers.github('github-token-123');
       
       expect(config).toEqual({
@@ -47,7 +51,7 @@ describe('MCP Helpers', () => {
       });
     });
 
-    it('should create slack server config', () => {
+    test('should create slack server config', () => {
       const config = MCPServers.slack('slack-token-123');
       
       expect(config).toEqual({
@@ -60,7 +64,7 @@ describe('MCP Helpers', () => {
       });
     });
 
-    it('should create postgres server config', () => {
+    test('should create postgres server config', () => {
       const config = MCPServers.postgres('postgresql://user:pass@localhost/db');
       
       expect(config).toEqual({
@@ -72,7 +76,7 @@ describe('MCP Helpers', () => {
       });
     });
 
-    it('should create sqlite server config', () => {
+    test('should create sqlite server config', () => {
       const config = MCPServers.sqlite('/path/to/database.db');
       
       expect(config).toEqual({
@@ -84,7 +88,7 @@ describe('MCP Helpers', () => {
       });
     });
 
-    it('should pass through custom config', () => {
+    test('should pass through custom config', () => {
       const customConfig: MCPServerConfig = {
         name: 'custom',
         command: 'custom-command',
@@ -99,10 +103,10 @@ describe('MCP Helpers', () => {
   });
 
   describe('validateServerConfig', () => {
-    it('should return no errors for valid config', () => {
+    test('should return no errors for valid config', () => {
       const config: MCPServerConfig = {
         name: 'test',
-        command: 'test-command',
+        command: TEST_COMMAND,
         args: ['arg1', 'arg2'],
         transport: 'stdio',
       };
@@ -111,61 +115,61 @@ describe('MCP Helpers', () => {
       expect(errors).toEqual([]);
     });
 
-    it('should validate missing name', () => {
+    test('should validate missing name', () => {
       const config = {
-        command: 'test-command',
+        command: TEST_COMMAND,
         args: [],
-      } as any;
+      } as PartialServerConfig;
       
       const errors = validateServerConfig(config);
       expect(errors).toContain('Server name is required');
     });
 
-    it('should validate missing command', () => {
+    test('should validate missing command', () => {
       const config = {
         name: 'test',
         args: [],
-      } as any;
+      } as PartialServerConfig;
       
       const errors = validateServerConfig(config);
       expect(errors).toContain('Server command is required');
     });
 
-    it('should validate missing or invalid args', () => {
+    test('should validate missing or invalid args', () => {
       const config1 = {
         name: 'test',
-        command: 'test-command',
-      } as any;
+        command: TEST_COMMAND,
+      } as PartialServerConfig;
       
       const errors1 = validateServerConfig(config1);
       expect(errors1).toContain('Server args must be an array');
 
       const config2 = {
         name: 'test',
-        command: 'test-command',
+        command: TEST_COMMAND,
         args: 'not-an-array',
-      } as any;
+      } as PartialServerConfig;
       
       const errors2 = validateServerConfig(config2);
       expect(errors2).toContain('Server args must be an array');
     });
 
-    it('should validate invalid transport type', () => {
+    test('should validate invalid transport type', () => {
       const config: MCPServerConfig = {
         name: 'test',
-        command: 'test-command',
+        command: TEST_COMMAND,
         args: [],
-        transport: 'invalid' as any,
+        transport: 'invalid' as 'stdio',
       };
       
       const errors = validateServerConfig(config);
       expect(errors).toContain('Invalid transport type. Must be stdio, http, or websocket');
     });
 
-    it('should return multiple errors', () => {
+    test('should return multiple errors', () => {
       const config = {
         transport: 'invalid',
-      } as any;
+      } as PartialServerConfig;
       
       const errors = validateServerConfig(config);
       expect(errors).toHaveLength(4);
@@ -173,7 +177,7 @@ describe('MCP Helpers', () => {
   });
 
   describe('createMCPConfig', () => {
-    it('should create MCP config with default autoConnect', () => {
+    test('should create MCP config with default autoConnect', () => {
       const servers: MCPServerConfig[] = [
         { name: 'server1', command: 'cmd1', args: [] },
         { name: 'server2', command: 'cmd2', args: [], autoConnect: false },
@@ -189,7 +193,7 @@ describe('MCP Helpers', () => {
       });
     });
 
-    it('should respect custom autoConnect setting', () => {
+    test('should respect custom autoConnect setting', () => {
       const servers: MCPServerConfig[] = [
         { name: 'server1', command: 'cmd1', args: [] },
         { name: 'server2', command: 'cmd2', args: [], autoConnect: true },
@@ -205,7 +209,7 @@ describe('MCP Helpers', () => {
       });
     });
 
-    it('should handle empty server list', () => {
+    test('should handle empty server list', () => {
       const config = createMCPConfig([]);
       
       expect(config).toEqual({

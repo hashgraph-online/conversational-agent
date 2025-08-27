@@ -1,4 +1,4 @@
-import { TokenCounter } from '../../src/memory/TokenCounter';
+import { TokenCounter } from '../../src/memory/token-counter';
 import type { BaseMessage } from '@langchain/core/messages';
 import { HumanMessage, AIMessage } from '@langchain/core/messages';
 

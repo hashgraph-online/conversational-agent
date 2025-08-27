@@ -1,45 +1,83 @@
-import { describe, test, expect, vi } from 'vitest';
-import { createAgent } from '../../src/agent-factory';
-import { LangChainAgent } from '../../src/langchain-agent';
+import { describe, test, expect } from '@jest/globals';
 
-vi.mock('hedera-agent-kit', async () => {
-  const actual = await vi.importActual('hedera-agent-kit');
+interface MockHederaKit {
+  initialize: jest.Mock;
+  getAggregatedLangChainTools: jest.Mock;
+  operationalMode: string;
+}
+
+interface MockTokenUsageCallbackHandler {
+  getLatestTokenUsage: jest.Mock;
+  getTotalTokenUsage: jest.Mock;
+  getTokenUsageHistory: jest.Mock;
+  reset: jest.Mock;
+}
+
+interface _MockLogger {
+  info: jest.Mock;
+  warn: jest.Mock;
+  error: jest.Mock;
+  debug: jest.Mock;
+}
+
+interface MockTool {
+  name: string;
+}
+import { createAgent } from '../../src/agent-factory';
+import { LangChainAgent } from '../../src/langchain/langchain-agent';
+import { createMockServerSigner, createMockPlugin } from '../mock-factory';
+
+jest.mock('hedera-agent-kit', async () => {
+  const actual = await jest.requireActual('hedera-agent-kit') as Record<string, unknown>;
   return {
     ...actual,
-    ServerSigner: vi.fn().mockImplementation(() => ({
+    ServerSigner: jest.fn().mockImplementation(() => ({
       getAccountId: () => ({ toString: () => '0.0.12345' }),
       getNetwork: () => 'testnet',
+      client: {},
+      accountIdInternal: '0.0.12345',
+      privateKey: 'mock-private-key',
+      networkInternal: 'testnet',
+      operationalMode: 'mock',
+      balance: jest.fn(),
+      getBalance: jest.fn(),
+      getAccountInfo: jest.fn(),
+      createAccount: jest.fn(),
+      sign: jest.fn(),
+      signMessage: jest.fn(),
+      freeze: jest.fn(),
+      submit: jest.fn(),
+      submitAndWait: jest.fn(),
+      getLiveHashQuery: jest.fn(),
+      getTokenBalance: jest.fn(),
     })),
-    HederaAgentKit: vi.fn().mockImplementation(function(this: any) {
-      this.initialize = vi.fn().mockResolvedValue(undefined);
-      this.getAggregatedLangChainTools = vi.fn().mockReturnValue([]);
+    HederaAgentKit: jest.fn().mockImplementation(function(this: MockHederaKit) {
+      this.initialize = jest.fn().mockResolvedValue(undefined);
+      this.getAggregatedLangChainTools = jest.fn().mockReturnValue([]);
       this.operationalMode = 'returnBytes';
     }),
-    getAllHederaCorePlugins: vi.fn().mockReturnValue([]),
-    TokenUsageCallbackHandler: vi.fn().mockImplementation(function(this: any) {
-      this.getLatestTokenUsage = vi.fn().mockReturnValue(null);
-      this.getTotalTokenUsage = vi.fn().mockReturnValue({ promptTokens: 0, completionTokens: 0, totalTokens: 0 });
-      this.getTokenUsageHistory = vi.fn().mockReturnValue([]);
-      this.reset = vi.fn();
+    getAllHederaCorePlugins: jest.fn().mockReturnValue([]),
+    TokenUsageCallbackHandler: jest.fn().mockImplementation(function(this: MockTokenUsageCallbackHandler) {
+      this.getLatestTokenUsage = jest.fn().mockReturnValue(null);
+      this.getTotalTokenUsage = jest.fn().mockReturnValue({ promptTokens: 0, completionTokens: 0, totalTokens: 0 });
+      this.getTokenUsageHistory = jest.fn().mockReturnValue([]);
+      this.reset = jest.fn();
     }),
-    calculateTokenCostSync: vi.fn().mockReturnValue({ totalCost: 0 }),
+    calculateTokenCostSync: jest.fn().mockReturnValue({ totalCost: 0 }),
   };
 });
 
-vi.mock('@hashgraphonline/standards-sdk', () => ({
-  Logger: vi.fn().mockImplementation(() => ({
-    info: vi.fn(),
-    error: vi.fn(),
-    debug: vi.fn(),
-    warn: vi.fn(),
+jest.mock('@hashgraphonline/standards-sdk', () => ({
+  Logger: jest.fn().mockImplementation(() => ({
+    info: jest.fn(),
+    error: jest.fn(),
+    debug: jest.fn(),
+    warn: jest.fn(),
   })),
 }));
 
 describe('Agent Factory Unit Tests', () => {
-  const mockSigner = {
-    getAccountId: () => ({ toString: () => '0.0.12345' }),
-    getNetwork: () => 'testnet',
-  };
+  const mockSigner = createMockServerSigner();
 
   describe('createAgent function', () => {
     test('Creates LangChain agent by default', () => {
@@ -87,7 +125,7 @@ describe('Agent Factory Unit Tests', () => {
       expect(() => {
         createAgent({
           signer: mockSigner,
-          framework: 'unknown-framework' as any,
+          framework: 'unknown-framework' as unknown as 'langchain',
         });
       }).toThrow('Unknown framework: unknown-framework');
     });
@@ -139,22 +177,17 @@ describe('Agent Factory Unit Tests', () => {
     });
 
     test('Handles complex configuration with all options', () => {
-      const mockPlugin = {
-        id: 'test-plugin',
+      const mockPlugin = createMockPlugin('test-plugin', {
         name: 'Test Plugin',
         description: 'Test plugin',
-        version: '1.0.0',
-        author: 'Test Author',
         namespace: 'test',
-        initialize: vi.fn(),
-        getTools: vi.fn().mockReturnValue([]),
-      };
+      });
 
-      const mockMCPTool = {
+      const _mockMCPTool = {
         name: 'test-mcp',
         description: 'Test MCP tool',
         schema: {},
-        execute: vi.fn(),
+        execute: jest.fn(),
       };
 
       const config = {
@@ -174,9 +207,7 @@ describe('Agent Factory Unit Tests', () => {
         filtering: {
           namespaceWhitelist: ['test'],
           toolBlacklist: ['unwanted-tool'],
-          enableMCP: true,
-          mcpTools: [mockMCPTool],
-          toolPredicate: (tool: any) => tool.name !== 'forbidden',
+          toolPredicate: (tool: MockTool) => tool.name !== 'forbidden',
         },
         messaging: {
           systemPreamble: 'Custom start',
@@ -204,8 +235,6 @@ describe('Agent Factory Unit Tests', () => {
       
       expect(agent['config'].filtering?.namespaceWhitelist).toEqual(['test']);
       expect(agent['config'].filtering?.toolBlacklist).toEqual(['unwanted-tool']);
-      expect(agent['config'].filtering?.enableMCP).toBe(true);
-      expect(agent['config'].filtering?.mcpTools).toEqual([mockMCPTool]);
       expect(typeof agent['config'].filtering?.toolPredicate).toBe('function');
       
       expect(agent['config'].messaging?.systemPreamble).toBe('Custom start');
@@ -243,14 +272,14 @@ describe('Agent Factory Unit Tests', () => {
       expect(() => {
         createAgent({
           signer: mockSigner,
-          framework: 'LangChain' as any,
+          framework: 'LangChain' as unknown as 'langchain',
         });
       }).toThrow('Unknown framework: LangChain');
 
       expect(() => {
         createAgent({
           signer: mockSigner,
-          framework: 'LANGCHAIN' as any,
+          framework: 'LANGCHAIN' as unknown as 'langchain',
         });
       }).toThrow('Unknown framework: LANGCHAIN');
     });
@@ -259,19 +288,13 @@ describe('Agent Factory Unit Tests', () => {
   describe('Configuration validation', () => {
     test('Handles missing signer parameter gracefully', () => {
             expect(() => {
-        createAgent({} as any);
+        createAgent({} as Parameters<typeof createAgent>[0]);
       }).not.toThrow();
     });
 
     test('Handles undefined configuration gracefully', () => {
       const agent = createAgent({
         signer: mockSigner,
-        execution: undefined,
-        ai: undefined,
-        filtering: undefined,
-        messaging: undefined,
-        extensions: undefined,
-        debug: undefined,
       });
 
       expect(agent).toBeInstanceOf(LangChainAgent);

@@ -1,10 +1,10 @@
-import { describe, test, expect } from 'vitest';
+import { describe, test, expect } from '@jest/globals';
 import { ConversationalAgent } from '../../src';
 import { OpenConvAIPlugin } from '../../src';
 import { HederaMirrorNode, Logger } from '@hashgraphonline/standards-sdk';
 import { PrivateKey } from '@hashgraph/sdk';
 import dotenv from 'dotenv';
-import { HederaAgentKit, ServerSigner } from 'hedera-agent-kit';
+import { HederaAgentKit, ServerSigner, GenericPluginContext } from 'hedera-agent-kit';
 
 dotenv.config();
 
@@ -69,14 +69,15 @@ describe('Plugin Component Integration Tests', () => {
 
       const plugin = new OpenConvAIPlugin();
 
-      const context = {
-        logger,
+      const context: GenericPluginContext = {
+        logger: logger as unknown as Parameters<typeof plugin.initialize>[0]['logger'],
+        client: { ...hederaKit.client, getNetwork: () => 'testnet' } as Parameters<typeof plugin.initialize>[0]['client'],
         config: {
           hederaKit,
         },
       };
 
-      await plugin.initialize(context as any);
+      await plugin.initialize(context);
 
       const tools = plugin.getTools();
       expect(tools.length).toBe(11);

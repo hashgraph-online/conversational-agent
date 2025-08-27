@@ -12,6 +12,7 @@ import type { CostCalculation } from 'hedera-agent-kit';
 import type { AIProvider, VercelAIProvider, BAMLProvider } from './providers';
 import { Logger } from '@hashgraphonline/standards-sdk';
 import type { MCPServerConfig, MCPConnectionStatus } from './mcp/types';
+import type { FormSubmission } from './forms/types';
 
 export interface ToolFilterConfig {
   namespaceWhitelist?: string[];
@@ -84,6 +85,8 @@ export interface ChatResponse {
     args: Record<string, unknown>;
     output?: string;
   }>;
+  formMessage?: unknown;
+  requiresForm?: boolean;
   [key: string]: unknown;
 }
 
@@ -109,6 +112,9 @@ export abstract class BaseAgent {
   abstract chat(
     message: string,
     context?: ConversationContext
+  ): Promise<ChatResponse>;
+  abstract processFormSubmission(
+    submission: FormSubmission
   ): Promise<ChatResponse>;
   abstract shutdown(): Promise<void>;
   abstract switchMode(mode: OperationalMode): void;
@@ -163,6 +169,15 @@ export abstract class BaseAgent {
       `You are a helpful Hedera assistant. Your primary operator account is ${operatorId}. ` +
         `You have tools to interact with the Hedera Hashgraph. ` +
         `When using any tool, provide all necessary parameters as defined by that tool's schema and description.`
+    );
+
+    parts.push(
+      `\nMETADATA QUALITY PRINCIPLES: When collecting user input for metadata creation across any tool:` +
+        `\n• Prioritize meaningful, valuable content over technical file information` +
+        `\n• Focus on attributes that add value for end users and collectors` +
+        `\n• Avoid auto-generating meaningless technical attributes as user-facing metadata` +
+        `\n• When fields are missing or inadequate, use forms to collect quality metadata` +
+        `\n• Encourage descriptive names, collectible traits, and storytelling elements`
     );
 
     if (userAccId) {

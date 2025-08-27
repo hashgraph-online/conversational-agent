@@ -1,6 +1,6 @@
 {
   "name": "@hashgraphonline/conversational-agent",
-  "version": "0.1.214",
+  "version": "0.2.1",
   "type": "module",
   "main": "./dist/cjs/index.cjs",
   "module": "./dist/esm/index.js",
@@ -29,8 +29,8 @@
     "README.md"
   ],
   "scripts": {
-    "test": "vitest run",
-    "test:integration": "vitest run tests/integration",
+    "test": "jest --detectOpenHandles",
+    "test:integration": "jest tests/integration",
     "clean": "rimraf dist",
     "build:es": "BUILD_FORMAT=es vite build",
     "build:cjs": "BUILD_FORMAT=cjs vite build",
@@ -73,12 +73,16 @@
   "description": "Hashgraph Online conversational AI agent implementing HCS-10 communication, HCS-2 registries, and content inscription on Hedera",
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.1",
+    "@jest/globals": "^29.7.0",
+    "@swc/jest": "^0.2.39",
+    "@types/jest": "^29.5.14",
     "@typescript-eslint/eslint-plugin": "^8.38.0",
     "@typescript-eslint/parser": "^8.38.0",
     "dotenv": "^17.2.1",
     "eslint": "^9.3",
     "eslint-config-next": "15.4.0",
     "eslint-plugin-sonarjs": "^3.0.4",
+    "jest": "^29.7.0",
     "rimraf": "^6.0.1",
     "rollup-plugin-polyfill-node": "^0.13.0",
     "terser": "^5.43.1",
@@ -87,25 +91,24 @@
     "vite": "^6.3.5",
     "vite-plugin-dts": "^3.9.1",
     "vite-plugin-node-polyfills": "^0.23.0",
-    "vite-plugin-string-replace": "^1.1.5",
-    "vitest": "^3.2.4"
+    "vite-plugin-string-replace": "^1.1.5"
   },
   "dependencies": {
     "@hashgraph/sdk": "^2.69.0",
-    "@hashgraphonline/standards-agent-kit": "^0.2.131",
-    "@hashgraphonline/standards-sdk": "^0.0.181",
+    "@hashgraphonline/standards-agent-kit": "0.2.136",
+    "@hashgraphonline/standards-sdk": "0.0.187",
     "@langchain/anthropic": "^0.3.26",
-    "@langchain/core": "^0.3.7",
-    "@langchain/openai": "^0.6.7",
-    "@modelcontextprotocol/sdk": "^1.17.0",
+    "@langchain/core": "^0.3.72",
+    "@langchain/openai": "^0.6.9",
+    "@modelcontextprotocol/sdk": "^1.17.4",
     "axios": "^1.11.0",
     "bignumber.js": "^9.3.1",
-    "electron-log": "^5.4.2",
     "ethers": "^6.15.0",
     "hedera-agent-kit": "^2.0.3",
-    "langchain": "^0.3.3",
+    "langchain": "^0.3.31",
     "tiktoken": "^1.0.22",
-    "zod": "^3.23.8"
+    "zod": "^3.25.0",
+    "zod-to-json-schema": "^3.24.6"
   },
   "repository": {
     "type": "git",

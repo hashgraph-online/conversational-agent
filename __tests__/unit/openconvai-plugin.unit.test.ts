@@ -1,25 +1,27 @@
-import { describe, test, expect, beforeEach, vi } from 'vitest';
+import { describe, test, expect, beforeEach } from '@jest/globals';
 import { OpenConvAIPlugin } from '../../src';
 import { Logger } from '@hashgraphonline/standards-sdk';
 
-vi.mock('@hashgraphonline/standards-agent-kit', async () => {
-  const actual = await vi.importActual('@hashgraphonline/standards-agent-kit');
-  return {
-    ...actual,
-    HCS10Builder: vi.fn().mockImplementation(() => ({
-      getStandardClient: vi.fn(),
-      getOperatorId: vi.fn().mockReturnValue('0.0.12345'),
-      getNetwork: vi.fn().mockReturnValue('testnet')
-    }))
-  };
-});
 
 /**
  * Unit tests for OpenConvAIPlugin
  */
+interface MockHederaKit {
+  client: { network: { toString: () => string } };
+  signer: { getAccountId: () => { toString: () => string } };
+}
+
+interface MockContext {
+  request: {
+    message: string;
+    sessionId: string;
+  };
+  state: Record<string, unknown>;
+}
+
 describe('OpenConvAIPlugin Unit Tests', () => {
-    let mockHederaKit: any;
-  let mockContext: any;
+    let mockHederaKit: MockHederaKit;
+  let mockContext: MockContext;
 
   beforeEach(() => {
     mockHederaKit = {
@@ -59,9 +61,9 @@ describe('OpenConvAIPlugin Unit Tests', () => {
     test('Plugin initializes tools when hederaKit is provided', async () => {
       const plugin = new OpenConvAIPlugin();
       
-      mockContext.logger.warn = vi.fn();
-      mockContext.logger.info = vi.fn();
-      mockContext.logger.error = vi.fn();
+      mockContext.logger.warn = jest.fn();
+      mockContext.logger.info = jest.fn();
+      mockContext.logger.error = jest.fn();
       
       await plugin.initialize(mockContext);
       
@@ -78,8 +80,8 @@ describe('OpenConvAIPlugin Unit Tests', () => {
       const plugin = new OpenConvAIPlugin();
       
       mockContext.config.hederaKit = undefined;
-      mockContext.logger.warn = vi.fn();
-      mockContext.logger.info = vi.fn();
+      mockContext.logger.warn = jest.fn();
+      mockContext.logger.info = jest.fn();
       
       await plugin.initialize(mockContext);
       
@@ -94,9 +96,9 @@ describe('OpenConvAIPlugin Unit Tests', () => {
     test('Plugin tools have correct structure', async () => {
       const plugin = new OpenConvAIPlugin();
       
-      mockContext.logger.warn = vi.fn();
-      mockContext.logger.info = vi.fn();
-      mockContext.logger.error = vi.fn();
+      mockContext.logger.warn = jest.fn();
+      mockContext.logger.info = jest.fn();
+      mockContext.logger.error = jest.fn();
       await plugin.initialize(mockContext);
       
       const tools = plugin.getTools();
@@ -114,9 +116,9 @@ describe('OpenConvAIPlugin Unit Tests', () => {
     test('Plugin creates HCS10Builder and StateManager', async () => {
       const plugin = new OpenConvAIPlugin();
       
-      mockContext.logger.warn = vi.fn();
-      mockContext.logger.info = vi.fn();
-      mockContext.logger.error = vi.fn();
+      mockContext.logger.warn = jest.fn();
+      mockContext.logger.info = jest.fn();
+      mockContext.logger.error = jest.fn();
       await plugin.initialize(mockContext);
       
       const tools = plugin.getTools();
@@ -130,9 +132,9 @@ describe('OpenConvAIPlugin Unit Tests', () => {
   describe('Tool Names and Descriptions', () => {
     test('All tools have unique names', async () => {
       const plugin = new OpenConvAIPlugin();
-      mockContext.logger.warn = vi.fn();
-      mockContext.logger.info = vi.fn();
-      mockContext.logger.error = vi.fn();
+      mockContext.logger.warn = jest.fn();
+      mockContext.logger.info = jest.fn();
+      mockContext.logger.error = jest.fn();
       await plugin.initialize(mockContext);
       
       const tools = plugin.getTools();
@@ -144,9 +146,9 @@ describe('OpenConvAIPlugin Unit Tests', () => {
 
     test('All tools have descriptive text', async () => {
       const plugin = new OpenConvAIPlugin();
-      mockContext.logger.warn = vi.fn();
-      mockContext.logger.info = vi.fn();
-      mockContext.logger.error = vi.fn();
+      mockContext.logger.warn = jest.fn();
+      mockContext.logger.info = jest.fn();
+      mockContext.logger.error = jest.fn();
       await plugin.initialize(mockContext);
       
       const tools = plugin.getTools();
@@ -163,9 +165,9 @@ describe('OpenConvAIPlugin Unit Tests', () => {
   describe('Tool Categories', () => {
     test('Tools are properly categorized', async () => {
       const plugin = new OpenConvAIPlugin();
-      mockContext.logger.warn = vi.fn();
-      mockContext.logger.info = vi.fn();
-      mockContext.logger.error = vi.fn();
+      mockContext.logger.warn = jest.fn();
+      mockContext.logger.info = jest.fn();
+      mockContext.logger.error = jest.fn();
       await plugin.initialize(mockContext);
       
       const tools = plugin.getTools();
@@ -200,9 +202,9 @@ describe('OpenConvAIPlugin Unit Tests', () => {
       
       const plugin = new OpenConvAIPlugin();
       
-      mockContext.logger.warn = vi.fn();
-      mockContext.logger.info = vi.fn();
-      mockContext.logger.error = vi.fn();
+      mockContext.logger.warn = jest.fn();
+      mockContext.logger.info = jest.fn();
+      mockContext.logger.error = jest.fn();
       await plugin.initialize(mockContext);
       
       const stateManager = plugin.getStateManager();
@@ -212,9 +214,9 @@ describe('OpenConvAIPlugin Unit Tests', () => {
     test('Plugin creates own StateManager if not provided', async () => {
       const plugin = new OpenConvAIPlugin();
       
-      mockContext.logger.warn = vi.fn();
-      mockContext.logger.info = vi.fn();
-      mockContext.logger.error = vi.fn();
+      mockContext.logger.warn = jest.fn();
+      mockContext.logger.info = jest.fn();
+      mockContext.logger.error = jest.fn();
       await plugin.initialize(mockContext);
       
       const stateManager = plugin.getStateManager();
@@ -227,14 +229,14 @@ describe('OpenConvAIPlugin Unit Tests', () => {
     test('Plugin handles initialization errors gracefully', async () => {
       const plugin = new OpenConvAIPlugin();
       
-      const originalInitTools = (plugin as any).initializeTools;
-      (plugin as any).initializeTools = vi.fn().mockImplementation(() => {
+      const originalInitTools = (plugin as unknown as { initializeTools: () => void }).initializeTools;
+      (plugin as unknown as { initializeTools: jest.Mock }).initializeTools = jest.fn().mockImplementation(() => {
         throw new Error('Test error during tool initialization');
       });
       
-      mockContext.logger.warn = vi.fn();
-      mockContext.logger.info = vi.fn();
-      mockContext.logger.error = vi.fn();
+      mockContext.logger.warn = jest.fn();
+      mockContext.logger.info = jest.fn();
+      mockContext.logger.error = jest.fn();
       
       await plugin.initialize(mockContext);
       
@@ -243,7 +245,7 @@ describe('OpenConvAIPlugin Unit Tests', () => {
         expect.any(Error)
       );
       
-      (plugin as any).initializeTools = originalInitTools;
+      (plugin as unknown as { initializeTools: () => void }).initializeTools = originalInitTools;
     });
   });
 
@@ -251,9 +253,9 @@ describe('OpenConvAIPlugin Unit Tests', () => {
     test('Cleanup removes tools and state', async () => {
       const plugin = new OpenConvAIPlugin();
       
-      mockContext.logger.warn = vi.fn();
-      mockContext.logger.info = vi.fn();
-      mockContext.logger.error = vi.fn();
+      mockContext.logger.warn = jest.fn();
+      mockContext.logger.info = jest.fn();
+      mockContext.logger.error = jest.fn();
       
       await plugin.initialize(mockContext);
       

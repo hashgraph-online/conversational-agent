@@ -1,4 +1,4 @@
-import { describe, test, expect } from 'vitest';
+import { describe, test, expect } from '@jest/globals';
 import {
   DEFAULT_CONTENT_REFERENCE_CONFIG,
   ContentReferenceError,

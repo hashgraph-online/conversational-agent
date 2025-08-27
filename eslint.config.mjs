@@ -4,7 +4,18 @@ import tsParser from '@typescript-eslint/parser';
 
 const eslintConfig = [
   {
-    ignores: ['dist/**', 'node_modules/**', '*.d.ts', '**/*.d.ts', '.yalc/**', 'yalc.lock', 'examples/**', 'vite.config.ts'],
+    ignores: [
+      'dist/**',
+      'node_modules/**',
+      '*.d.ts',
+      '**/*.d.ts',
+      '.yalc/**',
+      'yalc.lock',
+      'examples/**',
+      'vite.config.ts',
+      'cli/**',
+      'scripts/**',
+    ],
   },
   {
     files: ['**/*.{ts,tsx}'],
@@ -20,12 +31,19 @@ const eslintConfig = [
       sonarjs,
     },
     rules: {
-      '@typescript-eslint/no-explicit-any': 'warn',
+      '@typescript-eslint/no-explicit-any': 'error',
       '@typescript-eslint/explicit-function-return-type': [
         'warn',
         { allowExpressions: true },
       ],
-      '@typescript-eslint/no-unused-vars': 'error',
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          argsIgnorePattern: '^_',
+          varsIgnorePattern: '^_',
+          caughtErrorsIgnorePattern: '^_',
+        },
+      ],
       'no-unneeded-ternary': ['error', { defaultAssignment: false }],
       'no-nested-ternary': 'error',
       'no-constant-binary-expression': 'error',
@@ -35,7 +53,55 @@ const eslintConfig = [
         { max: 1000, skipBlankLines: true, skipComments: true, IIFEs: true },
       ],
       'no-unused-vars': 'off',
-      'sonarjs/no-duplicate-string': 'warn',
+      'sonarjs/no-duplicate-string': ['error', { threshold: 3 }],
+      'sonarjs/no-identical-functions': 'warn',
+    },
+  },
+  {
+    files: ['**/__tests__/**/*.{ts,tsx}', '**/tests/**/*.{ts,tsx}', '**/*.test.{ts,tsx}', '**/*.spec.{ts,tsx}'],
+    languageOptions: {
+      parser: tsParser,
+      parserOptions: {
+        ecmaFeatures: { modules: true },
+        project: './tsconfig.json',
+      },
+      globals: {
+        describe: 'readonly',
+        test: 'readonly',
+        it: 'readonly',
+        expect: 'readonly',
+        beforeEach: 'readonly',
+        afterEach: 'readonly',
+        beforeAll: 'readonly',
+        afterAll: 'readonly',
+        jest: 'readonly',
+      },
+    },
+    plugins: {
+      '@typescript-eslint': tsPlugin,
+      sonarjs,
+    },
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'error',
+      '@typescript-eslint/explicit-function-return-type': 'off',
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          argsIgnorePattern: '^_',
+          varsIgnorePattern: '^_',
+          caughtErrorsIgnorePattern: '^_',
+        },
+      ],
+      'no-unneeded-ternary': ['error', { defaultAssignment: false }],
+      'no-nested-ternary': 'error',
+      'no-constant-binary-expression': 'error',
+      complexity: ['warn', { max: 100 }],
+      'max-lines-per-function': [
+        'warn',
+        { max: 1000, skipBlankLines: true, skipComments: true, IIFEs: true },
+      ],
+      'no-unused-vars': 'off',
+      'sonarjs/no-duplicate-string': ['error', { threshold: 3 }],
       'sonarjs/no-identical-functions': 'warn',
     },
   },

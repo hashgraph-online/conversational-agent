@@ -1,75 +1,106 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { TransferHbarTool } from '../../../src/plugins/hbar-transfer/TransferHbarTool';
-import { AccountBuilder } from '../../../src/plugins/hbar-transfer/AccountBuilder';
-import { HederaAgentKit } from 'hedera-agent-kit';
-import { Logger } from '@hashgraphonline/standards-sdk';
+import { describe, expect, beforeEach } from '@jest/globals';
+import { TransferHbarTool } from '../../../src/plugins/hbar/TransferHbarTool';
+import { AccountBuilder } from '../../../src/plugins/hbar/AccountBuilder';
 import { TransferTransaction, Hbar, AccountId } from '@hashgraph/sdk';
+import { TEST_HBAR_AMOUNTS, TEST_MESSAGES } from '../../test-constants';
 
-vi.mock('@hashgraph/sdk');
-vi.mock('hedera-agent-kit');
+jest.mock('@hashgraph/sdk');
+jest.mock('hedera-agent-kit');
+
+const _ACCOUNT_IDS = {
+  PARTICIPANT_1: '0.0.800',
+  PARTICIPANT_2: '0.0.801',
+  TREASURY: '0.0.900'
+} as const;
+
+
+interface MockLogger {
+  info: jest.Mock;
+  warn: jest.Mock;
+  error: jest.Mock;
+  debug: jest.Mock;
+}
+
+interface MockTransaction {
+  addHbarTransfer: jest.Mock;
+  setTransactionMemo: jest.Mock;
+}
+
+interface MockHederaKit {
+  operationalMode: string;
+  userAccountId: string;
+  logger: MockLogger;
+}
+
+
+interface BuilderWithLogger {
+  logger: MockLogger;
+  kit: MockHederaKit;
+}
+
 
 describe('Multi-Signature Transfer Scenarios', () => {
   let tool: TransferHbarTool;
   let builder: AccountBuilder;
-  let mockHederaKit: any;
-  let mockLogger: any;
-  let mockTransaction: any;
+  let mockHederaKit: MockHederaKit;
+  let mockLogger: MockLogger;
+  let mockTransaction: MockTransaction;
 
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
 
     mockLogger = {
-      info: vi.fn(),
-      warn: vi.fn(),
-      error: vi.fn(),
-      debug: vi.fn(),
-    } as any;
+      info: jest.fn(),
+      warn: jest.fn(),
+      error: jest.fn(),
+      debug: jest.fn(),
+    };
 
     mockTransaction = {
-      addHbarTransfer: vi.fn().mockReturnThis(),
-      setTransactionMemo: vi.fn().mockReturnThis(),
-    } as any;
+      addHbarTransfer: jest.fn().mockReturnThis(),
+      setTransactionMemo: jest.fn().mockReturnThis(),
+    };
 
-    vi.mocked(TransferTransaction).mockImplementation(() => mockTransaction);
+    jest.mocked(TransferTransaction).mockImplementation(() => mockTransaction as unknown as TransferTransaction);
     
-    vi.mocked(Hbar.fromString).mockImplementation((amount: string) => ({
+    jest.mocked(Hbar.fromString).mockImplementation((amount: string) => ({
       toString: () => `${amount} ℏ`,
       toTinybars: () => BigInt(Math.round(parseFloat(amount) * 100000000)),
       negated: () => ({
         toString: () => `-${amount} ℏ`,
         toTinybars: () => BigInt(Math.round(parseFloat(amount) * -100000000)),
       }),
-    }));
+    } as unknown as import('@hashgraph/sdk').Hbar));
 
-    vi.mocked(AccountId.fromString).mockImplementation((id: string) => ({
+    jest.mocked(AccountId.fromString).mockImplementation((id: string) => ({
       toString: () => id,
-    }));
+    } as unknown as import('@hashgraph/sdk').AccountId));
 
     mockHederaKit = {
       operationalMode: 'returnBytes',
       userAccountId: '0.0.456',
       logger: mockLogger,
-    } as any;
+    };
 
     tool = new TransferHbarTool({
-      hederaKit: mockHederaKit,
+      hederaKit: mockHederaKit as unknown,
       logger: mockLogger,
-    });
+    } as unknown as ConstructorParameters<typeof TransferHbarTool>[0]);
 
-    builder = new AccountBuilder(mockHederaKit);
-    (builder as any).logger = mockLogger;
-    (builder as any).kit = mockHederaKit;
+    builder = new AccountBuilder(mockHederaKit as unknown as import('hedera-agent-kit').HederaAgentKit);
+    (builder as unknown as BuilderWithLogger).logger = mockLogger;
+    (builder as unknown as BuilderWithLogger).kit = mockHederaKit;
   });
 
   describe('Schema Validation for Multi-Signature Transfers', () => {
-    it('should accept multi-signature transfer with decimal HBAR amounts', () => {
+    test('should accept multi-signature transfer with decimal HBAR amounts', () => {
       const input = {
         transfers: [
           { accountId: '0.0.123', amount: -0.5 },
           { accountId: '0.0.789', amount: -0.5 },
           { accountId: '0.0.98', amount: 1 },
         ],
-        memo: 'Multi-signature transfer to Treasury',
+        memo: TEST_MESSAGES.MULTI_SIG_TREASURY,
       };
 
       const result = tool.specificInputSchema.safeParse(input);
@@ -88,7 +119,7 @@ describe('Multi-Signature Transfer Scenarios', () => {
       }
     });
 
-    it('should handle complex multi-party transfers with varying amounts', () => {
+    test('should handle complex multi-party transfers with varying amounts', () => {
       const input = {
         transfers: [
           { accountId: '0.0.100', amount: -2.5 },
@@ -111,25 +142,25 @@ describe('Multi-Signature Transfer Scenarios', () => {
   });
 
   describe('AccountBuilder Multi-Signature Handling', () => {
-    it('should process multi-signature transfer correctly in returnBytes mode', () => {
+    test('should process multi-signature transfer correctly in returnBytes mode', () => {
       const params = {
         transfers: [
           { accountId: '0.0.123', amount: -0.5 },
           { accountId: '0.0.789', amount: -0.5 },
           { accountId: '0.0.98', amount: 1 },
         ],
-        memo: 'Multi-signature transfer to Treasury',
+        memo: TEST_MESSAGES.MULTI_SIG_TREASURY,
       };
 
       builder.transferHbar(params, true);
 
-      expect(Hbar.fromString).toHaveBeenCalledWith('-0.50000000');
-      expect(Hbar.fromString).toHaveBeenCalledWith('-0.50000000');
-      expect(Hbar.fromString).toHaveBeenCalledWith('1.00000000');
+      expect(Hbar.fromString).toHaveBeenCalledWith(TEST_HBAR_AMOUNTS.HALF_HBAR_NEGATIVE);
+      expect(Hbar.fromString).toHaveBeenCalledWith(TEST_HBAR_AMOUNTS.HALF_HBAR_NEGATIVE);
+      expect(Hbar.fromString).toHaveBeenCalledWith(TEST_HBAR_AMOUNTS.ONE_HBAR);
       
       expect(mockTransaction.addHbarTransfer).toHaveBeenCalledTimes(3);
       expect(mockTransaction.setTransactionMemo).toHaveBeenCalledWith(
-        'Multi-signature transfer to Treasury'
+        TEST_MESSAGES.MULTI_SIG_TREASURY
       );
 
       expect(mockLogger.info).toHaveBeenCalledWith(
@@ -140,7 +171,7 @@ describe('Multi-Signature Transfer Scenarios', () => {
       );
     });
 
-    it('should handle the example case from tinybars conversion', () => {
+    test('should handle the example case from tinybars conversion', () => {
       const halfAmount = 0.5;
       
       const params = {
@@ -153,16 +184,16 @@ describe('Multi-Signature Transfer Scenarios', () => {
 
       builder.transferHbar(params);
 
-      expect(Hbar.fromString).toHaveBeenCalledWith('-0.50000000');
-      expect(Hbar.fromString).toHaveBeenCalledWith('1.00000000');
+      expect(Hbar.fromString).toHaveBeenCalledWith(TEST_HBAR_AMOUNTS.HALF_HBAR_NEGATIVE);
+      expect(Hbar.fromString).toHaveBeenCalledWith(TEST_HBAR_AMOUNTS.ONE_HBAR);
       expect(mockTransaction.addHbarTransfer).toHaveBeenCalledTimes(3);
     });
 
-    it('should handle scheduled transaction mode correctly', () => {
+    test('should handle scheduled transaction mode correctly', () => {
       mockHederaKit.operationalMode = 'provideBytes';
-      builder = new AccountBuilder(mockHederaKit);
-      (builder as any).logger = mockLogger;
-      (builder as any).kit = mockHederaKit;
+      builder = new AccountBuilder(mockHederaKit as unknown as import('hedera-agent-kit').HederaAgentKit);
+      (builder as unknown as BuilderWithLogger).logger = mockLogger;
+      (builder as unknown as BuilderWithLogger).kit = mockHederaKit;
 
       const params = {
         transfers: [
@@ -182,7 +213,7 @@ describe('Multi-Signature Transfer Scenarios', () => {
   });
 
   describe('Real-world Scenarios', () => {
-    it('should handle the exact ConversationalAgent example', () => {
+    test('should handle the exact ConversationalAgent example', () => {
       
       const amount = 100000000;
       const hbarAmount = amount / 100000000;
@@ -201,11 +232,11 @@ describe('Multi-Signature Transfer Scenarios', () => {
       
       builder.transferHbar(input);
       
-      expect(Hbar.fromString).toHaveBeenCalledWith('-0.50000000');
-      expect(Hbar.fromString).toHaveBeenCalledWith('1.00000000');
+      expect(Hbar.fromString).toHaveBeenCalledWith(TEST_HBAR_AMOUNTS.HALF_HBAR_NEGATIVE);
+      expect(Hbar.fromString).toHaveBeenCalledWith(TEST_HBAR_AMOUNTS.ONE_HBAR);
     });
 
-    it('should correctly interpret LLM response for multi-sig request', () => {
+    test('should correctly interpret LLM response for multi-sig request', () => {
       
       const llmGeneratedInput = {
         transfers: [

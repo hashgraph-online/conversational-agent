@@ -1,74 +1,149 @@
-import { describe, test, expect, vi, beforeEach, Mock } from 'vitest';
+import { describe, test, expect, beforeEach } from '@jest/globals';
 import { ConversationalAgent } from '../../src';
 import { BasePlugin, HederaConversationalAgent } from 'hedera-agent-kit';
 import type { GenericPluginContext } from 'hedera-agent-kit';
 
-let mockAgent: any;
+interface MockAgent {
+  boot: jest.Mock;
+  chat: jest.Mock;
+  generateFormFields: jest.Mock;
+  callTool: jest.Mock;
+}
 
-vi.mock('hedera-agent-kit', async () => {
-  const actual = await vi.importActual('hedera-agent-kit');
-  return {
-    ...actual,
-    ServerSigner: vi.fn().mockImplementation(() => ({
+interface MockHederaKit {
+  initialize: jest.Mock;
+  getAggregatedLangChainTools: jest.Mock;
+  operationalMode: string;
+}
+
+interface MockTokenUsageCallbackHandler {
+  getLatestTokenUsage: jest.Mock;
+  getTotalTokenUsage: jest.Mock;
+  getTokenUsageHistory: jest.Mock;
+  reset: jest.Mock;
+}
+
+interface MockConversationalAgent {
+  boot: jest.Mock;
+  chat: jest.Mock;
+  config: {
+    extensions: {
+      plugins: MockPlugin[];
+    };
+  };
+}
+
+interface MockPlugin {
+  id: string;
+  name?: string;
+}
+
+interface MockCustomStateManager {
+  custom: string;
+  someMethod: jest.Mock;
+}
+
+let mockAgent: MockAgent;
+
+jest.mock('hedera-agent-kit', () => ({
+    ServerSigner: jest.fn().mockImplementation(() => ({
       getAccountId: () => ({ toString: () => '0.0.12345' }),
       getNetwork: () => 'testnet',
     })),
-    HederaAgentKit: vi.fn().mockImplementation(function(this: any) {
-      this.initialize = vi.fn().mockResolvedValue(undefined);
-      this.getAggregatedLangChainTools = vi.fn().mockReturnValue([]);
+    HederaAgentKit: jest.fn().mockImplementation(function(this: MockHederaKit) {
+      this.initialize = jest.fn().mockResolvedValue(undefined);
+      this.getAggregatedLangChainTools = jest.fn().mockReturnValue([]);
       this.operationalMode = 'returnBytes';
     }),
-    HederaConversationalAgent: vi.fn(),
-    getAllHederaCorePlugins: vi.fn().mockReturnValue([
+    HederaConversationalAgent: jest.fn(),
+    getAllHederaCorePlugins: jest.fn().mockReturnValue([
       { id: 'hedera-token-service', name: 'Hedera Token Service Plugin' },
       { id: 'hedera-consensus-service', name: 'Hedera Consensus Service Plugin' },
       { id: 'hedera-account', name: 'Hedera Account Plugin' },
       { id: 'hedera-smart-contract-service', name: 'Hedera Smart Contract Service Plugin' },
       { id: 'hedera-network', name: 'Hedera Network Plugin' }
     ]),
-    TokenUsageCallbackHandler: vi.fn().mockImplementation(function(this: any) {
-      this.getLatestTokenUsage = vi.fn().mockReturnValue(null);
-      this.getTotalTokenUsage = vi.fn().mockReturnValue({ promptTokens: 0, completionTokens: 0, totalTokens: 0 });
-      this.getTokenUsageHistory = vi.fn().mockReturnValue([]);
-      this.reset = vi.fn();
+    TokenUsageCallbackHandler: jest.fn().mockImplementation(function(this: MockTokenUsageCallbackHandler) {
+      this.getLatestTokenUsage = jest.fn().mockReturnValue(null);
+      this.getTotalTokenUsage = jest.fn().mockReturnValue({ promptTokens: 0, completionTokens: 0, totalTokens: 0 });
+      this.getTokenUsageHistory = jest.fn().mockReturnValue([]);
+      this.reset = jest.fn();
     }),
-    calculateTokenCostSync: vi.fn().mockReturnValue({ totalCost: 0 }),
-  };
-});
+    calculateTokenCostSync: jest.fn().mockReturnValue({ totalCost: 0 }),
+    BasePlugin: class MockBasePlugin {
+      id = '';
+      name = '';
+      description = '';
+      version = '';
+      author = '';
+      namespace = '';
+      async initialize() {}
+      async cleanup() {}
+    },
+    BaseServiceBuilder: class MockBaseServiceBuilder {
+      constructor(_hederaKit: unknown) {}
+    },
+    BaseHederaTransactionTool: class MockBaseHederaTransactionTool {
+      name = '';
+      description = '';
+      constructor() {}
+    }
+}));
 
-vi.mock('@hashgraphonline/standards-agent-kit', async () => {
-  const actual = await vi.importActual('@hashgraphonline/standards-agent-kit');
-  return {
-    ...actual,
-    HCS10Builder: vi.fn().mockImplementation(() => ({
-      getStandardClient: vi.fn(),
-      getOperatorId: vi.fn().mockReturnValue('0.0.12345'),
-      getNetwork: vi.fn().mockReturnValue('testnet')
-    }))
-  };
-});
+jest.mock('@hashgraphonline/standards-agent-kit', () => ({
+    HCS10Builder: jest.fn().mockImplementation(() => ({
+      getStandardClient: jest.fn(),
+      getOperatorId: jest.fn().mockReturnValue('0.0.12345'),
+      getNetwork: jest.fn().mockReturnValue('testnet')
+    })),
+    OpenConvaiState: jest.fn(),
+    RegisterAgentTool: jest.fn(),
+    FindRegistrationsTool: jest.fn(),
+    InitiateConnectionTool: jest.fn(),
+    ListConnectionsTool: jest.fn(),
+    SendMessageToConnectionTool: jest.fn(),
+    CheckMessagesTool: jest.fn(),
+    ConnectionMonitorTool: jest.fn(),
+    ManageConnectionRequestsTool: jest.fn(),
+    AcceptConnectionRequestTool: jest.fn(),
+    RetrieveProfileTool: jest.fn(),
+    ListUnapprovedConnectionRequestsTool: jest.fn(),
+}));
 
-vi.mock('@hashgraphonline/standards-sdk', async () => {
-  const actual = await vi.importActual('@hashgraphonline/standards-sdk');
-  return {
-    ...actual,
-    HederaMirrorNode: vi.fn().mockImplementation(() => ({
-      requestAccount: vi.fn().mockResolvedValue({
+jest.mock('@hashgraphonline/standards-sdk', () => ({
+    HederaMirrorNode: jest.fn().mockImplementation(() => ({
+      requestAccount: jest.fn().mockResolvedValue({
         key: { _type: 'ED25519' }
       })
-    }))
-  };
-});
+    })),
+    Logger: jest.fn().mockImplementation(() => ({
+      info: jest.fn(),
+      warn: jest.fn(),
+      error: jest.fn(),
+      debug: jest.fn(),
+    })),
+    HCS10Client: jest.fn(),
+    ContentStoreService: {
+      setInstance: jest.fn(),
+      getInstance: jest.fn(),
+    },
+    ContentResolverRegistry: {
+      register: jest.fn(),
+      resolve: jest.fn(),
+    },
+    extractReferenceId: jest.fn(),
+    shouldUseReference: jest.fn(),
+}));
 
-vi.mock('@hashgraph/sdk', () => ({
+jest.mock('@hashgraph/sdk', () => ({
   PrivateKey: {
-    fromStringED25519: vi.fn().mockReturnValue('mock-private-key-instance'),
-    fromStringECDSA: vi.fn().mockReturnValue('mock-private-key-instance'),
+    fromStringED25519: jest.fn().mockReturnValue('mock-private-key-instance'),
+    fromStringECDSA: jest.fn().mockReturnValue('mock-private-key-instance'),
   },
 }));
 
-vi.mock('../../src/agent-factory', () => ({
-  createAgent: vi.fn(() => mockAgent)
+jest.mock('../../src/agent-factory', () => ({
+  createAgent: jest.fn(() => mockAgent)
 }));
 
 /**
@@ -78,22 +153,22 @@ describe('ConversationalAgent Plugin Support', () => {
   const mockAccountId = '0.0.12345';
   const mockPrivateKey = '302e020100300506032b657004220420a689b974df063cc7e19fd4ddeaf6dd412b5efec4e4a3cee7f181d29d40b3fc1e';
   const mockOpenAIKey = 'sk-test-key';
-  let mockConversationalAgent: any;
+  let mockConversationalAgent: MockConversationalAgent;
 
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
     
     mockAgent = {
-      boot: vi.fn().mockResolvedValue(undefined),
-      chat: vi.fn().mockResolvedValue({
+      boot: jest.fn().mockResolvedValue(undefined),
+      chat: jest.fn().mockResolvedValue({
         output: 'Test response',
         intermediateSteps: []
       })
     };
     
     mockConversationalAgent = {
-      initialize: vi.fn().mockResolvedValue(undefined),
-      processMessage: vi.fn().mockResolvedValue({
+      initialize: jest.fn().mockResolvedValue(undefined),
+      processMessage: jest.fn().mockResolvedValue({
         output: 'Test response',
         transactionId: '0.0.12345@1234567890.123',
       })
@@ -142,16 +217,16 @@ describe('ConversationalAgent Plugin Support', () => {
     expect(config.extensions?.plugins).toBeDefined();
     expect(config.extensions.plugins.length).toBeGreaterThan(0);
     
-    const hcs10Plugin = config.extensions.plugins.find((p: any) => p.id === 'hcs-10');
+    const hcs10Plugin = config.extensions.plugins.find((p: MockPlugin) => p.id === 'hcs-10');
     expect(hcs10Plugin).toBeDefined();
     
     expect(config.extensions.plugins).toContain(mockPlugin);
   });
 
   test('ConversationalAgent works with custom state manager', async () => {
-    const customStateManager = {
+    const customStateManager: MockCustomStateManager = {
       custom: 'state',
-      someMethod: vi.fn()
+      someMethod: jest.fn()
     };
     
     const agent = new ConversationalAgent({
@@ -159,7 +234,7 @@ describe('ConversationalAgent Plugin Support', () => {
       privateKey: mockPrivateKey,
       network: 'testnet',
       openAIApiKey: mockOpenAIKey,
-      stateManager: customStateManager as any
+      stateManager: customStateManager as unknown
     });
 
     await agent.initialize();
@@ -168,7 +243,7 @@ describe('ConversationalAgent Plugin Support', () => {
     
     const { createAgent } = await import('../../src/agent-factory');
     const createAgentCall = (createAgent as unknown as Mock).mock.calls[0];
-    const config = createAgentCall[0];
+    const _config = createAgentCall[0];
     
     expect(agent.getStateManager()).toBe(customStateManager);
     
