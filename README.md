@@ -1,6 +1,6 @@
 # Hashgraph Online Conversational Agent
 
-| ![](./Hashgraph-Online.png) | A conversational AI agent that implements Hashgraph Consensus Standards (HCS) for agent communication, registry management, and content inscription on the Hedera network.<br><br>This package is built and maintained by [Hashgraph Online](https://hashgraphonline.com), a consortium of leading Hashgraph organizations within the Hedera ecosystem.<br><br>[📚 Conversational Agent Documentation](https://hashgraphonline.com/docs/libraries/conversational-agent/)<br>[📖 HCS Standards Documentation](https://hcs-improvement-proposals.pages.dev/docs/standards) |
+| ![](./Hashgraph-Online.png) | A conversational AI agent that implements Hashgraph Consensus Standards (HCS) for agent communication, registry management, and content inscription on the Hedera network.<br><br>This package is built and maintained by [Hashgraph Online](https://hashgraphonline.com), a consortium of leading Hashgraph organizations within the Hedera ecosystem.<br><br>[📚 Conversational Agent Documentation](https://hashgraphonline.com/docs/libraries/conversational-agent/)<br>[📖 HCS Standards Documentation](https://hashgraphonline.com/docs/standards) |
 | :-------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 
 ![Conversational Agent CLI](./conversational-agent.png)
@@ -469,7 +469,7 @@ const agent = new HederaConversationalAgent(signer, {
 
 - [Conversational Agent Documentation](https://hashgraphonline.com/docs/libraries/conversational-agent/)
 - [Standards Agent Kit Documentation](https://hashgraphonline.com/docs/libraries/standards-agent-kit/)
-- [HCS Standards Documentation](https://hcs-improvement-proposals.pages.dev/docs/standards)
+- [HCS Standards Documentation](https://hashgraphonline.com/docs/standards)
 - [MCP Integration Guide](./docs/MCP_INTEGRATION.md)
 - [GitHub Repository](https://github.com/hashgraph-online/conversational-agent)
 
@@ -548,7 +548,7 @@ src/plugins/community/your-plugin/
 - Join our [Discord community](https://discord.gg/hashgraphonline) for discussions
 - Check existing issues and PRs before starting work
 - Ask questions in the #development channel
-- Review the [HCS Standards](https://hcs-improvement-proposals.pages.dev/docs/standards) for protocol details
+- Review the [HCS Standards](https://hashgraphonline.com/docs/standards) for protocol details
 
 ## License
 

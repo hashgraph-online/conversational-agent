@@ -44,6 +44,9 @@ importers:
       langchain:
         specifier: ^0.3.31
         version: 0.3.31(@langchain/anthropic@0.3.26(@langchain/core@0.3.72(openai@5.12.2(ws@8.18.2)(zod@3.25.76))))(@langchain/core@0.3.72(openai@5.12.2(ws@8.18.2)(zod@3.25.76)))(axios@1.11.0)(openai@5.12.2(ws@8.18.2)(zod@3.25.76))(ws@8.18.2)
+      openai:
+        specifier: ^5.12.2
+        version: 5.12.2(ws@8.18.2)(zod@3.25.76)
       tiktoken:
         specifier: ^1.0.22
         version: 1.0.22
@@ -9642,9 +9645,7 @@ snapshots:
       metro-runtime: 0.83.1
     transitivePeerDependencies:
       - '@babel/core'
-      - bufferutil
       - supports-color
-      - utf-8-validate
 
   '@react-native/normalize-colors@0.81.0': {}
 

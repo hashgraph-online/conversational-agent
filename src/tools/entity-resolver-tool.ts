@@ -1,6 +1,7 @@
 import { StructuredTool } from '@langchain/core/tools';
 import { z } from 'zod';
 import { ChatOpenAI } from '@langchain/openai';
+import { ChatAnthropic } from '@langchain/anthropic';
 import { Logger } from '@hashgraphonline/standards-sdk';
 
 const logger = new Logger({ module: 'EntityResolverTool' });
@@ -24,15 +25,11 @@ export class ResolveEntitiesTool extends StructuredTool {
   description = 'Resolves entity references like "the topic", "it", "that" to actual entity IDs';
   schema = ResolveEntitiesSchema;
   
-  private llm: ChatOpenAI;
+  private llm: ChatOpenAI | ChatAnthropic;
   
-  constructor(apiKey: string, modelName = 'gpt-4o-mini') {
+  constructor(llm: ChatOpenAI | ChatAnthropic) {
     super();
-    this.llm = new ChatOpenAI({
-      apiKey,
-      modelName,
-      temperature: 0,
-    });
+    this.llm = llm;
   }
   
   async _call(input: z.infer<typeof ResolveEntitiesSchema>): Promise<string> {
@@ -100,15 +97,11 @@ export class ExtractEntitiesTool extends StructuredTool {
   description = 'Extracts newly created entities from agent responses';
   schema = ExtractEntitiesSchema;
   
-  private llm: ChatOpenAI;
+  private llm: ChatOpenAI | ChatAnthropic;
   
-  constructor(apiKey: string, modelName = 'gpt-4o-mini') {
+  constructor(llm: ChatOpenAI | ChatAnthropic) {
     super();
-    this.llm = new ChatOpenAI({
-      apiKey,
-      modelName,
-      temperature: 0,
-    });
+    this.llm = llm;
   }
   
   async _call(input: z.infer<typeof ExtractEntitiesSchema>): Promise<string> {
@@ -145,13 +138,15 @@ JSON:`;
   }
 }
 
-export function createEntityTools(apiKey: string, modelName = 'gpt-4o-mini'): {
+export function createEntityTools(
+  llm: ChatOpenAI | ChatAnthropic
+): {
   resolveEntities: ResolveEntitiesTool;
   extractEntities: ExtractEntitiesTool;
 } {
   return {
-    resolveEntities: new ResolveEntitiesTool(apiKey, modelName),
-    extractEntities: new ExtractEntitiesTool(apiKey, modelName),
+    resolveEntities: new ResolveEntitiesTool(llm),
+    extractEntities: new ExtractEntitiesTool(llm),
   };
 }
 
@@ -164,4 +159,3 @@ interface EntityReference {
 type EntityGroup = EntityReference[];
 
 type GroupedEntities = Record<string, EntityGroup>;
-

@@ -8,6 +8,7 @@ import { createAgent } from './agent-factory';
 import { LangChainProvider } from './providers';
 import type { ChatResponse, ConversationContext } from './base-agent';
 import { ChatOpenAI } from '@langchain/openai';
+import OpenAI from 'openai';
 import { ChatAnthropic } from '@langchain/anthropic';
 import {
   HumanMessage,
@@ -57,7 +58,7 @@ export interface ConversationalAgentOptions {
   network?: NetworkType;
   openAIApiKey: string;
   openAIModelName?: string;
-  llmProvider?: 'openai' | 'anthropic';
+  llmProvider?: 'openai' | 'anthropic' | 'openrouter';
   verbose?: boolean;
   operationalMode?: AgentOperationalMode;
   userAccountId?: string;
@@ -77,6 +78,19 @@ export interface ConversationalAgentOptions {
 
   /** Configuration for entity memory system */
   entityMemoryConfig?: SmartMemoryConfig;
+
+  /**
+   * Provider used for entity extraction/resolution tools (defaults to llmProvider or 'openai')
+   */
+  entityMemoryProvider?: 'openai' | 'anthropic' | 'openrouter';
+
+  /**
+   * Model name for entity extraction/resolution tools (defaults per provider)
+   */
+  entityMemoryModelName?: string;
+
+  openRouterApiKey?: string;
+  openRouterBaseURL?: string;
 }
 
 /**
@@ -121,7 +135,7 @@ export class ConversationalAgent {
     if (this.options.entityMemoryEnabled !== false) {
       if (!options.openAIApiKey) {
         throw new Error(
-          'OpenAI API key is required when entity memory is enabled'
+          'OpenAI/Anthropic API key is required when entity memory is enabled'
         );
       }
 
@@ -130,7 +144,48 @@ export class ConversationalAgent {
       );
       this.logger.info('Entity memory initialized');
 
-      this.entityTools = createEntityTools(options.openAIApiKey, 'gpt-4o-mini');
+      const provider = options.entityMemoryProvider || options.llmProvider || 'openai';
+      const modelName =
+        options.entityMemoryModelName ||
+        (provider === 'anthropic'
+          ? 'claude-3-7-sonnet-latest'
+          : provider === 'openrouter'
+          ? 'openai/gpt-4o-mini'
+          : 'gpt-4o-mini');
+
+      let resolverLLM: ChatOpenAI | ChatAnthropic;
+      if (provider === 'anthropic') {
+        resolverLLM = new ChatAnthropic({
+          apiKey: options.openAIApiKey,
+          model: modelName,
+          temperature: 0,
+        });
+      } else if (provider === 'openrouter') {
+        const baseURL = options.openRouterBaseURL || 'https://openrouter.ai/api/v1';
+        const apiKey = options.openRouterApiKey || options.openAIApiKey;
+        const client = new OpenAI({
+          apiKey,
+          baseURL,
+          defaultHeaders: {
+            Referer: process.env.OPENROUTER_REFERRER || 'https://hashgraphonline.com',
+            'HTTP-Referer': process.env.OPENROUTER_REFERRER || 'https://hashgraphonline.com',
+            'X-Title': process.env.OPENROUTER_TITLE || 'Hashgraph Online Conversational Agent',
+          },
+        });
+        resolverLLM = new ChatOpenAI({
+          client,
+          model: modelName,
+          temperature: 0,
+        });
+      } else {
+        resolverLLM = new ChatOpenAI({
+          apiKey: options.openAIApiKey,
+          model: modelName,
+          temperature: 0,
+        });
+      }
+
+      this.entityTools = createEntityTools(resolverLLM);
       this.logger.info('LLM-based entity resolver tools initialized');
     }
   }
@@ -160,12 +215,42 @@ export class ConversationalAgent {
       );
 
       let llm: ChatOpenAI | ChatAnthropic;
+      let providerInfo: Record<string, unknown> = { provider: llmProvider };
       if (llmProvider === 'anthropic') {
         llm = new ChatAnthropic({
           apiKey: openAIApiKey,
-          modelName: openAIModelName || 'claude-3-5-sonnet-20241022',
+          model: openAIModelName || 'claude-3-7-sonnet-latest',
           temperature: DEFAULT_TEMPERATURE,
         });
+        providerInfo = {
+          ...providerInfo,
+          model: openAIModelName || 'claude-3-7-sonnet-latest',
+          keyPresent: !!openAIApiKey,
+        };
+      } else if (llmProvider === 'openrouter') {
+        const baseURL = this.options.openRouterBaseURL || 'https://openrouter.ai/api/v1';
+        const apiKey = this.options.openRouterApiKey || openAIApiKey;
+        const modelName = openAIModelName || 'anthropic/claude-3-haiku-20240307';
+        const client = new OpenAI({
+          apiKey,
+          baseURL,
+          defaultHeaders: {
+            Referer: process.env.OPENROUTER_REFERRER || 'https://hashgraphonline.com',
+            'HTTP-Referer': process.env.OPENROUTER_REFERRER || 'https://hashgraphonline.com',
+            'X-Title': process.env.OPENROUTER_TITLE || 'Hashgraph Online Conversational Agent',
+          },
+        });
+        llm = new ChatOpenAI({
+          client,
+          model: modelName,
+          temperature: DEFAULT_TEMPERATURE,
+        });
+        providerInfo = {
+          ...providerInfo,
+          model: modelName,
+          baseURL,
+          keyPresent: !!apiKey,
+        };
       } else {
         const modelName = openAIModelName || 'gpt-4o-mini';
         const isGPT5Model =
@@ -173,12 +258,19 @@ export class ConversationalAgent {
           modelName.toLowerCase().includes('gpt5');
         llm = new ChatOpenAI({
           apiKey: openAIApiKey,
-          modelName: openAIModelName,
+          model: modelName,
           ...(isGPT5Model
             ? { temperature: 1 }
             : { temperature: DEFAULT_TEMPERATURE }),
         });
+        providerInfo = {
+          ...providerInfo,
+          model: modelName,
+          keyPresent: !!openAIApiKey,
+        };
       }
+
+      this.logger.info('AI provider configured', providerInfo);
 
       this.logger.info('Preparing plugins...');
       const allPlugins = this.preparePlugins();

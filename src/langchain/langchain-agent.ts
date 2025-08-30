@@ -770,7 +770,15 @@ export class LangChainAgent extends BaseAgent {
         this.config.ai?.modelName ||
         process.env.OPENAI_MODEL_NAME ||
         'gpt-4o-mini';
-      this.tokenTracker = new TokenUsageCallbackHandler(modelName);
+      try {
+        if (typeof (TokenUsageCallbackHandler as unknown as { new (m: string): unknown }) === 'function') {
+          this.tokenTracker = new TokenUsageCallbackHandler(modelName);
+        } else {
+          this.logger.warn('TokenUsageCallbackHandler unavailable or not a constructor; skipping token tracking');
+        }
+      } catch {
+        this.logger.warn('TokenUsageCallbackHandler threw; skipping token tracking');
+      }
 
       this.toolRegistry = new ToolRegistry(this.logger);
 

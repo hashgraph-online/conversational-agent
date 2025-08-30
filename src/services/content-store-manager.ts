@@ -165,8 +165,26 @@ export class ContentStoreManager {
     }
 
     try {
-      await ContentStoreService.setInstance(this.adapter);
-      ContentResolverRegistry.register(this.resolver);
+      if (
+        ContentStoreService &&
+        typeof (ContentStoreService as unknown as { setInstance?: Function }).setInstance === 'function'
+      ) {
+        await (ContentStoreService as unknown as { setInstance: (adapter: unknown) => Promise<void> }).setInstance(
+          this.adapter
+        );
+      } else {
+        this.logger.warn('ContentStoreService.setInstance is unavailable; skipping registration');
+      }
+      if (
+        ContentResolverRegistry &&
+        typeof (ContentResolverRegistry as unknown as { register?: Function }).register === 'function'
+      ) {
+        (ContentResolverRegistry as unknown as { register: (resolver: unknown) => void }).register(
+          this.resolver
+        );
+      } else {
+        this.logger.warn('ContentResolverRegistry.register is unavailable; skipping registration');
+      }
       this.isRegistered = true;
       this.logger.info(
         'ContentStoreManager initialized and registered for cross-package access'
@@ -236,8 +254,18 @@ export class ContentStoreManager {
   async dispose(): Promise<void> {
     if (this.isRegistered) {
       this.contentStorage.dispose();
-      ContentStoreService.dispose();
-      ContentResolverRegistry.unregister();
+      if (
+        ContentStoreService &&
+        typeof (ContentStoreService as unknown as { dispose?: Function }).dispose === 'function'
+      ) {
+        (ContentStoreService as unknown as { dispose: () => void }).dispose();
+      }
+      if (
+        ContentResolverRegistry &&
+        typeof (ContentResolverRegistry as unknown as { unregister?: Function }).unregister === 'function'
+      ) {
+        (ContentResolverRegistry as unknown as { unregister: () => void }).unregister();
+      }
       this.isRegistered = false;
       this.logger.info('ContentStoreManager disposed and unregistered');
     }
