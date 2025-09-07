@@ -5,7 +5,6 @@ import { describe, test, expect, beforeEach, jest } from '@jest/globals';
  * Tests all public methods and initialization scenarios
  */
 
-// Mock all the HCS2 tools and builder at module level
 const mockHCS2Builder = jest.fn().mockImplementation(() => ({}));
 const mockCreateRegistryTool = jest.fn().mockImplementation(() => ({
   name: 'create-registry',
@@ -62,7 +61,6 @@ describe('HCS2Plugin', () => {
   let mockHederaKit: any;
 
   beforeEach(() => {
-    // Clear all mock calls
     jest.clearAllMocks();
 
     mockLogger = {

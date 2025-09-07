@@ -16,13 +16,11 @@ enum NetworkType {
   MAINNET = TEST_FORMAT_TYPES.MAINNET
 }
 
-// Mock HederaMirrorNode
 jest.mock('@hashgraphonline/standards-sdk', () => ({
   HederaMirrorNode: jest.fn().mockImplementation(() => ({
     getAccountBalance: jest.fn().mockResolvedValue(null),
     getTokenInfo: jest.fn().mockResolvedValue(null),
     getTopicInfo: jest.fn().mockImplementation((entity: string) => {
-      // Only return topic info for entities that match topic ID pattern
       if (/^0\.0\.\d+$/.test(entity)) {
         return Promise.resolve({ topicId: entity });
       }
@@ -156,7 +154,6 @@ describe('FormatConverterRegistry', () => {
       registry.register(topicToHrlConverter);
       const context = { networkType: TEST_FORMAT_TYPES.TESTNET };
       
-      // detectEntityFormat is the public method
       expect(await registry.detectEntityFormat(TEST_TOPIC_IDS.TOPIC_6624800, context)).toBe(EntityFormat.TOPIC_ID);
       expect(await registry.detectEntityFormat(TEST_TOPIC_IDS.TOPIC_123, context)).toBe(EntityFormat.TOPIC_ID);
     });

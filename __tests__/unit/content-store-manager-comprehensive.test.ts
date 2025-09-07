@@ -5,20 +5,17 @@ jest.mock('@hashgraphonline/standards-sdk');
 
 const mockLogger = jest.mocked(Logger);
 
-// Mock the ContentStoreService
 const mockContentStoreService = {
   setInstance: jest.fn(),
   getInstance: jest.fn(),
 };
 
-// Mock the ContentResolverRegistry
 const mockContentResolverRegistry = {
   register: jest.fn(),
   unregister: jest.fn(),
   getResolver: jest.fn(),
 };
 
-// Mock the adapter and resolver
 const mockAdapter = {
   store: jest.fn(),
   retrieve: jest.fn(),
@@ -38,7 +35,6 @@ describe('ContentStoreManager', () => {
     jest.clearAllMocks();
     contentStoreManager = new ContentStoreManager();
 
-    // Setup default mock returns
     mockAdapter.store.mockResolvedValue('stored-id');
     mockAdapter.retrieve.mockResolvedValue('retrieved-content');
     mockAdapter.exists.mockResolvedValue(true);
@@ -59,11 +55,9 @@ describe('ContentStoreManager', () => {
 
   describe('initialize', () => {
     it('should initialize successfully', async () => {
-      // Mock the required dependencies
       (contentStoreManager as any).adapter = mockAdapter;
       (contentStoreManager as any).resolver = mockResolver;
       
-      // Mock the static methods
       jest.doMock('../../src/services/content-storage', () => ({
         ContentStoreService: mockContentStoreService,
       }));
@@ -78,7 +72,6 @@ describe('ContentStoreManager', () => {
     });
 
     it('should handle initialization failure', async () => {
-      // Mock ContentStoreService to be undefined
       (contentStoreManager as any).adapter = undefined;
 
       await expect(contentStoreManager.initialize()).rejects.toThrow();
@@ -91,7 +84,6 @@ describe('ContentStoreManager', () => {
 
       await contentStoreManager.initialize();
 
-      // Should not reinitialize
       expect(contentStoreManager.isRegistered).toBe(true);
     });
   });
@@ -323,7 +315,6 @@ describe('ContentStoreManager', () => {
       (contentStoreManager as any).isRegistered = true;
       (contentStoreManager as any).adapter = mockAdapter;
 
-      // Mock the ContentResolverRegistry to throw on unregister
       jest.doMock('../../src/services/formatters/format-converter-registry', () => ({
         ContentResolverRegistry: {
           ...mockContentResolverRegistry,

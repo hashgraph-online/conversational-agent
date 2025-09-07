@@ -156,7 +156,7 @@ describe('Entity Format Detection via API', () => {
 
       const format2 = await registry['detectFormatWithFallback'](TEST_ENTITY_ID, context);
       expect(format2).toBe(EntityFormat.ACCOUNT_ID);
-      expect(mockGetAccountBalance).toHaveBeenCalledTimes(1); // No additional API call
+      expect(mockGetAccountBalance).toHaveBeenCalledTimes(1);
     });
 
     it('should respect cache TTL and refresh after expiry', async () => {

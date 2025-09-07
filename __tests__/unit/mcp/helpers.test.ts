@@ -408,9 +408,9 @@ describe('MCP Helpers', () => {
 
       const config = createMCPConfig(servers, true);
 
-      expect(config.mcpServers[0].autoConnect).toBe(false); // Preserved
-      expect(config.mcpServers[1].autoConnect).toBe(true);  // Preserved
-      expect(config.mcpServers[2].autoConnect).toBe(true);  // Default applied
+      expect(config.mcpServers[0].autoConnect).toBe(false);
+      expect(config.mcpServers[1].autoConnect).toBe(true);
+      expect(config.mcpServers[2].autoConnect).toBe(true);
     });
 
     test('should handle empty servers array', () => {

@@ -50,7 +50,6 @@ describe('HbarPlugin', () => {
     } as any;
 
     mockHederaKit = {
-      // Add any properties that HederaAgentKit should have
     } as any;
 
     mockContext = {

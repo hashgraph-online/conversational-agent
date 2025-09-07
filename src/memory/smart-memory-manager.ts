@@ -19,6 +19,8 @@ export interface EntityAssociation {
   createdAt: Date;
   /** Transaction ID that created this entity */
   transactionId?: string;
+  /** Optional session identifier to scope associations */
+  sessionId?: string;
 }
 
 /**
@@ -381,7 +383,8 @@ export class SmartMemoryManager {
     entityId: string,
     entityName: string,
     entityType: string,
-    transactionId?: string
+    transactionId?: string,
+    sessionId?: string
   ): void {
     try {
       if (
@@ -410,7 +413,7 @@ export class SmartMemoryManager {
 
       const sanitizedEntityId = entityId.trim();
       const sanitizedEntityName = entityName.trim().substring(0, 100);
-      const sanitizedEntityType = entityType.trim().toLowerCase();
+      const sanitizedEntityType = this.normalizeEntityType(entityType);
 
       let usageHint = '';
       if (sanitizedEntityType === 'tokenid') {
@@ -433,7 +436,7 @@ export class SmartMemoryManager {
         createdAt: new Date(),
         isEntityAssociation: true,
         ...(usageHint ? { usage: usageHint } : {}),
-        ...(sanitizedEntityType === 'topicid'
+        ...(sanitizedEntityType === 'topicId'
           ? { hrl: `hcs://1/${sanitizedEntityId}` }
           : {}),
         ...(transactionId !== undefined &&
@@ -441,6 +444,7 @@ export class SmartMemoryManager {
         transactionId.trim() !== ''
           ? { transactionId: transactionId.trim() }
           : {}),
+        ...(sessionId && sessionId.trim() !== '' ? { sessionId: sessionId.trim() } : {}),
       };
 
       const content = JSON.stringify(association);
@@ -462,6 +466,7 @@ export class SmartMemoryManager {
           entityName: sanitizedEntityName,
           entityType: sanitizedEntityType,
           isEntityAssociation: true,
+          ...(sessionId && sessionId.trim() !== '' ? { sessionId: sessionId.trim() } : {}),
         },
       };
 
@@ -478,6 +483,43 @@ export class SmartMemoryManager {
         error: error instanceof Error ? error.message : String(error),
       });
     }
+  }
+
+  /**
+   * Normalize various type aliases to canonical EntityFormat strings using a registry.
+   */
+  private normalizeEntityType(input: string): string {
+    const raw = (input || '').trim();
+    if (raw.length === 0) {
+      return '';
+    }
+
+    const key = raw.replace(/[^a-z]/gi, '').toLowerCase();
+
+    const REGISTRY: Record<string, string> = {
+      topic: 'topicId',
+      topicid: 'topicId',
+      token: 'tokenId',
+      tokenid: 'tokenId',
+      account: 'accountId',
+      accountid: 'accountId',
+      contract: 'contractId',
+      contractid: 'contractId',
+      file: 'fileId',
+      fileid: 'fileId',
+      schedule: 'scheduleId',
+      scheduleid: 'scheduleId',
+    };
+
+    if (Object.prototype.hasOwnProperty.call(REGISTRY, key)) {
+      return REGISTRY[key];
+    }
+
+    if (/^[a-z]+Id$/.test(raw)) {
+      return raw;
+    }
+
+    return raw;
   }
 
   /**
@@ -611,19 +653,15 @@ export class SmartMemoryManager {
    */
   getEntityAssociations(entityType?: string): EntityAssociation[] {
     try {
-      const sanitizedEntityType = entityType
-        ? entityType.trim().toLowerCase()
-        : undefined;
+      const rawFilter = entityType ? entityType.trim() : undefined;
+      const filterCanonical = rawFilter ? this.normalizeEntityType(rawFilter) : undefined;
 
-      if (
-        entityType &&
-        (!sanitizedEntityType || sanitizedEntityType.length === 0)
-      ) {
+      if (entityType && (!rawFilter || rawFilter.length === 0)) {
         return [];
       }
 
       const SEARCH_ANY_ENTITY = 'entityId';
-      const searchQuery = sanitizedEntityType || SEARCH_ANY_ENTITY;
+      const searchQuery = filterCanonical || SEARCH_ANY_ENTITY;
       const searchResults = this._contentStorage.searchMessages(searchQuery, {
         caseSensitive: false,
         limit: 100,
@@ -638,10 +676,7 @@ export class SmartMemoryManager {
             const parsed = JSON.parse(content);
 
             if (parsed.entityId && parsed.entityName && parsed.entityType) {
-              if (
-                sanitizedEntityType &&
-                parsed.entityType !== sanitizedEntityType
-              ) {
+              if (filterCanonical && parsed.entityType !== filterCanonical) {
                 continue;
               }
 
@@ -667,18 +702,35 @@ export class SmartMemoryManager {
         }
       }
 
-      const results = associations
-        .filter(
-          (assoc, index, arr) =>
-            arr.findIndex((a) => a.entityId === assoc.entityId) === index
-        )
-        .sort((a, b): number => {
-          const getTime = (d: Date | string): number =>
-            d instanceof Date ? d.getTime() : new Date(d).getTime();
-          const aTime = getTime(a.createdAt);
-          const bTime = getTime(b.createdAt);
-          return bTime - aTime;
-        });
+      const mergedById = new Map<string, EntityAssociation>();
+      const getTime = (d: Date | string): number =>
+        d instanceof Date ? d.getTime() : new Date(d).getTime();
+
+      for (const assoc of associations) {
+        const existing = mergedById.get(assoc.entityId);
+        if (!existing) {
+          mergedById.set(assoc.entityId, assoc);
+          continue;
+        }
+
+        const existingTime = getTime(existing.createdAt);
+        const currentTime = getTime(assoc.createdAt);
+
+        const preferCurrent =
+          currentTime > existingTime ||
+          (!!assoc.transactionId && !existing.transactionId);
+
+        if (preferCurrent) {
+          mergedById.set(assoc.entityId, {
+            ...existing,
+            ...assoc,
+          });
+        }
+      }
+
+      const results = Array.from(mergedById.values()).sort((a, b) =>
+        getTime(b.createdAt) - getTime(a.createdAt)
+      );
 
       return results;
     } catch (error) {

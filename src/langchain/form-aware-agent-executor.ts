@@ -378,7 +378,7 @@ export class FormAwareAgentExecutor extends AgentExecutor {
             toolName: toolName,
             toolDescription: tool.description,
           },
-          missingFields // Pass undefined for focused schemas, Set<string> for others
+          missingFields
         );
 
         if (this.isZodObject(schemaToUse)) {

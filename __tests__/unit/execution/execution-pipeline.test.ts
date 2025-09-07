@@ -230,7 +230,6 @@ describe('ExecutionPipeline', () => {
       const toolName = 'error-tool';
       const input = { param: 'test' };
 
-      // Create a tool that throws a string instead of Error
       class StringErrorTool extends StructuredTool {
         name = 'string-error-tool';
         description = 'A tool that throws string errors';
@@ -239,7 +238,7 @@ describe('ExecutionPipeline', () => {
         });
 
         async _call(): Promise<string> {
-          throw 'String error message'; // Throwing a string, not Error
+          throw 'String error message';
         }
       }
 
@@ -517,7 +516,7 @@ describe('ExecutionPipeline', () => {
     test('should fallback to originalTool when wrapper methods unavailable', async () => {
       const toolName = TEST_EXECUTION_MESSAGES.WRAPPED_TOOL;
       const input = { param: 'fallback-test' };
-      const mockWrapper = {}; // Empty wrapper
+      const mockWrapper = {};
       const toolEntry: ToolRegistryEntry = {
         tool: mockTool,
         name: toolName,
@@ -542,7 +541,6 @@ describe('ExecutionPipeline', () => {
       };
       const mockWrapper = {
         originalTool: mockOriginalTool
-        // No executeOriginal method
       };
       const toolEntry: ToolRegistryEntry = {
         tool: mockTool,
@@ -568,7 +566,6 @@ describe('ExecutionPipeline', () => {
       const toolName = TEST_EXECUTION_MESSAGES.WRAPPED_TOOL;
       const input = { param: 'neither-test' };
       const mockWrapper = {
-        // No executeOriginal or originalTool.call
         someOtherMethod: jest.fn()
       };
       const toolEntry: ToolRegistryEntry = {
@@ -585,7 +582,6 @@ describe('ExecutionPipeline', () => {
 
       expect(result.success).toBe(true);
       expect(result.output).toBe('Mock result: neither-test');
-      // The tool was called with merged args (param + renderForm: false)
     });
   });
 

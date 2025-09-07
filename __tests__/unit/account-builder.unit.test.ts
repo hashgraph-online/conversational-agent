@@ -150,7 +150,7 @@ describe('AccountBuilder', () => {
 
       accountBuilder.transferHbar(params, true);
 
-      expect(mockTransaction.addHbarTransfer).toHaveBeenCalledTimes(2); // recipient and sender
+      expect(mockTransaction.addHbarTransfer).toHaveBeenCalledTimes(2);
     });
 
     it('should skip user-initiated logic for multiple transfers', () => {
@@ -165,7 +165,6 @@ describe('AccountBuilder', () => {
 
       accountBuilder.transferHbar(params, true);
 
-      // Should process normally, not use user-initiated logic
       expect(mockTransaction.addHbarTransfer).toHaveBeenCalledTimes(2);
     });
 
@@ -176,14 +175,13 @@ describe('AccountBuilder', () => {
         transfers: [
           {
             accountId: '0.0.800',
-            amount: -1, // negative amount
+            amount: -1,
           },
         ],
       };
 
       accountBuilder.transferHbar(params, true);
 
-      // Should process normally, not add user transfer
       expect(mockTransaction.addHbarTransfer).toHaveBeenCalledTimes(1);
     });
 
@@ -202,24 +200,23 @@ describe('AccountBuilder', () => {
     });
 
     it('should adjust transfers when sum is not zero', () => {
-      // Mock toTinybars to return values that don't sum to zero
       mockHbarInstance.toTinybars
-        .mockReturnValueOnce(new BigNumber('500000000')) // 5 HBAR
-        .mockReturnValueOnce(new BigNumber('-200000000')) // -2 HBAR  
-        .mockReturnValueOnce(new BigNumber('-200000000')); // -2 HBAR (total: 1 HBAR off)
+        .mockReturnValueOnce(new BigNumber('500000000'))
+        .mockReturnValueOnce(new BigNumber('-200000000'))
+        .mockReturnValueOnce(new BigNumber('-200000000'));
 
       const params = {
         transfers: [
           { accountId: '0.0.800', amount: 5 },
           { accountId: '0.0.801', amount: -2 },
-          { accountId: '0.0.802', amount: -2 }, // Should be adjusted to -3
+          { accountId: '0.0.802', amount: -2 },
         ],
       };
 
       accountBuilder.transferHbar(params, false);
 
       expect(mockTransaction.addHbarTransfer).toHaveBeenCalledTimes(3);
-      expect(mockHbar.fromString).toHaveBeenCalled(); // Multiple calls including adjustment
+      expect(mockHbar.fromString).toHaveBeenCalled();
     });
 
     it('should set memo when provided', () => {
@@ -260,14 +257,14 @@ describe('AccountBuilder', () => {
         transfers: [
           {
             accountId: '0.0.800',
-            amount: '1.123456789', // 9 decimal places
+            amount: '1.123456789',
           },
         ],
       };
 
       accountBuilder.transferHbar(params);
 
-      expect(mockHbar.fromString).toHaveBeenCalledWith('1.12345678'); // Rounded down to 8 decimals
+      expect(mockHbar.fromString).toHaveBeenCalledWith('1.12345678');
     });
 
     it('should handle BigNumber amounts', () => {
@@ -306,7 +303,7 @@ describe('AccountBuilder', () => {
         transfers: [
           {
             accountId: '0.0.800',
-            amount: 0.00000001, // 1 tinybar
+            amount: 0.00000001,
           },
         ],
       };
@@ -321,7 +318,7 @@ describe('AccountBuilder', () => {
         transfers: [
           {
             accountId: '0.0.800',
-            amount: '50000000000', // 50 billion HBAR
+            amount: '50000000000',
           },
         ],
       };
@@ -350,7 +347,6 @@ describe('AccountBuilder', () => {
 
       builderWithoutUser.transferHbar(params, true);
 
-      // Should fall back to normal processing
       expect(mockTransaction.addHbarTransfer).toHaveBeenCalledTimes(1);
     });
 
@@ -372,7 +368,6 @@ describe('AccountBuilder', () => {
 
       builderWithDifferentMode.transferHbar(params, true);
 
-      // Should fall back to normal processing
       expect(mockTransaction.addHbarTransfer).toHaveBeenCalledTimes(1);
     });
   });

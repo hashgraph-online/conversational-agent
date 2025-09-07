@@ -57,9 +57,8 @@ describe('ContentStoreManager', () => {
 
     mockLogger = new Logger({ module: 'ContentStoreManager' }) as jest.Mocked<Logger>;
 
-    // Create ContentStoreManager instance
     contentStoreManager = new ContentStoreManager(
-      1000, // maxMessageStorage
+      1000,
       {
         sizeThresholdBytes: 10240,
         enableAutoCleanup: true,

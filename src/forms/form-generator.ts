@@ -187,11 +187,17 @@ export class FormGenerator {
     );
 
     const globalGuidance = fieldGuidanceRegistry.getGlobalGuidance(toolName);
-    let description = this.generateFormDescription(toolName, missingFields.size);
-    
+    let description = this.generateFormDescription(
+      toolName,
+      missingFields.size
+    );
+
     if (globalGuidance?.qualityStandards) {
-      description += '\n\nQuality Guidelines:\n' + 
-        globalGuidance.qualityStandards.map(standard => `• ${standard}`).join('\n');
+      description +=
+        '\n\nQuality Guidelines:\n' +
+        globalGuidance.qualityStandards
+          .map((standard) => `• ${standard}`)
+          .join('\n');
     }
 
     return {
@@ -203,7 +209,7 @@ export class FormGenerator {
       metadata: {
         toolName,
         missingFieldCount: missingFields.size,
-        globalGuidance
+        globalGuidance,
       },
     };
   }
@@ -453,8 +459,10 @@ export class FormGenerator {
   ): FormField {
     const type = this.mapFieldType(renderConfig?.fieldType, schema, fieldPath);
     const isRequired = this.isFieldRequired(schema, fieldPath || fieldName);
-    
-    const guidance = toolName ? fieldGuidanceRegistry.getFieldGuidance(toolName, fieldName) : null;
+
+    const guidance = toolName
+      ? fieldGuidanceRegistry.getFieldGuidance(toolName, fieldName)
+      : null;
     const finalType = guidance?.fieldTypeOverride || type;
 
     const field: FormField = {
@@ -474,7 +482,10 @@ export class FormGenerator {
       }
 
       if (guidance.predefinedOptions) {
-        field.options = [...(field.options || []), ...guidance.predefinedOptions];
+        field.options = [
+          ...(field.options || []),
+          ...guidance.predefinedOptions,
+        ];
       }
 
       if (guidance.contextualHelpText) {
@@ -482,7 +493,7 @@ export class FormGenerator {
       }
 
       if (guidance.warnings) {
-        field.warnings = guidance.warnings.map(w => w.message);
+        field.warnings = guidance.warnings.map((w) => w.message);
       }
 
       if (guidance.validationRules) {
@@ -491,7 +502,7 @@ export class FormGenerator {
           field.contextualGuidance = {
             qualityStandards: [],
             examples: guidance.suggestions || [],
-            avoidPatterns: qualityChecks.forbidTechnicalTerms || []
+            avoidPatterns: qualityChecks.forbidTechnicalTerms || [],
           };
 
           if (qualityChecks.minNonTechnicalWords) {
@@ -502,7 +513,9 @@ export class FormGenerator {
 
           if (qualityChecks.forbidTechnicalTerms) {
             field.contextualGuidance.qualityStandards?.push(
-              `Avoid technical terms like: ${qualityChecks.forbidTechnicalTerms.join(', ')}`
+              `Avoid technical terms like: ${qualityChecks.forbidTechnicalTerms.join(
+                ', '
+              )}`
             );
           }
         }
@@ -817,7 +830,10 @@ export class FormGenerator {
     zodSchema: z.ZodObject<z.ZodRawShape>,
     partialInput?: Record<string, unknown>,
     missingFields?: Set<string>
-  ): { jsonSchema: Record<string, unknown>; uiSchema: Record<string, unknown> } {
+  ): {
+    jsonSchema: Record<string, unknown>;
+    uiSchema: Record<string, unknown>;
+  } {
     const fullJsonSchema = zodToJsonSchema(zodSchema, {
       target: 'jsonSchema7',
     });

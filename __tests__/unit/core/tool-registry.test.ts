@@ -12,7 +12,6 @@ import {
   EntityResolutionPreferences,
 } from '../../../src/core/tool-registry';
 
-// Mock dependencies
 jest.mock('@hashgraphonline/standards-sdk', () => ({
   Logger: jest.fn().mockImplementation(() => ({
     debug: jest.fn(),
@@ -65,7 +64,6 @@ describe('ToolRegistry', () => {
 
     registry = new ToolRegistry(mockLogger);
 
-    // Basic tool
     mockTool = {
       name: 'test-tool',
       description: 'A test tool',
@@ -73,7 +71,6 @@ describe('ToolRegistry', () => {
       func: jest.fn(),
     } as StructuredTool;
 
-    // Tool with ZodObject schema
     mockZodObjectTool = {
       name: 'zod-tool',
       description: 'A ZodObject tool',
@@ -84,7 +81,6 @@ describe('ToolRegistry', () => {
       func: jest.fn(),
     } as StructuredTool;
 
-    // Form validatable tool
     mockFormValidatableTool = {
       name: 'form-tool',
       description: 'A form validatable tool',
@@ -142,7 +138,6 @@ describe('ToolRegistry', () => {
     test('should identify when tools should be wrapped', () => {
       (isFormValidatable as jest.Mock).mockReturnValue(true);
       
-      // Use a tool with ZodObject schema to test wrapping logic
       const zodTool = {
         ...mockFormValidatableTool,
         schema: z.object({ data: z.string() }),
@@ -151,7 +146,6 @@ describe('ToolRegistry', () => {
       registry.registerTool(zodTool);
       
       const entry = registry.getTool('form-tool')!;
-      // The tool should be registered successfully regardless of wrapping
       expect(entry).toBeDefined();
       expect(entry.metadata.capabilities.supportsFormValidation).toBe(true);
     });
@@ -291,7 +285,7 @@ describe('ToolRegistry', () => {
 
   describe('getToolsByQuery', () => {
     beforeEach(() => {
-      registry.clear(); // Clear any previous tools
+      registry.clear();
       registry.registerTool(mockTool);
       registry.registerTool({
         ...mockTool,
@@ -534,7 +528,6 @@ describe('ToolRegistry', () => {
       
       registry.registerTool(zodObjectTool);
       
-      // If it's ZodObject-like and form validatable, it should be wrapped
       const entry = registry.getTool('test-tool')!;
       expect(entry.originalTool).toBeDefined();
     });

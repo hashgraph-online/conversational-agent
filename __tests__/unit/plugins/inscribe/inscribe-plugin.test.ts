@@ -5,7 +5,6 @@ import { describe, test, expect, beforeEach, jest } from '@jest/globals';
  * Tests all public methods and initialization scenarios
  */
 
-// Mock all the Inscribe tools and builder at module level
 const mockInscriberBuilder = jest.fn().mockImplementation(() => ({}));
 const mockInscribeFromUrlTool = jest.fn().mockImplementation(() => ({
   name: 'inscribe-from-url',
@@ -57,7 +56,6 @@ describe('InscribePlugin', () => {
   let mockHederaKit: any;
 
   beforeEach(() => {
-    // Clear all mock calls
     jest.clearAllMocks();
 
     mockLogger = {
@@ -194,7 +192,6 @@ describe('InscribePlugin', () => {
 
       expect(tools).toHaveLength(5);
 
-      // Verify each tool has the expected properties
       tools.forEach((tool: any) => {
         expect(tool).toHaveProperty('name');
         expect(tool).toHaveProperty('description');

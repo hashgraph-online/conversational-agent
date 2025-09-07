@@ -67,7 +67,7 @@ export class HCS10Plugin extends BasePlugin {
   namespace = 'hcs10';
 
   private stateManager?: IStateManager;
-  private tools: HederaTool[] = [];
+  private tools: any[] = [];
   appConfig?: Record<string, unknown>;
 
   override async initialize(context: GenericPluginContext): Promise<void> {
@@ -89,48 +89,51 @@ export class HCS10Plugin extends BasePlugin {
         new OpenConvaiState();
 
       const accountId = hederaKit.signer.getAccountId().toString();
+      const isBytesMode = String(hederaKit.operationalMode || 'returnBytes') === 'returnBytes';
       let inboundTopicId = '';
       let outboundTopicId = '';
 
-      try {
-        const opKey = hederaKit.signer.getOperatorPrivateKey();
-        const privateKey = extractPrivateKey(opKey);
+      if (!isBytesMode) {
+        try {
+          const opKey = hederaKit.signer.getOperatorPrivateKey();
+          const privateKey = extractPrivateKey(opKey);
 
-        const hcs10Client = new HCS10Client({
-          network: hederaKit.network as 'mainnet' | 'testnet',
-          operatorId: accountId,
-          operatorPrivateKey: privateKey,
-          logLevel: 'error',
-        });
+          const hcs10Client = new HCS10Client({
+            network: hederaKit.network as 'mainnet' | 'testnet',
+            operatorId: accountId,
+            operatorPrivateKey: privateKey,
+            logLevel: 'error',
+          });
 
-        const profileResponse = await hcs10Client.retrieveProfile(accountId);
-        if (profileResponse.success && profileResponse.topicInfo) {
-          inboundTopicId = profileResponse.topicInfo.inboundTopic;
-          outboundTopicId = profileResponse.topicInfo.outboundTopic;
+          const profileResponse = await hcs10Client.retrieveProfile(accountId);
+          if (profileResponse.success && profileResponse.topicInfo) {
+            inboundTopicId = profileResponse.topicInfo.inboundTopic;
+            outboundTopicId = profileResponse.topicInfo.outboundTopic;
+          }
+        } catch (profileError) {
+          this.context.logger.warn('Skipping profile topic discovery', profileError);
         }
-      } catch (profileError) {
-        this.context.logger.warn(
-          'Could not retrieve profile topics:',
-          profileError
-        );
       }
 
-      this.stateManager.setCurrentAgent({
+      const agentRecord: Record<string, unknown> = {
         name: `Agent ${accountId}`,
         accountId: accountId,
         inboundTopicId,
         outboundTopicId,
-        privateKey: ((): string => {
+      };
+      if (!isBytesMode) {
+        try {
           const opKey = hederaKit.signer.getOperatorPrivateKey();
-          return extractPrivateKey(opKey);
-        })(),
-      });
+          agentRecord.privateKey = extractPrivateKey(opKey);
+        } catch {}
+      }
+      this.stateManager.setCurrentAgent(agentRecord as any);
 
       this.context.logger.info(
         `Set current agent: ${accountId} with topics ${inboundTopicId}/${outboundTopicId}`
       );
 
-      if (this.stateManager && !this.stateManager.getConnectionsManager()) {
+      if (!isBytesMode && this.stateManager && !this.stateManager.getConnectionsManager()) {
         try {
           const opKey = hederaKit.signer.getOperatorPrivateKey();
           const privateKey = extractPrivateKey(opKey);
@@ -155,7 +158,6 @@ export class HCS10Plugin extends BasePlugin {
       }
 
       this.initializeTools();
-
       this.context.logger.info('HCS-10 Plugin initialized successfully');
     } catch (error) {
       this.context.logger.error('Failed to initialize HCS-10 plugin:', error);

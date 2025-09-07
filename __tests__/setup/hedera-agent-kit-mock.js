@@ -8,21 +8,21 @@ class MockServerSigner {
     this.privateKey = privateKey;
     this.network = network;
   }
-  
+
   getAccountId() {
     return { toString: () => this.accountId || '0.0.12345' };
   }
-  
+
   getNetwork() {
     return this.network || 'testnet';
   }
-  
+
   getOperatorPrivateKey() {
     return this.privateKey || 'mock-private-key';
   }
 }
 
-const mockHederaAgentKit = jest.fn().mockImplementation(function() {
+const mockHederaAgentKit = jest.fn().mockImplementation(function () {
   this.initialize = jest.fn().mockResolvedValue(undefined);
   this.getAggregatedLangChainTools = jest.fn().mockReturnValue([]);
   this.operationalMode = 'returnBytes';
@@ -37,7 +37,7 @@ class MockBasePlugin {
     this.author = '';
     this.namespace = '';
   }
-  
+
   async initialize() {}
   async cleanup() {}
 }
@@ -46,6 +46,10 @@ class MockBaseServiceBuilder {
   constructor(hederaKit) {
     this.hederaKit = hederaKit;
   }
+}
+
+class MockAbstractSigner {
+  constructor() {}
 }
 
 class MockBaseHederaTransactionTool {
@@ -57,6 +61,7 @@ class MockBaseHederaTransactionTool {
 
 module.exports = {
   ServerSigner: MockServerSigner,
+  AbstractSigner: MockAbstractSigner,
   HederaAgentKit: mockHederaAgentKit,
   getAllHederaCorePlugins: jest.fn(() => []),
   BasePlugin: MockBasePlugin,

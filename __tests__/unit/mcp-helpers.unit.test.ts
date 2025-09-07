@@ -240,7 +240,7 @@ describe('MCP Helpers', () => {
       expect(config).toEqual({
         mcpServers: [
           { ...server1, autoConnect: true },
-          { ...server2, autoConnect: false }, // Should preserve existing false
+          { ...server2, autoConnect: false },
         ],
       });
     });
@@ -251,7 +251,7 @@ describe('MCP Helpers', () => {
       expect(config).toEqual({
         mcpServers: [
           { ...server1, autoConnect: false },
-          { ...server2, autoConnect: false }, // Should preserve existing false
+          { ...server2, autoConnect: false },
         ],
       });
     });
@@ -266,7 +266,7 @@ describe('MCP Helpers', () => {
 
       const config = createMCPConfig([serverWithAutoConnect], false);
 
-      expect(config.mcpServers[0].autoConnect).toBe(true); // Should preserve existing true
+      expect(config.mcpServers[0].autoConnect).toBe(true);
     });
 
     it('should handle empty server list', () => {
@@ -303,11 +303,9 @@ describe('MCP Helpers', () => {
       expect(config.mcpServers[1].name).toBe('github');
       expect(config.mcpServers[2].name).toBe('postgres');
 
-      // All should have autoConnect: false since we set default to false
-      // but filesystem should have autoConnect: true since it's set in the preset
-      expect(config.mcpServers[0].autoConnect).toBe(true); // Preserves preset
-      expect(config.mcpServers[1].autoConnect).toBe(true); // Preserves preset
-      expect(config.mcpServers[2].autoConnect).toBe(true); // Preserves preset
+      expect(config.mcpServers[0].autoConnect).toBe(true);
+      expect(config.mcpServers[1].autoConnect).toBe(true);
+      expect(config.mcpServers[2].autoConnect).toBe(true);
     });
   });
 });

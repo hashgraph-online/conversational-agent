@@ -159,7 +159,7 @@ describe('MCP LangChain Adapter', () => {
     });
 
     it('should store large content as reference', async () => {
-      const largeContent = 'a'.repeat(15000); // Above 10KB threshold
+      const largeContent = 'a'.repeat(15000);
       mockMCPManager.executeTool.mockResolvedValue(largeContent);
       mockContentStore.storeContent.mockResolvedValue('ref-12345');
 
@@ -196,7 +196,7 @@ describe('MCP LangChain Adapter', () => {
 
       const result = await langchainTool.func({ param1: 'test' });
 
-      expect(result).toBe(largeContent); // Should return original content
+      expect(result).toBe(largeContent);
     });
 
     it('should handle case when content store is not available', async () => {
@@ -206,7 +206,7 @@ describe('MCP LangChain Adapter', () => {
 
       const result = await langchainTool.func({ param1: 'test' });
 
-      expect(result).toBe(largeContent); // Should return original content
+      expect(result).toBe(largeContent);
     });
 
     it('should handle tool execution errors', async () => {
@@ -404,7 +404,6 @@ describe('MCP LangChain Adapter', () => {
       const langchainTool = convertMCPToolToLangChain(tool, mockMCPManager);
       const schema = langchainTool.schema as z.ZodObject<any>;
       
-      // All properties should be present in the schema
       expect(Object.keys(schema.shape)).toHaveLength(4);
     });
   });

@@ -1,6 +1,6 @@
 {
   "name": "@hashgraphonline/conversational-agent",
-  "version": "0.2.1",
+  "version": "0.2.106",
   "type": "module",
   "main": "./dist/cjs/index.cjs",
   "module": "./dist/esm/index.js",
@@ -93,20 +93,24 @@
     "vite-plugin-node-polyfills": "^0.23.0",
     "vite-plugin-string-replace": "^1.1.5"
   },
+  "optionalDependencies": {
+    "fsevents": "2.3.3"
+  },
   "dependencies": {
-    "@hashgraph/sdk": "^2.69.0",
-    "@hashgraphonline/standards-agent-kit": "0.2.136",
-    "@hashgraphonline/standards-sdk": "0.0.187",
-    "@langchain/anthropic": "^0.3.26",
-    "@langchain/core": "^0.3.72",
-    "@langchain/openai": "^0.6.9",
-    "openai": "^5.12.2",
-    "@modelcontextprotocol/sdk": "^1.17.4",
+    "@hashgraph/sdk": "^2.72.0",
+    "@hashgraphonline/hashinal-wc": "^1.0.104",
+    "@hashgraphonline/standards-agent-kit": "^0.2.139",
+    "@hashgraphonline/standards-sdk": "^0.0.192",
+    "@langchain/anthropic": "^0.3.27",
+    "@langchain/core": "^0.3.75",
+    "@langchain/openai": "^0.6.11",
+    "@modelcontextprotocol/sdk": "^1.17.5",
     "axios": "^1.11.0",
     "bignumber.js": "^9.3.1",
     "ethers": "^6.15.0",
     "hedera-agent-kit": "^2.0.3",
     "langchain": "^0.3.31",
+    "openai": "^5.12.2",
     "tiktoken": "^1.0.22",
     "zod": "^3.25.0",
     "zod-to-json-schema": "^3.24.6"
@@ -122,5 +126,10 @@
     "url": "https://github.com/hashgraph-online/conversational-agent/issues"
   },
   "homepage": "https://github.com/hashgraph-online/conversational-agent#readme",
-  "packageManager": "pnpm@10.11.1+sha512.e519b9f7639869dc8d5c3c5dfef73b3f091094b0a006d7317353c72b124e80e1afd429732e28705ad6bfa1ee879c1fce46c128ccebd3192101f43dd67c667912"
+  "packageManager": "pnpm@10.11.1+sha512.e519b9f7639869dc8d5c3c5dfef73b3f091094b0a006d7317353c72b124e80e1afd429732e28705ad6bfa1ee879c1fce46c128ccebd3192101f43dd67c667912",
+  "pnpm": {
+    "overrides": {
+      "@hashgraph/sdk": "2.72.0"
+    }
+  }
 }

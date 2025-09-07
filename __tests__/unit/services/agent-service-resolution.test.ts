@@ -2,7 +2,6 @@
  * @jest-environment node
  */
 
-// Mock HederaMirrorNode before imports
 jest.mock('@hashgraphonline/standards-sdk', () => ({
   HederaMirrorNode: jest.fn().mockImplementation(() => ({
     getAccountBalance: jest.fn().mockResolvedValue(null),

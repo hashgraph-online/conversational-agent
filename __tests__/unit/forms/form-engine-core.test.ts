@@ -4,7 +4,6 @@ import { StructuredTool } from '@langchain/core/tools';
 import { z, ZodError } from 'zod';
 import { Logger } from '@hashgraphonline/standards-sdk';
 
-// Mock isFormValidatable
 jest.mock('@hashgraphonline/standards-agent-kit', () => ({
   isFormValidatable: jest.fn(),
 }));
@@ -88,7 +87,6 @@ describe('FormEngine - Core Functionality', () => {
     mockRenderConfigTool = new MockRenderConfigTool();
     mockRegularTool = new MockRegularTool();
 
-    // Reset isFormValidatable mock
     const { isFormValidatable } = require('@hashgraphonline/standards-agent-kit');
     isFormValidatable.mockReturnValue(false);
   });
@@ -299,7 +297,7 @@ describe('FormEngine - Core Functionality', () => {
 
       expect(result).toEqual({
         baseField: 'baseValue',
-        sharedField: 'submissionShared', // submission data takes precedence
+        sharedField: 'submissionShared',
         submissionField: 'submissionValue',
         __fromForm: true,
       });
@@ -398,7 +396,6 @@ describe('FormEngine - Core Functionality', () => {
 
   describe('Error Handling', () => {
     test('should log errors when form generation fails', async () => {
-      // Create a tool that will cause an error
       const problematicTool = new StructuredTool({
         name: 'problematic-tool',
         description: 'A tool that causes form generation errors',
@@ -410,7 +407,6 @@ describe('FormEngine - Core Functionality', () => {
         }
       });
 
-      // Mock the formGenerator to throw an error
       const originalGenerateForm = (formEngine as any).formGenerator.generateForm;
       (formEngine as any).formGenerator.generateForm = jest.fn().mockImplementation(() => {
         throw new Error('Form generation failed');
@@ -419,14 +415,12 @@ describe('FormEngine - Core Functionality', () => {
       try {
         await formEngine.generateForm('problematic-tool', problematicTool, {});
       } catch (error) {
-        // Verify the error was logged
         expect(mockLogger.error).toHaveBeenCalledWith(
           'Failed to generate form for tool: problematic-tool',
           { error: 'Form generation failed' }
         );
       }
 
-      // Restore original method
       (formEngine as any).formGenerator.generateForm = originalGenerateForm;
     });
   });
@@ -459,7 +453,6 @@ describe('FormEngine - Core Functionality', () => {
         schema: z.object({ field: z.string() }),
       };
 
-      // Mock the schema to have _renderConfig
       (renderConfigTool.schema as any)._renderConfig = { renderType: 'custom' };
 
       const result = await formEngine.generateForm('render-config-tool', renderConfigTool, {});
@@ -575,7 +568,7 @@ describe('FormEngine - Core Functionality', () => {
         schema: z.object({ field: z.string() }),
       };
 
-      const invalidInput = { field: 123 }; // Should be string
+      const invalidInput = { field: 123 };
       const validation = (formEngine as any).validateInput(tool, invalidInput);
 
       expect(validation.isValid).toBe(false);
@@ -651,7 +644,7 @@ describe('FormEngine - Core Functionality', () => {
         isFieldEmpty: jest.fn().mockReturnValue(false),
       };
 
-      const input = { field1: 'value1' }; // Missing field2
+      const input = { field1: 'value1' };
       const missingFields = (formEngine as any).determineMissingFields(tool, input, tool.schema, false);
 
       expect(missingFields.has('field2')).toBe(true);
@@ -664,7 +657,7 @@ describe('FormEngine - Core Functionality', () => {
         description: 'A tool with empty field detection',
         schema: z.object({ field1: z.string() }),
         getEssentialFields: jest.fn().mockReturnValue(['field1']),
-        isFieldEmpty: jest.fn().mockReturnValue(true), // All fields are empty
+        isFieldEmpty: jest.fn().mockReturnValue(true),
       };
 
       const input = { field1: 'value1' };

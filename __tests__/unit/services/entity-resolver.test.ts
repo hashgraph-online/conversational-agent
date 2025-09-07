@@ -43,9 +43,7 @@ describe('EntityResolver', () => {
       invoke: jest.fn(),
     };
 
-    // Create resolver instance
     entityResolver = new EntityResolver(config);
-    // Replace the internal llm with our mock
     (entityResolver as any).llm = mockChatOpenAI;
     (entityResolver as any).logger = mockLogger;
   });
@@ -69,7 +67,6 @@ describe('EntityResolver', () => {
     });
 
     test('should create resolver with empty API key', () => {
-      // The constructor doesn't validate API key - it just passes it to ChatOpenAI
       expect(() => {
         new EntityResolver({
           apiKey: '',
@@ -160,8 +157,7 @@ describe('EntityResolver', () => {
 
       const result = await entityResolver.resolveReferences(message, entities);
 
-      expect(result).toBe(message); // Should return original message on error
-      // Note: The actual implementation may not log errors in try/catch blocks
+      expect(result).toBe(message);
     });
 
     test('should handle logging errors gracefully', async () => {
@@ -187,10 +183,8 @@ describe('EntityResolver', () => {
 
       const result = await entityResolver.resolveReferences(message, entities);
 
-      // When logging fails, the method continues and may return original message
       expect(typeof result).toBe('string');
       expect(mockChatOpenAI.invoke).toHaveBeenCalled();
-      // The logging error is caught and ignored in the implementation
     });
 
     test('should group entities by type correctly', async () => {
@@ -398,7 +392,6 @@ describe('EntityResolver', () => {
 
       const result = await entityResolver.resolveReferences('test', entities);
 
-      // The LLM will either resolve it or return original message
       expect(typeof result).toBe('string');
       expect(mockChatOpenAI.invoke).toHaveBeenCalled();
     });
@@ -421,7 +414,6 @@ describe('EntityResolver', () => {
 
       const result = await entityResolver.resolveReferences('test', entities);
 
-      // The LLM will either resolve it or return original message
       expect(typeof result).toBe('string');
       expect(mockChatOpenAI.invoke).toHaveBeenCalled();
     });
@@ -451,7 +443,6 @@ describe('EntityResolver', () => {
 
       const result = await entityResolver.resolveReferences('test', entities);
 
-      // The LLM will either resolve it or return original message
       expect(typeof result).toBe('string');
       expect(mockChatOpenAI.invoke).toHaveBeenCalled();
     });

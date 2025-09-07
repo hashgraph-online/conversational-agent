@@ -139,8 +139,8 @@ describe('AirdropToolWrapper', () => {
       expect(mockOriginalTool._call).toHaveBeenCalledWith({
         ...validInput,
         recipients: [
-          { accountId: '0.0.456', amount: '1000' }, // 10 * 10^2
-          { accountId: '0.0.789', amount: '550' }, // 5.5 * 10^2
+          { accountId: '0.0.456', amount: '1000' },
+          { accountId: '0.0.789', amount: '550' },
         ],
       });
       expect(result).toBe('Airdrop successful');
@@ -158,8 +158,8 @@ describe('AirdropToolWrapper', () => {
       expect(mockOriginalTool._call).toHaveBeenCalledWith({
         ...validInput,
         recipients: [
-          { accountId: '0.0.456', amount: '10' }, // 10 * 10^0
-          { accountId: '0.0.789', amount: '5' }, // 5.5 * 10^0 = 5 (floored)
+          { accountId: '0.0.456', amount: '10' },
+          { accountId: '0.0.789', amount: '5' },
         ],
       });
     });
@@ -176,8 +176,8 @@ describe('AirdropToolWrapper', () => {
       expect(mockOriginalTool._call).toHaveBeenCalledWith({
         ...validInput,
         recipients: [
-          { accountId: '0.0.456', amount: '1000000000' }, // 10 * 10^8
-          { accountId: '0.0.789', amount: '550000000' }, // 5.5 * 10^8
+          { accountId: '0.0.456', amount: '1000000000' },
+          { accountId: '0.0.789', amount: '550000000' },
         ],
       });
     });
@@ -201,8 +201,8 @@ describe('AirdropToolWrapper', () => {
       expect(mockOriginalTool._call).toHaveBeenCalledWith({
         ...validInput,
         recipients: [
-          { accountId: '0.0.456', amount: '10000000' }, // 10 * 10^6
-          { accountId: '0.0.789', amount: '5500000' }, // 5.5 * 10^6
+          { accountId: '0.0.456', amount: '10000000' },
+          { accountId: '0.0.789', amount: '5500000' },
         ],
       });
     });
@@ -240,7 +240,7 @@ describe('AirdropToolWrapper', () => {
       expect(mockOriginalTool._call).toHaveBeenCalledWith({
         ...validInput,
         recipients: [
-          { accountId: '0.0.456', amount: '10' }, // Fallback to 0 decimals
+          { accountId: '0.0.456', amount: '10' },
           { accountId: '0.0.789', amount: '5' },
         ],
       });
@@ -258,7 +258,7 @@ describe('AirdropToolWrapper', () => {
       expect(mockOriginalTool._call).toHaveBeenCalledWith({
         ...validInput,
         recipients: [
-          { accountId: '0.0.456', amount: '10' }, // Fallback to 0 decimals
+          { accountId: '0.0.456', amount: '10' },
           { accountId: '0.0.789', amount: '5' },
         ],
       });
@@ -267,7 +267,6 @@ describe('AirdropToolWrapper', () => {
     it('should handle token info with missing decimals', async () => {
       mockAgentKit.mirrorNode.getTokenInfo.mockResolvedValue({
         name: 'Token Without Decimals',
-        // No decimals field
       });
       mockOriginalTool._call.mockResolvedValue('Airdrop successful');
 
@@ -276,7 +275,7 @@ describe('AirdropToolWrapper', () => {
       expect(mockOriginalTool._call).toHaveBeenCalledWith({
         ...validInput,
         recipients: [
-          { accountId: '0.0.456', amount: '10' }, // Uses 0 as default
+          { accountId: '0.0.456', amount: '10' },
           { accountId: '0.0.789', amount: '5' },
         ],
       });
@@ -299,8 +298,8 @@ describe('AirdropToolWrapper', () => {
       expect(mockOriginalTool._call).toHaveBeenCalledWith({
         ...inputWithStringAmounts,
         recipients: [
-          { accountId: '0.0.456', amount: '12345' }, // 12.345 * 10^3
-          { accountId: '0.0.789', amount: '1' }, // 0.001 * 10^3
+          { accountId: '0.0.456', amount: '12345' },
+          { accountId: '0.0.789', amount: '1' },
         ],
       });
     });
@@ -312,7 +311,7 @@ describe('AirdropToolWrapper', () => {
       const inputWithFractionalResult = {
         tokenId: '0.0.123',
         recipients: [
-          { accountId: '0.0.456', amount: 1.234 }, // 1.234 * 100 = 123.4 → 123
+          { accountId: '0.0.456', amount: 1.234 },
         ],
       };
 
@@ -321,7 +320,7 @@ describe('AirdropToolWrapper', () => {
       expect(mockOriginalTool._call).toHaveBeenCalledWith({
         ...inputWithFractionalResult,
         recipients: [
-          { accountId: '0.0.456', amount: '123' }, // Floored
+          { accountId: '0.0.456', amount: '123' },
         ],
       });
     });
@@ -363,7 +362,7 @@ describe('AirdropToolWrapper', () => {
         { amount: 1.5, decimals: 2, expected: 150 },
         { amount: 10.234, decimals: 3, expected: 10234 },
         { amount: 0.001, decimals: 6, expected: 1000 },
-        { amount: 1.9999, decimals: 2, expected: 199 }, // Floor 199.99
+        { amount: 1.9999, decimals: 2, expected: 199 },
       ];
 
       testCases.forEach(({ amount, decimals, expected }) => {

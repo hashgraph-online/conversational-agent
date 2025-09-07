@@ -3,7 +3,6 @@ import { FormGenerator } from '../../../src/forms/form-generator';
 import { z, ZodError } from 'zod';
 import { Logger } from '@hashgraphonline/standards-sdk';
 
-// Mock external dependencies
 jest.mock('@hashgraphonline/standards-sdk', () => ({
   Logger: jest.fn().mockImplementation(() => ({
     info: jest.fn(),
@@ -210,7 +209,7 @@ describe('FormGenerator - Comprehensive Tests', () => {
       expect(result.jsonSchema.properties).toBeDefined();
       expect(result.jsonSchema.properties?.name).toBeDefined();
       expect(result.jsonSchema.properties?.email).toBeDefined();
-      expect(result.jsonSchema.properties?.age).toBeUndefined(); // Not in missing fields
+      expect(result.jsonSchema.properties?.age).toBeUndefined();
     });
 
     test('should handle schema with no missing fields', () => {
@@ -290,7 +289,6 @@ describe('FormGenerator - Comprehensive Tests', () => {
 
       const result = formGenerator.generateJsonSchemaForm(schema);
       
-      // The UI schema should have help text for required fields
       expect(result.uiSchema.name).toBeDefined();
     });
 
@@ -303,7 +301,6 @@ describe('FormGenerator - Comprehensive Tests', () => {
 
       const result = formGenerator.generateJsonSchemaForm(schema);
       
-      // Advanced and expert fields should be collapsible
       expect(result.uiSchema.advanced?.['ui:options']?.collapsed).toBe(true);
       expect(result.uiSchema.expert?.['ui:options']?.collapsed).toBe(true);
     });
@@ -421,7 +418,6 @@ describe('FormGenerator - Comprehensive Tests', () => {
 
       const result = formGenerator.generateJsonSchemaForm(schema);
       
-      // The humanization happens in createFormField, but we can verify the schema is generated
       expect(result.jsonSchema.properties?.firstName).toBeDefined();
       expect(result.jsonSchema.properties?.lastName).toBeDefined();
       expect(result.jsonSchema.properties?.dateOfBirth).toBeDefined();

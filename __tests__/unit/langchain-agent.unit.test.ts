@@ -172,7 +172,6 @@ describe('LangChainAgent', () => {
 
     agent = new LangChainAgent(mockConfig);
     
-    // Spy on the actual logger methods
     jest.spyOn(agent['logger'], 'info');
     jest.spyOn(agent['logger'], 'warn');
     jest.spyOn(agent['logger'], 'error');

@@ -69,7 +69,7 @@ describe('LangChainAgent Type Safety', () => {
       
       if (preservedMetadata.hashLinkBlock) {
         expect(preservedMetadata.hashLinkBlock.blockId).toBe(TEST_BLOCK_IDS.PRESERVED_BLOCK);
-        expect(preservedMetadata.hashLinkBlock.attributes.preserved).toBe(true); // attributes is typed as Record<string, unknown>
+        expect(preservedMetadata.hashLinkBlock.attributes.preserved).toBe(true);
       }
     });
 
@@ -129,7 +129,7 @@ describe('LangChainAgent Type Safety', () => {
 
       try {
         await agent.connectMCPServers();
-        expect(true).toBe(true); // If it doesn't throw, the return type is correct
+        expect(true).toBe(true);
       } catch (error) {
         expect(error).toBeDefined();
       }

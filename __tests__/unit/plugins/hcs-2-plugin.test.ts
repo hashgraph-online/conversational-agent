@@ -5,7 +5,6 @@ import { describe, test, expect, beforeEach, jest } from '@jest/globals';
  * Tests all public methods and initialization scenarios
  */
 
-// Mock all the HCS2 tools and builder at module level
 const mockHCS2Builder = jest.fn().mockImplementation(() => ({}));
 const mockCreateRegistryTool = jest.fn().mockImplementation(() => ({
   name: 'create-registry',
@@ -53,7 +52,6 @@ describe('HCS2Plugin', () => {
   let mockHederaKit: any;
 
   beforeEach(() => {
-    // Clear all mock calls
     jest.clearAllMocks();
     
     mockLogger = {
@@ -116,7 +114,7 @@ describe('HCS2Plugin', () => {
       const errorContext = {
         ...mockContext,
         config: {
-          hederaKit: null, // This will cause an error in initializeTools
+          hederaKit: null,
         },
       } as GenericPluginContext;
 
@@ -136,7 +134,6 @@ describe('HCS2Plugin', () => {
         logger: undefined,
       } as unknown as GenericPluginContext;
 
-      // Should throw because of the null hederaKit causing an error in initializeTools
       await expect(plugin.initialize(contextWithoutLogger)).rejects.toThrow();
     });
   });
@@ -185,7 +182,6 @@ describe('HCS2Plugin', () => {
     });
 
     test('should handle cleanup without context/logger', async () => {
-      // Manually clear the context to test the edge case
       (plugin as any).context = null;
 
       await expect(plugin.cleanup()).resolves.not.toThrow();
@@ -194,7 +190,6 @@ describe('HCS2Plugin', () => {
     test('should handle cleanup with missing logger', async () => {
       await plugin.initialize(mockContext);
       
-      // Set context without logger
       (plugin as any).context = { logger: null };
 
       await expect(plugin.cleanup()).resolves.not.toThrow();
@@ -261,7 +256,6 @@ describe('HCS2Plugin', () => {
         config: undefined,
       } as unknown as GenericPluginContext;
 
-      // Should throw because accessing context.config.hederaKit when config is undefined
       await expect(plugin.initialize(contextWithUndefinedConfig)).rejects.toThrow();
     });
   });

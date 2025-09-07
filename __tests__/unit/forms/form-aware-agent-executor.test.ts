@@ -25,7 +25,6 @@ interface MockExecutorResponse extends Record<string, unknown> {
   output: string;
   intermediateSteps: unknown[];
 }
-// Mock AgentExecutor from langchain/agents
 jest.mock('@langchain/agents', () => {
   return {
     AgentExecutor: class MockAgentExecutor {
@@ -185,7 +184,7 @@ describe('FormAwareAgentExecutor', () => {
       const result = await executor.processFormSubmission(formSubmission);
 
       expect(result.output).toBeDefined();
-      expect(executor.getPendingFormsInfo().length).toBe(0); // Form should be removed
+      expect(executor.getPendingFormsInfo().length).toBe(0);
 
       Object.getPrototypeOf(Object.getPrototypeOf(executor))._call =
         originalSuper;

@@ -669,7 +669,7 @@ describe('ExternalToolWrapper Comprehensive Tests', () => {
       const end = performance.now();
       
       expect(configs).toHaveLength(1000);
-      expect(end - start).toBeLessThan(100); // Should complete within 100ms
+      expect(end - start).toBeLessThan(100);
     });
 
     it('should handle large tool wrapping efficiently', () => {
@@ -701,7 +701,7 @@ describe('ExternalToolWrapper Comprehensive Tests', () => {
       const end = performance.now();
       
       expect(wrapper.name).toBe('large-tool');
-      expect(end - start).toBeLessThan(50); // Should complete within 50ms
+      expect(end - start).toBeLessThan(50);
     });
   });
 });

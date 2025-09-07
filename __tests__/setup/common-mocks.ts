@@ -97,7 +97,6 @@ export const commonMocks = {
     })),
   }),
 
-  // Mock timers to prevent open handles in tests
   timers: () => {
     jest.useFakeTimers();
     global.setInterval = jest.fn(() => ({ unref: jest.fn() }));
@@ -112,6 +111,7 @@ export const commonMocks = {
       getNetwork: () => 'testnet',
       getOperatorPrivateKey: jest.fn(),
     })),
+    AbstractSigner: class MockAbstractSigner {},
     HederaAgentKit: jest.fn().mockImplementation(function(this: any) {
       this.initialize = jest.fn().mockResolvedValue(undefined);
       this.getAggregatedLangChainTools = jest.fn().mockReturnValue([]);
@@ -150,6 +150,5 @@ export function setupCommonMocks() {
   jest.mock('@hashgraphonline/standards-agent-kit', commonMocks['@hashgraphonline/standards-agent-kit']);
   jest.mock('hedera-agent-kit', commonMocks['hedera-agent-kit']);
 
-  // Setup timer mocks to prevent open handles
   commonMocks.timers();
 }

@@ -6,6 +6,13 @@ import {
   wrapToolWithFormValidation,
 } from '../langchain/form-validating-tool-wrapper';
 import { FormGenerator } from '../forms/form-generator';
+import {
+  fieldGuidanceRegistry,
+} from '../forms/field-guidance-registry';
+import type {
+  ToolFieldConfiguration as FG_ToolFieldConfiguration,
+  FieldGuidanceProvider as FG_FieldGuidanceProvider,
+} from '../forms/field-guidance-registry';
 import { isFormValidatable } from '@hashgraphonline/standards-agent-kit';
 
 /**
@@ -40,6 +47,8 @@ export interface ToolMetadata {
   dependencies: string[];
   schema: unknown;
   entityResolutionPreferences?: EntityResolutionPreferences;
+  fieldGuidance?: FG_ToolFieldConfiguration;
+  fieldGuidanceProvider?: FG_FieldGuidanceProvider;
 }
 
 /**
@@ -191,6 +200,21 @@ export class ToolRegistry {
     };
 
     this.tools.set(tool.name, entry);
+
+    try {
+      const metaFG = metadata.fieldGuidance as FG_ToolFieldConfiguration | undefined;
+      if (metaFG) {
+        fieldGuidanceRegistry.registerToolConfiguration(metaFG);
+      }
+      const provider = metadata.fieldGuidanceProvider as FG_FieldGuidanceProvider | undefined;
+      if (provider) {
+        const pattern = metaFG?.toolPattern ?? tool.name;
+        fieldGuidanceRegistry.registerToolProvider(pattern, provider, {
+          id: `${tool.name}:field-guidance-provider`,
+          priority: 0,
+        });
+      }
+    } catch {}
   }
 
   /**

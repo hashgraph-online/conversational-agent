@@ -82,7 +82,6 @@ describe('HbarPlugin', () => {
     };
 
     hbarPlugin = new HbarPlugin();
-    // Replace the context after construction
     (hbarPlugin as any).context = mockContext;
   });
 
@@ -120,7 +119,6 @@ describe('HbarPlugin', () => {
     });
 
     test('should handle initialization errors gracefully', async () => {
-      // Test that initialization completes
       await expect(hbarPlugin.initialize(mockContext)).resolves.toBeUndefined();
     });
   });
@@ -155,7 +153,6 @@ describe('HbarPlugin', () => {
     test('should shutdown successfully', async () => {
       await expect(hbarPlugin.shutdown()).resolves.toBeUndefined();
 
-      // Tools should be cleared
       const tools = hbarPlugin.getTools();
       expect(tools).toEqual([]);
     });
@@ -171,5 +168,4 @@ describe('HbarPlugin', () => {
     });
   });
 
-  // Error handling is tested in the main initialization tests
 });

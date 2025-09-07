@@ -4,7 +4,6 @@ import { describe, test, expect } from '@jest/globals';
  * Unit tests for LangChainAgent utility functions
  */
 
-// Test the isJSON logic (extracted from LangChainAgent)
 function isJSON(str: string): boolean {
   if (typeof str !== 'string') return false;
 
@@ -26,7 +25,6 @@ function isJSON(str: string): boolean {
   }
 }
 
-// Test the persistToolRaw logic (simplified version)
 function formatToolOutput(output: unknown): string {
   if (typeof output === 'string') {
     return isJSON(output) ? output : JSON.stringify({ output });
@@ -41,7 +39,6 @@ function formatToolOutput(output: unknown): string {
   }
 }
 
-// Test the intermediate steps processing logic
 function processIntermediateStep(step: any): { toolName: string; observation: string } | null {
   if (!step || typeof step !== 'object') return null;
 
@@ -120,7 +117,7 @@ describe('LangChainAgent - Pure Utility Functions', () => {
 
     test('should handle circular references', () => {
       const circularRef: any = { name: 'test' };
-      circularRef.self = circularRef; // Create circular reference
+      circularRef.self = circularRef;
 
       const result = formatToolOutput(circularRef);
       expect(result).toBe('[object Object]');

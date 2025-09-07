@@ -75,7 +75,7 @@ describe('ToolRegistry', () => {
 
     it('should not register duplicate tools', () => {
       toolRegistry.registerTool(mockTool1);
-      toolRegistry.registerTool(mockTool1); // Attempt duplicate
+      toolRegistry.registerTool(mockTool1);
 
       const tools = toolRegistry.getAllTools();
       expect(tools).toHaveLength(1);
@@ -84,13 +84,12 @@ describe('ToolRegistry', () => {
     it('should handle tool registration with same name', () => {
       const duplicateNameTool = {
         ...mockTool2,
-        name: 'test-tool-1', // Same name as mockTool1
+        name: 'test-tool-1',
       };
 
       toolRegistry.registerTool(mockTool1);
       toolRegistry.registerTool(duplicateNameTool);
 
-      // Should only register the first one
       const tools = toolRegistry.getAllTools();
       expect(tools).toHaveLength(1);
       expect(tools[0].tool).toBe(mockTool1);
@@ -243,7 +242,7 @@ describe('ToolRegistry', () => {
     beforeEach(() => {
       toolRegistry.registerTool(mockTool1, { enabled: true });
       toolRegistry.registerTool(mockTool2, { enabled: false });
-      toolRegistry.registerTool(mockTool3); // Default enabled
+      toolRegistry.registerTool(mockTool3);
     });
 
     it('should return only enabled tools', () => {
@@ -270,7 +269,7 @@ describe('ToolRegistry', () => {
     beforeEach(() => {
       toolRegistry.registerTool(mockTool1, { namespace: 'hedera' });
       toolRegistry.registerTool(mockTool2, { namespace: 'inscription' });
-      toolRegistry.registerTool(mockTool3); // No namespace
+      toolRegistry.registerTool(mockTool3);
     });
 
     it('should get tools by namespace', () => {
@@ -359,8 +358,8 @@ describe('ToolRegistry', () => {
 
       const tool = toolRegistry.getTool('test-tool-1');
       expect(tool?.options.priority).toBe('high');
-      expect(tool?.options.capability).toBe('basic'); // Should remain unchanged
-      expect(tool?.options.enabled).toBe(true); // Should remain unchanged
+      expect(tool?.options.capability).toBe('basic');
+      expect(tool?.options.enabled).toBe(true);
     });
   });
 

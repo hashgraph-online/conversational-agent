@@ -47,7 +47,6 @@ describe('AirdropToolWrapper', () => {
     };
 
     airdropToolWrapper = new AirdropToolWrapper(mockOriginalTool, mockAgentKit);
-    // Replace the logger with our mock
     (airdropToolWrapper as any).logger = mockLogger;
   });
 
@@ -90,7 +89,6 @@ describe('AirdropToolWrapper', () => {
 
       mockAgentKit.mirrorNode.getTokenInfo.mockRejectedValue(new Error('Token not found'));
 
-      // The method should fall back to 0 decimals when token info fails
       const result = await (airdropToolWrapper as any).getTokenInfo(tokenId);
       expect(result).toEqual({ decimals: 0 });
       expect(mockLogger.warn).toHaveBeenCalled();
@@ -116,25 +114,25 @@ describe('AirdropToolWrapper', () => {
     test('should convert human amount to smallest units', () => {
       const result = (airdropToolWrapper as any).convertToSmallestUnits(10, 8);
 
-      expect(result).toBe(1000000000); // 10 * 10^8
+      expect(result).toBe(1000000000);
     });
 
     test('should handle zero decimals', () => {
       const result = (airdropToolWrapper as any).convertToSmallestUnits(5, 0);
 
-      expect(result).toBe(5); // 5 * 10^0
+      expect(result).toBe(5);
     });
 
     test('should handle large decimal values', () => {
       const result = (airdropToolWrapper as any).convertToSmallestUnits(0.1, 18);
 
-      expect(result).toBe(100000000000000000); // 0.1 * 10^18
+      expect(result).toBe(100000000000000000);
     });
 
     test('should handle fractional amounts', () => {
       const result = (airdropToolWrapper as any).convertToSmallestUnits(1.5, 2);
 
-      expect(result).toBe(150); // 1.5 * 10^2
+      expect(result).toBe(150);
     });
   });
 
@@ -222,7 +220,7 @@ describe('AirdropToolWrapper', () => {
         recipients: [
           {
             accountId: '0.0.111',
-            amount: '10000000', // 10 * 10^6
+            amount: '10000000',
           },
         ],
         memo: undefined,
@@ -256,7 +254,7 @@ describe('AirdropToolWrapper', () => {
         recipients: [
           {
             accountId: '0.0.111',
-            amount: '1', // 1 * 10^0
+            amount: '1',
           },
         ],
         memo: undefined,
@@ -306,7 +304,6 @@ describe('AirdropToolWrapper', () => {
 
       mockAgentKit.mirrorNode.getTokenInfo.mockRejectedValue(new Error('Token not found'));
 
-      // The method should fall back to 0 decimals and continue processing
       const result = await airdropToolWrapper._call(input);
       
       expect(mockLogger.warn).toHaveBeenCalled();
@@ -344,7 +341,6 @@ describe('AirdropToolWrapper', () => {
         recipients: [],
       };
 
-      // Schema validation should handle this, but test the behavior
       const schema = (airdropToolWrapper as any).schema;
       const result = schema.safeParse(input);
 
@@ -420,7 +416,7 @@ describe('AirdropToolWrapper', () => {
       };
 
       const result = schema.safeParse(invalidInput);
-      expect(result.success).toBe(true); // Schema doesn't validate token ID format
+      expect(result.success).toBe(true);
     });
 
     test('should reject empty recipients', () => {

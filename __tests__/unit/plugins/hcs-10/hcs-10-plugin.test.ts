@@ -1,7 +1,6 @@
 import { describe, test, expect, beforeEach, jest } from '@jest/globals';
 import { TEST_ACCOUNT_IDS, TEST_NETWORKS, TEST_MOCK_CONSTANTS } from '../../../test-constants';
 
-// Mock Hedera SDK to prevent the 'Finite' error
 jest.mock('@hashgraph/sdk', () => ({
   Hbar: {
     fromString: jest.fn(),

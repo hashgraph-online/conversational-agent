@@ -7,7 +7,6 @@ import type { ChainValues } from '@langchain/core/utils/types';
 import type { CallbackManagerForChainRun } from '@langchain/core/callbacks/manager';
 import type { RunnableConfig } from '@langchain/core/runnables';
 
-// Mock AgentExecutor before imports
 jest.mock('langchain/agents', () => ({
   AgentExecutor: class MockAgentExecutor {
     agent: any;

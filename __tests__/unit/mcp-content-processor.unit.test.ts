@@ -236,7 +236,6 @@ describe('MCPContentProcessor', () => {
         ],
       };
 
-      // Mock analyzeResponse to throw an error
       jest.spyOn(processor, 'analyzeResponse').mockImplementation(() => {
         throw new Error('Analysis failed');
       });
@@ -270,7 +269,7 @@ describe('MCPContentProcessor', () => {
           preview: 'First content...',
           metadata: { sizeBytes: 50, contentType: 'text' },
         })
-        .mockResolvedValueOnce(null); // Second storage attempt returns null (not stored)
+        .mockResolvedValueOnce(null);
 
       const result = await processor.processResponse(response, 'server', 'tool');
 
@@ -335,7 +334,6 @@ describe('MCPContentProcessor', () => {
           ],
         };
 
-        // Override the mime type detection
         jest.spyOn(processor as any, 'detectMimeType').mockReturnValue(testCase.mimeType);
         
         mockContentStorage.shouldUseReference.mockReturnValue(true);
@@ -427,11 +425,10 @@ describe('MCPContentProcessor', () => {
       expect(result.wasProcessed).toBe(true);
       expect(result.content).not.toEqual(response);
       
-      // The content should have been replaced with a reference
       const processedContent = result.content as any;
       expect(processedContent.content[0].type).toBe('content_reference');
       expect(processedContent.content[0].referenceId).toBe('ref-replace');
-      expect(processedContent.metadata.source).toBe('test'); // Metadata should remain
+      expect(processedContent.metadata.source).toBe('test');
     });
   });
 });

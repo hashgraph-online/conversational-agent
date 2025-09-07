@@ -149,12 +149,10 @@ export interface MockStructuredToolInterface {
   namespace?: string;
   call: jest.Mock;
   invoke: jest.Mock;
-  // Additional properties required by StructuredTool
   returnDirect?: boolean;
   verboseParsingErrors?: boolean;
   lc_namespace?: string[];
   _call?: jest.Mock;
-  // Add other required properties with defaults
   [key: string]: unknown;
 }
 

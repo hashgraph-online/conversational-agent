@@ -62,7 +62,6 @@ describe('TransferHbarTool', () => {
       logger: mockLogger,
     });
 
-    // Replace the service builder with our mock
     (transferHbarTool as any).getServiceBuilder = jest.fn().mockReturnValue(mockAccountBuilder);
   });
 
@@ -137,15 +136,15 @@ describe('TransferHbarTool', () => {
         transfers: [
           {
             accountId: '0.0.111',
-            amount: -5, // Sender
+            amount: -5,
           },
           {
             accountId: '0.0.222',
-            amount: -3, // Sender
+            amount: -3,
           },
           {
             accountId: '0.0.333',
-            amount: 8, // Receiver
+            amount: 8,
           },
         ],
         memo: 'Multi-party transfer',
@@ -242,7 +241,7 @@ describe('TransferHbarTool', () => {
       };
 
       const result = schema.safeParse(invalidInput);
-      expect(result.success).toBe(true); // Schema doesn't validate account ID format
+      expect(result.success).toBe(true);
     });
 
     test('should reject empty transfers array', () => {

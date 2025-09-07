@@ -9,7 +9,6 @@ import {
 } from '../../../src/forms/form-engine';
 import type { FormMessage, FormSubmission } from '../../../src/forms/types';
 
-// Mock dependencies
 jest.mock('@hashgraphonline/standards-sdk', () => ({
   Logger: jest.fn().mockImplementation(() => ({
     debug: jest.fn(),
@@ -146,16 +145,14 @@ describe('FormEngine', () => {
       
       const result = await formEngine.generateForm('test', toolWithoutSchema, {});
       
-      // The form engine still generates a form, even for tools that don't strictly need one
       expect(result).not.toBeNull();
       expect(result?.type).toBe('form');
     });
 
     test('should handle form generation errors', async () => {
-      // Test that the form engine properly handles and propagates errors
       const problematicTool = {
         ...mockTool,
-        name: undefined as any, // Invalid tool name - causes error in form generator
+        name: undefined as any,
       };
       
       await expect(
@@ -290,7 +287,6 @@ describe('FormEngine', () => {
       
       const result = await formEngine.generateForm('test', nonZodTool, {});
       
-      // Form engine still generates forms even for non-ZodObject schemas
       expect(result).not.toBeNull();
       expect(result?.type).toBe('form');
     });
@@ -333,7 +329,6 @@ describe('FormEngine', () => {
         timestamp: Date.now(),
       };
       
-      // This should not throw
       expect(async () => {
         await formEngine.processSubmission(validSubmission);
       }).not.toThrow();
@@ -376,9 +371,9 @@ describe('FormEngine', () => {
       
       const result = await formEngine.processSubmission(submission, context);
       
-      expect(result).toHaveProperty('field1', 'updated-value'); // Updated
-      expect(result).toHaveProperty('field2', 'new-value'); // New
-      expect(result).toHaveProperty('field3', 'keep-value'); // Preserved
+      expect(result).toHaveProperty('field1', 'updated-value');
+      expect(result).toHaveProperty('field2', 'new-value');
+      expect(result).toHaveProperty('field3', 'keep-value');
     });
   });
 
@@ -425,7 +420,6 @@ describe('FormEngine', () => {
         }),
       };
       
-      // The form engine might still generate a form despite errors in shouldGenerateForm
       const result = await formEngine.generateForm('test', errorTool, {});
       expect(result).toBeDefined();
       expect(result?.type).toBe('form');

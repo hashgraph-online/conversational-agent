@@ -26,3 +26,4 @@ export * from './services';
 export * from './langchain';
 export * from './tools';
 export * from './utils';
+export * from './runtime/wallet-bridge';

@@ -1,4 +1,5 @@
 import type { FormFieldType, FieldOption } from './types';
+import { Logger } from '@hashgraphonline/standards-sdk';
 
 /**
  * Field guidance configuration for providing contextual help and suggestions
@@ -90,6 +91,19 @@ export interface ToolFieldConfiguration {
  */
 class FieldGuidanceRegistry {
   private configurations: ToolFieldConfiguration[] = [];
+  private providers: Array<{
+    id: string;
+    priority: number;
+    pattern: string | RegExp;
+    provider: FieldGuidanceProvider;
+    order: number;
+  }> = [];
+  private registerOrderCounter = 0;
+  private logger: Logger;
+
+  constructor() {
+    this.logger = new Logger({ module: 'FieldGuidanceRegistry' });
+  }
 
   /**
    * Register field guidance for a specific tool
@@ -99,9 +113,54 @@ class FieldGuidanceRegistry {
   }
 
   /**
+   * Register a provider for dynamic field/global guidance
+   */
+  registerToolProvider(
+    toolPattern: string | RegExp,
+    provider: FieldGuidanceProvider,
+    options?: { id?: string; priority?: number }
+  ): string {
+    const id = options?.id ?? `provider-${this.providers.length + 1}`;
+    const priority = options?.priority ?? 0;
+    if (this.providers.some((p) => p.id === id)) {
+      this.logger.error('Duplicate provider id', { id });
+      throw new Error('DUPLICATE_PROVIDER_ID');
+    }
+    this.providers.push({
+      id,
+      priority,
+      pattern: toolPattern,
+      provider,
+      order: this.registerOrderCounter++,
+    });
+    return id;
+  }
+
+  /** Unregister a provider by id */
+  unregisterProvider(id: string): void {
+    this.providers = this.providers.filter((p) => p.id !== id);
+  }
+
+  /** List registered providers */
+  listProviders(): Array<{
+    id: string;
+    priority: number;
+    pattern: string | RegExp;
+  }> {
+    return this.providers.map(({ id, priority, pattern }) => ({
+      id,
+      priority,
+      pattern,
+    }));
+  }
+
+  /**
    * Get field guidance for a specific tool and field
    */
   getFieldGuidance(toolName: string, fieldName: string): FieldGuidance | null {
+    if (process.env.CA_FORM_GUIDANCE_ENABLED === 'false') {
+      return null;
+    }
     for (const config of this.configurations) {
       const matches =
         typeof config.toolPattern === 'string'
@@ -109,8 +168,31 @@ class FieldGuidanceRegistry {
           : config.toolPattern.test(toolName);
 
       if (matches && config.fields[fieldName]) {
-        return config.fields[fieldName];
+        const staticGuidance = config.fields[fieldName];
+        const providers = this.pickMatchingProviders(toolName);
+        if (providers.length === 0) return staticGuidance;
+        let merged: FieldGuidance = { ...staticGuidance };
+        for (const p of [...providers].reverse()) {
+          const fromProvider = this.safeGetFieldGuidance(
+            p,
+            fieldName,
+            toolName
+          );
+          if (fromProvider) {
+            merged = this.mergeGuidance(merged, fromProvider);
+          }
+        }
+        return merged;
       }
+    }
+    const providers = this.pickMatchingProviders(toolName);
+    if (providers.length > 0) {
+      let merged: FieldGuidance = {};
+      for (const p of [...providers].reverse()) {
+        const g = this.safeGetFieldGuidance(p, fieldName, toolName);
+        if (g) merged = this.mergeGuidance(merged, g);
+      }
+      return Object.keys(merged).length > 0 ? merged : null;
     }
     return null;
   }
@@ -121,6 +203,9 @@ class FieldGuidanceRegistry {
   getGlobalGuidance(
     toolName: string
   ): ToolFieldConfiguration['globalGuidance'] | null {
+    if (process.env.CA_FORM_GUIDANCE_ENABLED === 'false') {
+      return null;
+    }
     for (const config of this.configurations) {
       const matches =
         typeof config.toolPattern === 'string'
@@ -128,8 +213,41 @@ class FieldGuidanceRegistry {
           : config.toolPattern.test(toolName);
 
       if (matches && config.globalGuidance) {
-        return config.globalGuidance;
+        const base = config.globalGuidance;
+        const providers = this.pickMatchingProviders(toolName);
+        if (providers.length === 0) return base;
+        let mergedWarnings: string[] | undefined = base.warnings;
+        let mergedQuality: string[] | undefined = base.qualityStandards;
+        for (const p of [...providers].reverse()) {
+          const fromProvider = this.safeGetGlobalGuidance(p, toolName);
+          if (fromProvider) {
+            mergedWarnings = fromProvider.warnings ?? mergedWarnings;
+            mergedQuality = fromProvider.qualityStandards ?? mergedQuality;
+          }
+        }
+        const result: NonNullable<ToolFieldConfiguration['globalGuidance']> =
+          {};
+        if (mergedWarnings !== undefined) result.warnings = mergedWarnings;
+        if (mergedQuality !== undefined)
+          result.qualityStandards = mergedQuality;
+        return result;
       }
+    }
+    const providers = this.pickMatchingProviders(toolName);
+    if (providers.length > 0) {
+      let mergedWarnings: string[] | undefined;
+      let mergedQuality: string[] | undefined;
+      for (const p of [...providers].reverse()) {
+        const g = this.safeGetGlobalGuidance(p, toolName);
+        if (g) {
+          mergedWarnings = g.warnings ?? mergedWarnings;
+          mergedQuality = g.qualityStandards ?? mergedQuality;
+        }
+      }
+      const result: NonNullable<ToolFieldConfiguration['globalGuidance']> = {};
+      if (mergedWarnings !== undefined) result.warnings = mergedWarnings;
+      if (mergedQuality !== undefined) result.qualityStandards = mergedQuality;
+      return Object.keys(result).length > 0 ? result : null;
     }
     return null;
   }
@@ -222,194 +340,101 @@ class FieldGuidanceRegistry {
    */
   clear(): void {
     this.configurations = [];
+    this.providers = [];
+    this.registerOrderCounter = 0;
+  }
+
+  /** Choose matching provider by priority then last-in wins */
+  private pickMatchingProviders(toolName: string): Array<{
+    id: string;
+    provider: FieldGuidanceProvider;
+    priority: number;
+    order: number;
+  }> {
+    const matches = this.providers.filter((p) =>
+      typeof p.pattern === 'string'
+        ? toolName.toLowerCase().includes((p.pattern as string).toLowerCase())
+        : (p.pattern as RegExp).test(toolName)
+    );
+    const sorted = matches.sort((a, b) => {
+      if (b.priority !== a.priority) return b.priority - a.priority;
+      return b.order - a.order; // last-in wins when equal priority
+    });
+    return sorted.map((m) => ({
+      id: m.id,
+      provider: m.provider,
+      priority: m.priority,
+      order: m.order,
+    }));
+  }
+
+  private safeGetFieldGuidance(
+    winner: { id: string; provider: FieldGuidanceProvider },
+    fieldName: string,
+    toolName: string
+  ): FieldGuidance | null {
+    try {
+      return winner.provider.getFieldGuidance(fieldName, { toolName }) ?? null;
+    } catch (err) {
+      this.logger.warn('Provider getFieldGuidance failed', {
+        id: winner.id,
+        err,
+      });
+      return null;
+    }
+  }
+
+  private safeGetGlobalGuidance(
+    winner: { id: string; provider: FieldGuidanceProvider },
+    toolName: string
+  ): ToolFieldConfiguration['globalGuidance'] | null {
+    try {
+      return winner.provider.getGlobalGuidance?.(toolName) ?? null;
+    } catch (err) {
+      this.logger.warn('Provider getGlobalGuidance failed', {
+        id: winner.id,
+        err,
+      });
+      return null;
+    }
+  }
+
+  private mergeGuidance(
+    base: FieldGuidance,
+    over: FieldGuidance
+  ): FieldGuidance {
+    const out: FieldGuidance = {};
+    const suggestions = over.suggestions ?? base.suggestions;
+    if (suggestions !== undefined) out.suggestions = suggestions;
+    const predefinedOptions = over.predefinedOptions ?? base.predefinedOptions;
+    if (predefinedOptions !== undefined)
+      out.predefinedOptions = predefinedOptions;
+    const warnings = over.warnings ?? base.warnings;
+    if (warnings !== undefined) out.warnings = warnings;
+    const validationRules = over.validationRules ?? base.validationRules;
+    if (validationRules !== undefined) out.validationRules = validationRules;
+    const fieldTypeOverride = over.fieldTypeOverride ?? base.fieldTypeOverride;
+    if (fieldTypeOverride !== undefined)
+      out.fieldTypeOverride = fieldTypeOverride;
+    const contextualHelpText =
+      over.contextualHelpText ?? base.contextualHelpText;
+    if (contextualHelpText !== undefined)
+      out.contextualHelpText = contextualHelpText;
+    return out;
   }
 }
 
 export const fieldGuidanceRegistry = new FieldGuidanceRegistry();
 
-fieldGuidanceRegistry.registerToolConfiguration({
-  toolPattern: /inscribe.*hashinal/i,
-  globalGuidance: {
-    warnings: [
-      'Avoid auto-generating technical metadata like file types or upload sources',
-      'Focus on collectible traits that add value to the NFT',
-    ],
-    qualityStandards: [
-      'Use meaningful names that describe the artwork or content',
-      'Include collectible attributes like rarity, style, or theme',
-      'Provide descriptions that tell a story or explain the concept',
-    ],
-  },
-  fields: {
-    name: {
-      suggestions: [
-        'Sunset Landscape #42',
-        'Digital Abstract Art',
-        'Cosmic Dream Series',
-        'Portrait Study #5',
-      ],
-      validationRules: {
-        rejectPatterns: [
-          {
-            pattern: /^untitled$/i,
-            reason: 'Generic names like "Untitled" are not valuable for NFTs',
-          },
-          {
-            pattern: /^image|file|upload/i,
-            reason: 'Avoid technical file references in NFT names',
-          },
-        ],
-        qualityChecks: {
-          minNonTechnicalWords: 2,
-          forbidTechnicalTerms: [
-            'MIME',
-            'upload',
-            'file type',
-            'buffer',
-            'source',
-          ],
-        },
-      },
-      contextualHelpText:
-        'Create a distinctive name that collectors will find appealing and memorable',
-    },
-
-    description: {
-      suggestions: [
-        'A vibrant sunset captured in digital brushstrokes...',
-        'Part of the Cosmic Dreams collection, exploring...',
-        'This piece represents the intersection of technology and nature...',
-      ],
-      validationRules: {
-        rejectPatterns: [
-          {
-            pattern: /uploaded by|file size|mime type|created from/i,
-            reason: 'Avoid technical descriptions in NFT metadata',
-          },
-        ],
-        qualityChecks: {
-          minNonTechnicalWords: 8,
-          forbidTechnicalTerms: [
-            'uploaded',
-            'file size',
-            'mime type',
-            'user upload',
-            'image format',
-            'pixel dimensions',
-            'file extension',
-          ],
-          requireSpecificTerms: [
-            'art',
-            'collection',
-            'piece',
-            'concept',
-            'inspired',
-            'represents',
-          ],
-        },
-      },
-      fieldTypeOverride: 'textarea',
-      contextualHelpText:
-        'Describe the story, inspiration, or artistic vision behind this NFT',
-    },
-
-    creator: {
-      suggestions: [
-        '0.0.123456 (Hedera Account ID)',
-        'ArtistName',
-        'StudioBrand',
-        'CollectiveDAO',
-      ],
-      contextualHelpText:
-        "Provide the creator's account ID, artist name, or brand identity",
-    },
-
-    attributes: {
-      predefinedOptions: [
-        {
-          value: 'Rarity',
-          label: 'Rarity',
-          description: 'Common, Rare, Epic, Legendary',
-        },
-        {
-          value: 'Color',
-          label: 'Color',
-          description: 'Primary colors or palette',
-        },
-        {
-          value: 'Style',
-          label: 'Style',
-          description: 'Abstract, Realistic, Minimalist, etc.',
-        },
-        {
-          value: 'Theme',
-          label: 'Theme',
-          description: 'Nature, Technology, Fantasy, etc.',
-        },
-        {
-          value: 'Series',
-          label: 'Series',
-          description: 'Collection or series number',
-        },
-        {
-          value: 'Element',
-          label: 'Element',
-          description: 'Fire, Water, Earth, Air, etc.',
-        },
-        {
-          value: 'Power Level',
-          label: 'Power Level',
-          description: 'Numeric strength value',
-        },
-        {
-          value: 'Edition',
-          label: 'Edition',
-          description: 'Special, Limited, First, etc.',
-        },
-      ],
-      warnings: [
-        {
-          pattern: /mime.?type|file.?type|upload.?source/i,
-          message: 'Technical metadata is not valuable for NFT collectors',
-        },
-      ],
-      validationRules: {
-        rejectPatterns: [
-          {
-            pattern: /^(mime.?type|file.?type|source|origin|upload)$/i,
-            reason: 'Technical attributes are not collectible traits',
-          },
-        ],
-        qualityChecks: {
-          forbidTechnicalTerms: [
-            'MIME Type',
-            'File Type',
-            'Source',
-            'Origin',
-            'Upload Source',
-            'File Extension',
-            'Format',
-          ],
-        },
-      },
-      contextualHelpText:
-        'Add traits that make this NFT unique and valuable to collectors',
-    },
-
-    type: {
-      predefinedOptions: [
-        { value: 'Digital Art', label: 'Digital Art' },
-        { value: 'Photography', label: 'Photography' },
-        { value: 'Collectible Card', label: 'Collectible Card' },
-        { value: 'Avatar', label: 'Avatar' },
-        { value: 'Music', label: 'Music' },
-        { value: 'Video', label: 'Video' },
-        { value: '3D Model', label: '3D Model' },
-        { value: 'Generative Art', label: 'Generative Art' },
-        { value: 'Pixel Art', label: 'Pixel Art' },
-      ],
-      contextualHelpText:
-        'Choose the category that best represents your NFT content',
-    },
-  },
-});
+/**
+ * Provider interface (optional, for dynamic guidance)
+ */
+export interface FieldGuidanceProvider {
+  getFieldGuidance(
+    fieldName: string,
+    ctx: { toolName: string }
+  ): FieldGuidance | null;
+  getGlobalGuidance?(
+    toolName: string
+  ): ToolFieldConfiguration['globalGuidance'] | null;
+}

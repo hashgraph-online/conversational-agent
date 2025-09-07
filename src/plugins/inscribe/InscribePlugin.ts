@@ -12,6 +12,7 @@ import {
   InscribeHashinalTool,
   RetrieveInscriptionTool,
 } from '@hashgraphonline/standards-agent-kit';
+import { fieldGuidanceRegistry, type FieldGuidance } from '../../forms/field-guidance-registry';
 
 /**
  * Plugin providing content inscription tools for Hedera
@@ -25,7 +26,8 @@ export class InscribePlugin extends BasePlugin {
   author = 'Hashgraph Online';
   namespace = 'inscribe';
 
-  private tools: HederaTool[] = [];
+  private tools: any[] = [];
+  private providerId: string | null = null;
 
   override async initialize(context: GenericPluginContext): Promise<void> {
     await super.initialize(context);
@@ -40,6 +42,42 @@ export class InscribePlugin extends BasePlugin {
 
     try {
       this.initializeTools();
+
+      try {
+        const provider = {
+          getFieldGuidance: (fieldName: string): FieldGuidance | null => {
+            if (fieldName === 'name') {
+              return {
+                suggestions: [
+                  'Sunset Landscape #42',
+                  'Digital Abstract Art',
+                ],
+                contextualHelpText:
+                  'Create a distinctive name that collectors will find appealing',
+              };
+            }
+            if (fieldName === 'description') {
+              return {
+                fieldTypeOverride: 'textarea',
+                suggestions: ['A beautiful piece representing...'],
+              };
+            }
+            return null;
+          },
+          getGlobalGuidance: () => ({
+            qualityStandards: [
+              'Use meaningful names that describe the artwork or content',
+            ],
+          }),
+        };
+        this.providerId = fieldGuidanceRegistry.registerToolProvider(
+          /inscribe.*hashinal/i,
+          provider,
+          { id: 'inscribe:hashinal:provider', priority: 1 }
+        );
+      } catch (e) {
+        this.context.logger.warn('Could not register Inscribe field guidance provider');
+      }
 
       this.context.logger.info(
         'Inscribe Plugin initialized successfully'
@@ -95,6 +133,12 @@ export class InscribePlugin extends BasePlugin {
 
   override async cleanup(): Promise<void> {
     this.tools = [];
+    if (this.providerId) {
+      try {
+        fieldGuidanceRegistry.unregisterProvider(this.providerId);
+      } catch {}
+      this.providerId = null;
+    }
     if (this.context?.logger) {
       this.context.logger.info('Inscribe Plugin cleaned up');
     }

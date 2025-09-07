@@ -1,4 +1,3 @@
-// Mock external dependencies that might cause issues
 jest.mock('@hashgraph/sdk', () => ({
   Hbar: {
     fromString: jest.fn(),
@@ -183,14 +182,14 @@ describe('EntityResolver Type Safety', () => {
       const result = await resolver.resolveReferences(TEST_ENTITY_CONSTANTS.SEND_THE_TOKEN, entities);
       
       expect(typeof result).toBe('string');
-      expect(result).toBeTruthy(); // Should not be empty string
+      expect(result).toBeTruthy();
     });
 
     it('should handle empty entities array without error', async () => {
       const result = await resolver.resolveReferences(TEST_ENTITY_CONSTANTS.SEND_THE_TOKEN, []);
       
       expect(typeof result).toBe('string');
-      expect(result).toBe('Send the token'); // Should return original message
+      expect(result).toBe('Send the token');
     });
   });
 

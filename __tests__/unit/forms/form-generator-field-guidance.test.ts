@@ -140,7 +140,7 @@ describe('FormGenerator with Field Guidance', () => {
       );
 
       const descField = formMessage.formConfig.fields.find(f => f.name === 'description');
-      expect(descField?.type).toBe('textarea'); // Overridden from 'text'
+      expect(descField?.type).toBe('textarea');
     });
 
     it('should include global guidance in form metadata', async () => {

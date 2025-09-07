@@ -1,14 +1,10 @@
-import {
-  ServerSigner,
-  getAllHederaCorePlugins,
-  BasePlugin,
-} from 'hedera-agent-kit';
+import { ServerSigner, getAllHederaCorePlugins, BasePlugin, AbstractSigner } from 'hedera-agent-kit';
 import { Logger, type NetworkType } from '@hashgraphonline/standards-sdk';
 import { createAgent } from './agent-factory';
+import BrowserSigner from './signers/browser-signer';
 import { LangChainProvider } from './providers';
 import type { ChatResponse, ConversationContext } from './base-agent';
 import { ChatOpenAI } from '@langchain/openai';
-import OpenAI from 'openai';
 import { ChatAnthropic } from '@langchain/anthropic';
 import {
   HumanMessage,
@@ -19,6 +15,8 @@ import type { AgentOperationalMode, MirrorNodeConfig } from 'hedera-agent-kit';
 import { HCS10Plugin } from './plugins/hcs-10/HCS10Plugin';
 import { HCS2Plugin } from './plugins/hcs-2/HCS2Plugin';
 import { InscribePlugin } from './plugins/inscribe/InscribePlugin';
+import { getWalletBridgeProvider } from './runtime/wallet-bridge';
+import { InscriberBuilder } from '@hashgraphonline/standards-agent-kit';
 import { HbarPlugin } from './plugins/hbar/HbarPlugin';
 import { OpenConvaiState } from '@hashgraphonline/standards-agent-kit';
 import type { IStateManager } from '@hashgraphonline/standards-agent-kit';
@@ -32,6 +30,10 @@ import {
   ExtractEntitiesTool,
 } from './tools/entity-resolver-tool';
 import type { FormSubmission } from './forms/types';
+import { ParameterService } from './services/parameter-service';
+import { FormatConverterRegistry } from './services/formatters/format-converter-registry';
+import { TopicIdToHrlConverter } from './services/formatters/converters/topic-id-to-hrl-converter';
+import { StringNormalizationConverter } from './services/formatters/converters/string-normalization-converter';
 
 export type ToolDescriptor = {
   name: string;
@@ -48,6 +50,9 @@ export type AgentInstance = ReturnType<typeof createAgent>;
 export type MirrorNetwork = 'testnet' | 'mainnet' | 'previewnet';
 
 const DEFAULT_MODEL_NAME = 'gpt-4o';
+const DEFAULT_OPENAI_MODEL = 'gpt-4o-mini';
+const DEFAULT_OPENROUTER_MODEL = 'openai/gpt-4o-mini';
+const DEFAULT_CLAUDE_MODEL = 'claude-3-7-sonnet-latest';
 const DEFAULT_TEMPERATURE = 0.1;
 const DEFAULT_NETWORK = 'testnet';
 const DEFAULT_OPERATIONAL_MODE: AgentOperationalMode = 'autonomous';
@@ -72,6 +77,13 @@ export interface ConversationalAgentOptions {
   enabledPlugins?: string[];
   toolFilter?: (tool: { name: string; namespace?: string }) => boolean;
   mcpServers?: MCPServerConfig[];
+  walletExecutor?: (base64: string, network: 'mainnet' | 'testnet') => Promise<{ transactionId: string }>;
+  /** Optional: provide a signer factory to override default signer selection */
+  customSignerFactory?: (args: {
+    operationalMode: AgentOperationalMode;
+    accountId: string;
+    network: NetworkType;
+  }) => AbstractSigner;
 
   /** Enable automatic entity memory functionality (default: true) */
   entityMemoryEnabled?: boolean;
@@ -145,13 +157,16 @@ export class ConversationalAgent {
       this.logger.info('Entity memory initialized');
 
       const provider = options.entityMemoryProvider || options.llmProvider || 'openai';
-      const modelName =
-        options.entityMemoryModelName ||
-        (provider === 'anthropic'
-          ? 'claude-3-7-sonnet-latest'
-          : provider === 'openrouter'
-          ? 'openai/gpt-4o-mini'
-          : 'gpt-4o-mini');
+      let modelName = options.entityMemoryModelName;
+      if (!modelName) {
+        if (provider === 'anthropic') {
+          modelName = DEFAULT_CLAUDE_MODEL;
+        } else if (provider === 'openrouter') {
+          modelName = DEFAULT_OPENROUTER_MODEL;
+        } else {
+          modelName = DEFAULT_OPENAI_MODEL;
+        }
+      }
 
       let resolverLLM: ChatOpenAI | ChatAnthropic;
       if (provider === 'anthropic') {
@@ -163,19 +178,17 @@ export class ConversationalAgent {
       } else if (provider === 'openrouter') {
         const baseURL = options.openRouterBaseURL || 'https://openrouter.ai/api/v1';
         const apiKey = options.openRouterApiKey || options.openAIApiKey;
-        const client = new OpenAI({
-          apiKey,
-          baseURL,
-          defaultHeaders: {
-            Referer: process.env.OPENROUTER_REFERRER || 'https://hashgraphonline.com',
-            'HTTP-Referer': process.env.OPENROUTER_REFERRER || 'https://hashgraphonline.com',
-            'X-Title': process.env.OPENROUTER_TITLE || 'Hashgraph Online Conversational Agent',
-          },
-        });
         resolverLLM = new ChatOpenAI({
-          client,
+          apiKey,
           model: modelName,
           temperature: 0,
+          configuration: {
+            baseURL,
+            defaultHeaders: {
+              'HTTP-Referer': process.env.OPENROUTER_REFERRER || 'https://hashgraphonline.com',
+              'X-Title': process.env.OPENROUTER_TITLE || 'Hashgraph Online Conversational Agent',
+            },
+          },
         });
       } else {
         resolverLLM = new ChatOpenAI({
@@ -208,42 +221,124 @@ export class ConversationalAgent {
     this.validateOptions(accountId, privateKey);
 
     try {
-      const serverSigner = new ServerSigner(
-        accountId!,
-        privateKey!,
-        network as MirrorNetwork
-      );
+      const opMode = (this.options.operationalMode || DEFAULT_OPERATIONAL_MODE) as string;
+      const bytesMode = opMode !== 'autonomous';
+      let signer: AbstractSigner;
+
+      try {
+        type InscriberBuilderAug = typeof InscriberBuilder & {
+          setPreferWalletOnly?: (prefer: boolean) => void;
+          setWalletInfoResolver?: (fn: () => Promise<{ accountId: string; network: string } | null>) => void;
+          setWalletExecutor?: (fn: (base64: string, network: 'mainnet' | 'testnet') => Promise<{ transactionId: string }>) => void;
+          setStartInscriptionDelegate?: (fn: (request: Record<string, unknown>, network: 'mainnet' | 'testnet') => Promise<unknown>) => void;
+        };
+        const IB = InscriberBuilder as InscriberBuilderAug;
+        if (typeof IB.setPreferWalletOnly === 'function') {
+          IB.setPreferWalletOnly(bytesMode);
+        }
+      } catch (e) {
+        this.logger.warn('Failed to set wallet-only preference', e as Error);
+      }
+      if (!bytesMode) {
+        signer = new ServerSigner(accountId!, privateKey!, network as MirrorNetwork);
+      } else {
+        const chain: 'mainnet' | 'testnet' = String(network || 'testnet') === 'mainnet' ? 'mainnet' : 'testnet';
+        const effectiveAccount = (this.options.userAccountId || accountId)!;
+        signer = new BrowserSigner(effectiveAccount, chain, this.options.walletExecutor);
+      }
+
+      this.logger.info('Signer configured', {
+        operationalMode: opMode,
+        bytesMode,
+        signerClass: Object.getPrototypeOf(signer)?.constructor?.name || 'unknown',
+      });
+
+      try {
+        const bridge = getWalletBridgeProvider();
+        if (bridge) {
+          type InscriberBuilderAug2 = typeof InscriberBuilder & {
+            setWalletInfoResolver?: (fn: () => Promise<{ accountId: string; network: string } | null>) => void;
+            setWalletExecutor?: (fn: (base64: string, network: 'mainnet' | 'testnet') => Promise<{ transactionId: string }>) => void;
+            setStartInscriptionDelegate?: (fn: (request: Record<string, unknown>, network: 'mainnet' | 'testnet') => Promise<unknown>) => void;
+          };
+          const IB = InscriberBuilder as InscriberBuilderAug2;
+          if (typeof IB.setWalletInfoResolver === 'function') {
+            IB.setWalletInfoResolver(async () => {
+              const status = await bridge.status();
+              if (status.connected && status.accountId && status.network) {
+                return { accountId: status.accountId, network: status.network };
+              }
+              return null;
+            });
+          }
+          if (typeof IB.setWalletExecutor === 'function') {
+            IB.setWalletExecutor(async (base64: string, network: 'mainnet' | 'testnet') => {
+              return await bridge.executeBytes(base64, network);
+            });
+          }
+          if (typeof IB.setStartInscriptionDelegate === 'function' && bridge.startInscription) {
+            IB.setStartInscriptionDelegate(async (request: Record<string, unknown>, network: 'mainnet' | 'testnet') => {
+              return await bridge.startInscription!(request, network);
+            });
+          }
+
+          try {
+            const sak = await import('@hashgraphonline/standards-agent-kit');
+            const reg: any = (sak as any)?.SignerProviderRegistry;
+            if (reg) {
+              reg.setWalletInfoResolver(async () => {
+                const status = await bridge.status();
+                if (status.connected && status.accountId && status.network) {
+                  return { accountId: status.accountId, network: status.network as 'mainnet' | 'testnet' };
+                }
+                return null;
+              });
+              reg.setWalletExecutor(async (base64: string, network: 'mainnet' | 'testnet') => {
+                return await bridge.executeBytes(base64, network);
+              });
+              if (typeof (bridge as any).startHCS === 'function') {
+                reg.setStartHCSDelegate(async (op: any, request: Record<string, unknown>, network: 'mainnet' | 'testnet') => {
+                  return await (bridge as any).startHCS(op, request, network);
+                });
+              }
+              reg.setPreferWalletOnly(!!bytesMode);
+            }
+          } catch (sakWireErr) {
+            this.logger.warn('Failed to wire SAK SignerProviderRegistry wallet delegates', sakWireErr as Error);
+          }
+        }
+      } catch (e) {
+        this.logger.warn('Failed to register wallet bridge providers', e as Error);
+      }
 
       let llm: ChatOpenAI | ChatAnthropic;
       let providerInfo: Record<string, unknown> = { provider: llmProvider };
       if (llmProvider === 'anthropic') {
         llm = new ChatAnthropic({
           apiKey: openAIApiKey,
-          model: openAIModelName || 'claude-3-7-sonnet-latest',
+          model: openAIModelName || DEFAULT_CLAUDE_MODEL,
           temperature: DEFAULT_TEMPERATURE,
         });
         providerInfo = {
           ...providerInfo,
-          model: openAIModelName || 'claude-3-7-sonnet-latest',
+          model: openAIModelName || DEFAULT_CLAUDE_MODEL,
           keyPresent: !!openAIApiKey,
         };
       } else if (llmProvider === 'openrouter') {
         const baseURL = this.options.openRouterBaseURL || 'https://openrouter.ai/api/v1';
         const apiKey = this.options.openRouterApiKey || openAIApiKey;
         const modelName = openAIModelName || 'anthropic/claude-3-haiku-20240307';
-        const client = new OpenAI({
-          apiKey,
-          baseURL,
-          defaultHeaders: {
-            Referer: process.env.OPENROUTER_REFERRER || 'https://hashgraphonline.com',
-            'HTTP-Referer': process.env.OPENROUTER_REFERRER || 'https://hashgraphonline.com',
-            'X-Title': process.env.OPENROUTER_TITLE || 'Hashgraph Online Conversational Agent',
-          },
-        });
         llm = new ChatOpenAI({
-          client,
+          apiKey,
           model: modelName,
           temperature: DEFAULT_TEMPERATURE,
+          configuration: {
+            baseURL,
+            defaultHeaders: {
+              'HTTP-Referer': process.env.OPENROUTER_REFERRER || 'https://hashgraphonline.com',
+              'X-Title': process.env.OPENROUTER_TITLE || 'Hashgraph Online Conversational Agent',
+            },
+          },
         });
         providerInfo = {
           ...providerInfo,
@@ -252,20 +347,16 @@ export class ConversationalAgent {
           keyPresent: !!apiKey,
         };
       } else {
-        const modelName = openAIModelName || 'gpt-4o-mini';
-        const isGPT5Model =
-          modelName.toLowerCase().includes('gpt-5') ||
-          modelName.toLowerCase().includes('gpt5');
+        const modelName2 = openAIModelName || DEFAULT_OPENAI_MODEL;
+        const isGPT5Model = modelName2.toLowerCase().includes('gpt-5') || modelName2.toLowerCase().includes('gpt5');
         llm = new ChatOpenAI({
           apiKey: openAIApiKey,
-          model: modelName,
-          ...(isGPT5Model
-            ? { temperature: 1 }
-            : { temperature: DEFAULT_TEMPERATURE }),
+          model: modelName2,
+          ...(isGPT5Model ? { temperature: 1 } : { temperature: DEFAULT_TEMPERATURE }),
         });
         providerInfo = {
           ...providerInfo,
-          model: modelName,
+          model: modelName2,
           keyPresent: !!openAIApiKey,
         };
       }
@@ -275,7 +366,7 @@ export class ConversationalAgent {
       this.logger.info('Preparing plugins...');
       const allPlugins = this.preparePlugins();
       this.logger.info('Creating agent config...');
-      const agentConfig = this.createAgentConfig(serverSigner, llm, allPlugins);
+      const agentConfig = this.createAgentConfig(signer as ServerSigner, llm, allPlugins);
 
       this.logger.info('Creating agent...');
       this.agent = createAgent(agentConfig);
@@ -298,6 +389,28 @@ export class ConversationalAgent {
       this.logger.info('🔥 agent.boot() completed');
 
       if (this.agent) {
+        try {
+          const registry = new FormatConverterRegistry();
+          registry.register(new TopicIdToHrlConverter());
+          registry.register(new StringNormalizationConverter());
+          const paramService = new ParameterService(
+            registry,
+            (this.options.network as unknown as NetworkType) || 'testnet'
+          );
+          paramService.attachToAgent(this.agent, {
+            getEntities: async () =>
+              this.memoryManager?.getEntityAssociations() || [],
+          });
+          this.logger.info(
+            'Parameter preprocessing callback attached (internal)'
+          );
+        } catch (e) {
+          this.logger.warn(
+            'Failed to attach internal parameter preprocessing callback',
+            e
+          );
+        }
+
         const cfg = agentConfig;
         cfg.filtering = cfg.filtering || {};
         const originalPredicate = cfg.filtering.toolPredicate as
@@ -450,8 +563,13 @@ export class ConversationalAgent {
    * @throws {Error} If required fields are missing
    */
   private validateOptions(accountId?: string, privateKey?: string): void {
-    if (!accountId || !privateKey) {
-      throw new Error('Account ID and private key are required');
+    const opMode = (this.options.operationalMode || DEFAULT_OPERATIONAL_MODE) as string;
+    const bytesMode = opMode !== 'autonomous';
+    if (!accountId) {
+      throw new Error('Account ID is required');
+    }
+    if (!privateKey && !bytesMode) {
+      throw new Error('Private key is required in autonomous mode');
     }
 
     if (typeof accountId !== 'string') {
@@ -460,15 +578,14 @@ export class ConversationalAgent {
       );
     }
 
-    if (typeof privateKey !== 'string') {
+    if (!bytesMode && typeof privateKey !== 'string') {
       throw new Error(
         `Private key must be a string, received ${typeof privateKey}: ${JSON.stringify(
           privateKey
         )}`
       );
     }
-
-    if (privateKey.length < 10) {
+    if (!bytesMode && typeof privateKey === 'string' && privateKey.length < 10) {
       throw new Error('Private key appears to be invalid (too short)');
     }
   }
@@ -504,13 +621,13 @@ export class ConversationalAgent {
   /**
    * Creates the agent configuration object.
    *
-   * @param serverSigner - The server signer instance
+   * @param signer - The signer instance
    * @param llm - The language model instance
    * @param allPlugins - Array of plugins to use
    * @returns Configuration object for creating the agent
    */
   private createAgentConfig(
-    serverSigner: ServerSigner,
+    signer: ServerSigner,
     llm: ChatOpenAI | ChatAnthropic,
     allPlugins: BasePlugin[]
   ): Parameters<typeof createAgent>[0] {
@@ -528,7 +645,7 @@ export class ConversationalAgent {
 
     return {
       framework: 'langchain',
-      signer: serverSigner,
+      signer,
       execution: {
         mode: operationalMode === 'autonomous' ? 'direct' : 'bytes',
         operationalMode: operationalMode,
@@ -798,7 +915,7 @@ export class ConversationalAgent {
       }
       if (typeof response === 'string') {
         const match = response.match(
-          /transaction[\s\w]*ID[\s:"]*([0-9a-fA-F@\.\-]+)/i
+          /transaction[\s\w]*ID[\s:"]*([0-9a-fA-F@._-]+)/i
         );
         return match ? match[1] : undefined;
       }

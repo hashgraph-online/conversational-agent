@@ -1,6 +1,5 @@
 import { describe, test, expect, jest } from '@jest/globals';
 
-// Mock all dependencies before importing
 jest.mock('../../src/plugins/hcs-10/HCS10Plugin', () => ({
   HCS10Plugin: jest.fn().mockImplementation(() => ({
     initialize: jest.fn(),
@@ -93,7 +92,6 @@ jest.mock('../../src/agent-factory', () => ({
   })),
 }));
 
-// Now import after mocks are set up
 import { ConversationalAgent } from '../../src/conversational-agent';
 
 /**
@@ -123,13 +121,11 @@ describe('ConversationalAgent - Basic Functionality', () => {
           accountId: '0.0.12345',
           privateKey: 'mock-private-key',
           entityMemoryEnabled: true
-          // missing openAIApiKey
         });
-      }).toThrow('OpenAI API key is required when entity memory is enabled');
+      }).toThrow('OpenAI/Anthropic API key is required when entity memory is enabled');
     });
 
     test('Creates entity tools when OpenAI key is provided and entity memory is enabled', () => {
-      // Test that the agent can be created with entity memory enabled
       const agent = new ConversationalAgent({
         accountId: '0.0.12345',
         privateKey: 'mock-private-key',
@@ -138,7 +134,6 @@ describe('ConversationalAgent - Basic Functionality', () => {
       });
 
       expect(agent).toBeDefined();
-      // The entity tools creation happens in constructor, we just verify it doesn't throw
     });
 
     test('Creates agent without entity tools when entity memory is disabled', () => {
@@ -150,7 +145,6 @@ describe('ConversationalAgent - Basic Functionality', () => {
       });
 
       expect(agent).toBeDefined();
-      // When entityMemoryEnabled is false, no entity tools should be created
     });
   });
 
@@ -162,7 +156,7 @@ describe('ConversationalAgent - Basic Functionality', () => {
         openAIApiKey: 'sk-test'
       });
 
-      await expect(agent.initialize()).rejects.toThrow('Account ID and private key are required');
+      await expect(agent.initialize()).rejects.toThrow('Account ID is required');
     });
 
     test('Throws error during initialization for empty private key', async () => {
@@ -172,7 +166,7 @@ describe('ConversationalAgent - Basic Functionality', () => {
         openAIApiKey: 'sk-test'
       });
 
-      await expect(agent.initialize()).rejects.toThrow('Account ID and private key are required');
+      await expect(agent.initialize()).rejects.toThrow('Private key is required in autonomous mode');
     });
 
     test('Throws error during initialization for undefined account ID', async () => {
@@ -182,7 +176,7 @@ describe('ConversationalAgent - Basic Functionality', () => {
         openAIApiKey: 'sk-test'
       });
 
-      await expect(agent.initialize()).rejects.toThrow('Account ID and private key are required');
+      await expect(agent.initialize()).rejects.toThrow('Account ID is required');
     });
 
     test('Throws error during initialization for undefined private key', async () => {
@@ -192,7 +186,7 @@ describe('ConversationalAgent - Basic Functionality', () => {
         openAIApiKey: 'sk-test'
       });
 
-      await expect(agent.initialize()).rejects.toThrow('Account ID and private key are required');
+      await expect(agent.initialize()).rejects.toThrow('Private key is required in autonomous mode');
     });
 
     test('Throws error for invalid account ID type', async () => {
@@ -318,7 +312,6 @@ describe('ConversationalAgent - Basic Functionality', () => {
         timestamp: Date.now()
       };
 
-      // This should throw because agent is not initialized, not because of invalid submission
       await expect(agent.processFormSubmission(submission)).rejects.toThrow(
         'Agent not initialized. Call initialize() first.'
       );
@@ -370,7 +363,6 @@ describe('ConversationalAgent - Basic Functionality', () => {
         openAIApiKey: 'sk-test'
       });
 
-      // Cleanup should not throw an error even when not initialized
       await expect(agent.cleanup()).resolves.toBeUndefined();
     });
   });

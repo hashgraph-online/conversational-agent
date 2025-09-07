@@ -72,7 +72,6 @@ describe('FormGenerator', () => {
 
     mockLogger.mockImplementation(() => mockLoggerInstance);
 
-    // FIELD_PRIORITIES is now mocked in the jest.mock() above
 
     mockFieldTypeRegistry.detectType = jest.fn().mockReturnValue('text');
     mockFieldGuidanceRegistry.getGlobalGuidance = jest.fn().mockReturnValue(null);
@@ -813,7 +812,6 @@ describe('FormGenerator', () => {
     it('should handle schema extraction errors gracefully', () => {
       const schema = z.object({ name: z.string() });
       
-      // Mock the extractZodObject method to return null
       formGenerator['extractZodObject'] = jest.fn().mockReturnValue(null);
 
       const fields = formGenerator['extractFieldsFromSchema'](schema);

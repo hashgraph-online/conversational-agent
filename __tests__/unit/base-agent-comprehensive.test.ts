@@ -30,7 +30,6 @@ class TestAgent extends BaseAgent {
   }
 
   switchMode(): void {
-    // Test implementation
   }
 
   getUsageStats(): any {
@@ -42,18 +41,15 @@ class TestAgent extends BaseAgent {
   }
 
   clearUsageStats(): void {
-    // Test implementation
   }
 
   async connectMCPServers(): Promise<void> {
-    // Test implementation
   }
 
   getMCPConnectionStatus(): Map<string, any> {
     return new Map([['test-server', { connected: true }]]);
   }
 
-  // Expose protected methods for testing
   public testFilterTools(tools: StructuredTool[]): StructuredTool[] {
     return this.filterTools(tools);
   }
@@ -202,7 +198,7 @@ describe('BaseAgent', () => {
 
       const result = agent.testFilterTools(mockTools);
 
-      expect(result).toHaveLength(2); // tool1 (no namespace) and tool2 (allowed namespace)
+      expect(result).toHaveLength(2);
       expect(result.map(t => t.name)).toContain('tool1');
       expect(result.map(t => t.name)).toContain('tool2');
       expect(result.map(t => t.name)).not.toContain('tool3');
@@ -405,7 +401,6 @@ describe('BaseAgent', () => {
         ...validConfig,
         execution: {
           mode: 'direct',
-          // operationalMode not specified, should default to 'returnBytes'
         },
       };
       agent = new TestAgent(config);
@@ -597,7 +592,7 @@ describe('BaseAgent', () => {
 
       const result = agent.testFilterTools(tools);
 
-      expect(result).toHaveLength(2); // Both should pass because undefined namespace is allowed
+      expect(result).toHaveLength(2);
     });
 
     it('should handle tools with null namespace', () => {
@@ -615,7 +610,7 @@ describe('BaseAgent', () => {
 
       const result = agent.testFilterTools(tools);
 
-      expect(result).toHaveLength(1); // null namespace should be treated as allowed
+      expect(result).toHaveLength(1);
     });
   });
 });

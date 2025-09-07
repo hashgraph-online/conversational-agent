@@ -6,7 +6,6 @@ import { BaseChatModel } from '@langchain/core/language_models/chat_models';
 import { createMockServerSigner, createMockTool, createMockAgentExecutor, MockStructuredToolInterface, MockAgentExecutorInterface } from '../mock-factory';
 import { TEST_RESPONSE_MESSAGES, TEST_MCP_DATA, TEST_FRAMEWORK_VALUES, TEST_TOOL_VALUES } from '../test-constants';
 
-// Mock BasePlugin before importing anything that uses it
 jest.mock('hedera-agent-kit', () => ({
   BasePlugin: class MockBasePlugin {
     context = {

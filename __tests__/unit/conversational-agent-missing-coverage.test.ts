@@ -20,7 +20,7 @@ describe('ConversationalAgent Missing Coverage Tests', () => {
     test('should handle userAccountId option when provided', async () => {
       const agent = new ConversationalAgent({
         ...mockOptions,
-        userAccountId: '0.0.67890', // Line 63 coverage
+        userAccountId: '0.0.67890',
       });
 
       expect(agent).toBeDefined();
@@ -37,7 +37,7 @@ describe('ConversationalAgent Missing Coverage Tests', () => {
     test('should initialize with entityMemoryEnabled: true', async () => {
       const agent = new ConversationalAgent({
         ...mockOptions,
-        entityMemoryEnabled: true, // Line 132-133 coverage
+        entityMemoryEnabled: true,
         entityMemoryConfig: {
           maxTokens: 50000,
           priorityDecay: 0.9,
@@ -47,7 +47,6 @@ describe('ConversationalAgent Missing Coverage Tests', () => {
       try {
         await agent.initialize();
       } catch (error) {
-        // Expected to fail in test environment due to mocks
         expect(error).toBeDefined();
       }
     });
@@ -55,13 +54,12 @@ describe('ConversationalAgent Missing Coverage Tests', () => {
     test('should work with entityMemoryEnabled: false', async () => {
       const agent = new ConversationalAgent({
         ...mockOptions,
-        entityMemoryEnabled: false, // Skip entity memory initialization
+        entityMemoryEnabled: false,
       });
 
       try {
         await agent.initialize();
       } catch (error) {
-        // Expected to fail in test environment due to mocks
         expect(error).toBeDefined();
       }
     });
@@ -86,13 +84,12 @@ describe('ConversationalAgent Missing Coverage Tests', () => {
     test('should set temperature to 1 for GPT-5 models', async () => {
       const agent = new ConversationalAgent({
         ...mockOptions,
-        openAIModelName: 'gpt-5-turbo', // Line 172-173 coverage
+        openAIModelName: 'gpt-5-turbo',
       });
 
       try {
         await agent.initialize();
       } catch (error) {
-        // Expected to fail in test environment, but we're testing the configuration path
         expect(error).toBeDefined();
       }
     });
@@ -100,13 +97,12 @@ describe('ConversationalAgent Missing Coverage Tests', () => {
     test('should set temperature to 1 for gpt5 models (case insensitive)', async () => {
       const agent = new ConversationalAgent({
         ...mockOptions,
-        openAIModelName: 'GPT5-advanced', // Line 172-173 coverage
+        openAIModelName: 'GPT5-advanced',
       });
 
       try {
         await agent.initialize();
       } catch (error) {
-        // Expected to fail in test environment, but we're testing the configuration path
         expect(error).toBeDefined();
       }
     });
@@ -114,13 +110,12 @@ describe('ConversationalAgent Missing Coverage Tests', () => {
     test('should use default temperature for non-GPT5 models', async () => {
       const agent = new ConversationalAgent({
         ...mockOptions,
-        openAIModelName: 'gpt-4o-mini', // Should not trigger GPT-5 logic
+        openAIModelName: 'gpt-4o-mini',
       });
 
       try {
         await agent.initialize();
       } catch (error) {
-        // Expected to fail in test environment
         expect(error).toBeDefined();
       }
     });
@@ -137,7 +132,6 @@ describe('ConversationalAgent Missing Coverage Tests', () => {
       try {
         await agent.initialize();
       } catch (error) {
-        // Expected to fail in test environment due to mocks
         expect(error).toBeDefined();
       }
     });
@@ -147,13 +141,12 @@ describe('ConversationalAgent Missing Coverage Tests', () => {
     test('should handle tool filter returning false', async () => {
       const agent = new ConversationalAgent({
         ...mockOptions,
-        toolFilter: () => false, // Line 225-227 coverage - filter rejects all tools
+        toolFilter: () => false,
       });
 
       try {
         await agent.initialize();
       } catch (error) {
-        // Expected to fail in test environment
         expect(error).toBeDefined();
       }
     });
@@ -162,7 +155,6 @@ describe('ConversationalAgent Missing Coverage Tests', () => {
       const agent = new ConversationalAgent({
         ...mockOptions,
         toolFilter: (tool) => {
-          // Line 225-227 coverage - complex filter logic
           if (tool.namespace === 'blocked-namespace') {
             return false;
           }
@@ -173,7 +165,6 @@ describe('ConversationalAgent Missing Coverage Tests', () => {
       try {
         await agent.initialize();
       } catch (error) {
-        // Expected to fail in test environment
         expect(error).toBeDefined();
       }
     });
@@ -249,7 +240,6 @@ describe('ConversationalAgent Missing Coverage Tests', () => {
       try {
         await agent.initialize();
       } catch (error) {
-        // Expected to fail in test environment
         expect(error).toBeDefined();
       }
     });

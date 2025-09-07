@@ -274,7 +274,7 @@ describe('FormEngine', () => {
       const nonZodTool = {
         name: 'non-zod-tool',
         description: 'Tool without Zod schema',
-        schema: 'string-schema', // Not a ZodObject
+        schema: 'string-schema',
       } as StructuredTool;
 
       const result = await formEngine.generateForm('non-zod-tool', nonZodTool, {});
@@ -382,7 +382,7 @@ describe('FormEngine', () => {
       const { isFormValidatable } = require('@hashgraphonline/standards-agent-kit');
       isFormValidatable.mockReturnValue(true);
       
-      const input = { param: '' }; // Empty param should trigger form generation
+      const input = { param: '' };
 
       const result = formEngine.shouldGenerateForm(mockFormValidatableTool, input);
 
@@ -414,14 +414,14 @@ describe('FormEngine', () => {
       const { isFormValidatable } = require('@hashgraphonline/standards-agent-kit');
       isFormValidatable.mockReturnValue(false);
       
-      const invalidInput = { invalidParam: 'test' }; // Missing requiredParam
+      const invalidInput = { invalidParam: 'test' };
       const validInput = { requiredParam: 'test' };
 
       const invalidResult = formEngine.shouldGenerateForm(mockStandardTool, invalidInput);
       const validResult = formEngine.shouldGenerateForm(mockStandardTool, validInput);
 
-      expect(invalidResult).toBe(true); // Should generate form for invalid input
-      expect(validResult).toBe(false); // Should not generate form for valid input
+      expect(invalidResult).toBe(true);
+      expect(validResult).toBe(false);
     });
   });
 

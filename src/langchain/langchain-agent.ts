@@ -621,45 +621,55 @@ export class LangChainAgent extends BaseAgent {
       );
     }
 
-    const parsedSteps = result?.intermediateSteps?.[0]?.observation;
-    if (
-      parsedSteps &&
-      typeof parsedSteps === 'string' &&
-      this.isJSON(parsedSteps)
-    ) {
+    const steps = (result?.intermediateSteps as IntermediateStep[]) || [];
+    const lastJsonObservation = [...steps]
+      .reverse()
+      .find(
+        (s) => typeof s?.observation === 'string' && this.isJSON(s.observation as string)
+      )?.observation as string | undefined;
+
+    if (lastJsonObservation) {
       try {
-        const parsed = JSON.parse(parsedSteps);
+        const parsed = JSON.parse(lastJsonObservation);
 
         if (ResponseFormatter.isInscriptionResponse(parsed)) {
-          const formattedMessage =
-            ResponseFormatter.formatInscriptionResponse(parsed);
+          const formattedMessage = ResponseFormatter.formatInscriptionResponse(parsed);
           response.output = formattedMessage;
           response.message = formattedMessage;
-
           if (parsed.inscription) {
             response.inscription = parsed.inscription;
           }
           if (parsed.metadata) {
-            response.metadata = {
-              ...response.metadata,
-              ...parsed.metadata,
-            };
+            response.metadata = { ...response.metadata, ...parsed.metadata };
           }
         } else {
-          response = { ...response, ...parsed };
+          if (typeof parsed.message === 'string' && parsed.message.trim().length > 0) {
+            response.message = parsed.message;
+            response.output = parsed.message;
+          }
+          if (parsed.success === true) {
+            delete (response as { error?: string }).error;
+          }
+          if (typeof parsed.transactionBytes === 'string') {
+            response.metadata = {
+              ...response.metadata,
+              transactionBytes: parsed.transactionBytes as string,
+            };
+          }
+          if (typeof parsed.scheduleId === 'string') {
+            (response as { scheduleId?: string }).scheduleId = parsed.scheduleId as string;
+          }
         }
 
         const blockMetadata = this.processHashLinkBlocks(parsed);
         if (blockMetadata.hashLinkBlock) {
-          response.metadata = {
-            ...response.metadata,
-            ...blockMetadata,
-          };
+          response.metadata = { ...response.metadata, ...blockMetadata };
         }
       } catch (error) {
         this.logger.error('Error parsing intermediate steps:', error);
       }
     }
+
 
     if (!response.output || response.output.trim() === '') {
       response.output = 'Agent action complete.';
@@ -809,7 +819,7 @@ export class LangChainAgent extends BaseAgent {
             if (args.metaOptions && typeof args.metaOptions === 'object') {
               const metaOptions = args.metaOptions as Record<string, unknown>;
               if (metaOptions.transactionMemo) {
-                console.warn(
+                this.logger.warn(
                   '🚨 WORKAROUND: Stripping transactionMemo from hedera-hts-mint-nft to avoid bug',
                   { originalMemo: metaOptions.transactionMemo }
                 );

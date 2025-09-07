@@ -34,7 +34,7 @@ describe('ResponseFormatter Comprehensive Tests', () => {
         { success: false, type: 'inscription', hashLinkBlock: {} },
         { success: 'true', type: 'inscription', hashLinkBlock: {} },
         { success: undefined, type: 'inscription', hashLinkBlock: {} },
-        { type: 'inscription', hashLinkBlock: {} }, // missing success
+        { type: 'inscription', hashLinkBlock: {} },
       ];
 
       responses.forEach(response => {
@@ -46,7 +46,7 @@ describe('ResponseFormatter Comprehensive Tests', () => {
       const responses = [
         { success: true, type: 'other', hashLinkBlock: {} },
         { success: true, type: null, hashLinkBlock: {} },
-        { success: true, hashLinkBlock: {} }, // missing type
+        { success: true, hashLinkBlock: {} },
       ];
 
       responses.forEach(response => {
@@ -56,7 +56,7 @@ describe('ResponseFormatter Comprehensive Tests', () => {
 
     test('should return false when hashLinkBlock is missing or invalid', () => {
       const responses = [
-        { success: true, type: 'inscription' }, // missing hashLinkBlock
+        { success: true, type: 'inscription' },
         { success: true, type: 'inscription', hashLinkBlock: null },
         { success: true, type: 'inscription', hashLinkBlock: 'string' },
         { success: true, type: 'inscription', hashLinkBlock: 123 },
@@ -95,8 +95,8 @@ describe('ResponseFormatter Comprehensive Tests', () => {
       expect(result).toContain('✅ Interactive content created successfully!');
       expect(result).toContain('**Test Block**');
       expect(result).toContain('A test block description');
-      expect(result).toContain('📍 **Topic ID:** 0.0.456'); // inscription topicId takes priority
-      expect(result).toContain('🔗 **HRL:** hrl://inscription-hrl'); // inscription hrl takes priority
+      expect(result).toContain('📍 **Topic ID:** 0.0.456');
+      expect(result).toContain('🔗 **HRL:** hrl://inscription-hrl');
       expect(result).toContain('🌐 **CDN URL:** https://cdn.example.com/content');
       expect(result).toContain('👤 **Creator:** test-creator');
       expect(result).toContain('⚡ Interactive content will load below');
@@ -216,7 +216,7 @@ describe('ResponseFormatter Comprehensive Tests', () => {
       const responses = [
         { success: false, type: 'inscription', inscription: {} },
         { success: 'true', type: 'inscription', inscription: {} },
-        { type: 'inscription', inscription: {} }, // missing success
+        { type: 'inscription', inscription: {} },
       ];
 
       responses.forEach(response => {
@@ -227,7 +227,7 @@ describe('ResponseFormatter Comprehensive Tests', () => {
     test('should return false when type is not inscription', () => {
       const responses = [
         { success: true, type: 'other', inscription: {} },
-        { success: true, inscription: {} }, // missing type
+        { success: true, inscription: {} },
       ];
 
       responses.forEach(response => {
@@ -237,7 +237,7 @@ describe('ResponseFormatter Comprehensive Tests', () => {
 
     test('should return false when inscription is missing or invalid', () => {
       const responses = [
-        { success: true, type: 'inscription' }, // missing inscription
+        { success: true, type: 'inscription' },
         { success: true, type: 'inscription', inscription: null },
         { success: true, type: 'inscription', inscription: 'string' },
         { success: true, type: 'inscription', inscription: 123 },

@@ -208,7 +208,7 @@ describe('Plugins', () => {
 
     it('should have setAccountId method', () => {
       const result = builder.setAccountId('0.0.123');
-      expect(result).toBe(builder); // Should return this for chaining
+      expect(result).toBe(builder);
     });
 
     it('should have setPrivateKey method', () => {
@@ -272,7 +272,6 @@ describe('Plugins', () => {
         amounts: [100, 200],
       };
 
-      // Should not throw, even if it returns an error
       await expect(wrapper._call(params)).resolves.toBeDefined();
     });
   });
@@ -314,14 +313,12 @@ describe('Plugins', () => {
         amount: 100,
       };
 
-      // Should not throw, even if it returns an error
       await expect(tool._call(params)).resolves.toBeDefined();
     });
 
     it('should handle call with invalid parameters gracefully', async () => {
       const params = {};
 
-      // Should handle invalid parameters without throwing
       await expect(tool._call(params)).resolves.toBeDefined();
     });
   });

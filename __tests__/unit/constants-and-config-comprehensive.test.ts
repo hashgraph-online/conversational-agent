@@ -68,7 +68,6 @@ describe('Configuration and Constants', () => {
     it('should contain entity reference patterns', () => {
       expect(ENTITY_REFERENCES).toBeDefined();
       
-      // Check if it has expected structure
       if (typeof ENTITY_REFERENCES === 'object' && ENTITY_REFERENCES !== null) {
         const keys = Object.keys(ENTITY_REFERENCES);
         expect(keys.length).toBeGreaterThanOrEqual(0);
@@ -93,14 +92,12 @@ describe('Configuration and Constants', () => {
     it('should contain priority levels', () => {
       expect(FIELD_PRIORITIES).toBeDefined();
       
-      // Common priority levels that might exist
       const expectedPriorities = ['essential', 'common', 'advanced', 'expert', 'critical', 'high', 'medium', 'low'];
       
       if (typeof FIELD_PRIORITIES === 'object' && FIELD_PRIORITIES !== null) {
         const keys = Object.keys(FIELD_PRIORITIES);
         expect(keys.length).toBeGreaterThanOrEqual(0);
         
-        // Check if some expected priorities exist
         const hasExpectedPriorities = keys.some(key => 
           expectedPriorities.includes(key.toLowerCase())
         );
@@ -147,7 +144,6 @@ describe('Configuration and Constants', () => {
         keys.forEach(key => {
           expect(typeof key).toBe('string');
           expect(key.length).toBeGreaterThan(0);
-          // Error message keys should be descriptive
           expect(key.toUpperCase() === key || key.includes('_')).toBe(true);
         });
       }
@@ -183,7 +179,6 @@ describe('Configuration and Constants', () => {
           expect(typeof key).toBe('string');
           expect(key.length).toBeGreaterThan(0);
           
-          // Test constants can be any type
           expect(value !== undefined).toBe(true);
         });
       }
@@ -193,7 +188,6 @@ describe('Configuration and Constants', () => {
       if (typeof TEST_CONSTANTS === 'object' && TEST_CONSTANTS !== null) {
         const keys = Object.keys(TEST_CONSTANTS);
         
-        // Common test constant patterns
         const testPatterns = ['test', 'mock', 'sample', 'example', 'dummy'];
         
         if (keys.length > 0) {
@@ -217,7 +211,6 @@ describe('Configuration and Constants', () => {
     });
 
     it('should not have circular references', () => {
-      // Test that constants don't reference each other in a circular way
       const constants = [ENTITY_REFERENCES, FIELD_PRIORITIES, ERROR_MESSAGES, TEST_CONSTANTS];
       
       constants.forEach(constant => {
@@ -241,7 +234,6 @@ describe('Configuration and Constants', () => {
     });
 
     it('should maintain referential integrity', () => {
-      // Constants should be stable references
       expect(ENTITY_REFERENCES).toBe(ENTITY_REFERENCES);
       expect(FIELD_PRIORITIES).toBe(FIELD_PRIORITIES);
       expect(ERROR_MESSAGES).toBe(ERROR_MESSAGES);
@@ -267,24 +259,19 @@ describe('Configuration and Constants', () => {
     });
 
     it('should maintain constant immutability', () => {
-      // Verify constants are not accidentally mutable
       const originalEntityRefs = { ...ENTITY_REFERENCES };
       const originalFieldPriorities = { ...FIELD_PRIORITIES };
       const originalErrorMessages = { ...ERROR_MESSAGES };
       const originalTestConstants = { ...TEST_CONSTANTS };
 
-      // Try to modify (should not affect originals if properly frozen/immutable)
       try {
         (ENTITY_REFERENCES as any).newKey = 'newValue';
         (FIELD_PRIORITIES as any).newPriority = 'newValue';
         (ERROR_MESSAGES as any).newError = 'newValue';
         (TEST_CONSTANTS as any).newTest = 'newValue';
       } catch {
-        // It's okay if modification throws (frozen objects)
       }
 
-      // Constants should remain unchanged or the modification should be ignored
-      // This test passes regardless of mutability to avoid false failures
       expect(typeof ENTITY_REFERENCES).toBe('object');
       expect(typeof FIELD_PRIORITIES).toBe('object');
       expect(typeof ERROR_MESSAGES).toBe('object');

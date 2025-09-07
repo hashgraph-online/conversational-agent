@@ -134,7 +134,6 @@ describe('ResponseFormatter', () => {
 
       const result = ResponseFormatter.formatOutput(output);
 
-      // Should handle circular references without throwing
       expect(typeof result).toBe('string');
       expect(result).toContain('test');
     });
@@ -243,13 +242,13 @@ describe('ResponseFormatter', () => {
     });
 
     it('should reject invalid JSON string', () => {
-      const result = ResponseFormatter.isValidJson('{key: value}'); // Missing quotes
+      const result = ResponseFormatter.isValidJson('{key: value}');
 
       expect(result).toBe(false);
     });
 
     it('should reject malformed JSON', () => {
-      const result = ResponseFormatter.isValidJson('{"key": value}'); // Unquoted value
+      const result = ResponseFormatter.isValidJson('{"key": value}');
 
       expect(result).toBe(false);
     });

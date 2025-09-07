@@ -26,7 +26,7 @@ export class HCS2Plugin extends BasePlugin {
   author = 'Hashgraph Online';
   namespace = 'hcs2';
 
-  private tools: HederaTool[] = [];
+  private tools: any[] = [];
 
   override async initialize(context: GenericPluginContext): Promise<void> {
     await super.initialize(context);
