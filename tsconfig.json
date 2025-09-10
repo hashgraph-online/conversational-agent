@@ -22,7 +22,11 @@
     "allowJs": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "noEmit": true
+    "noEmit": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"]
+    }
   },
   "include": ["src/**/*", "tests/**/*", "vite.config.ts", "vitest.config.ts", "__tests__/**/*"],
   "exclude": ["node_modules", "dist", "scripts/**/*"]

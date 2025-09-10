@@ -4,6 +4,7 @@ import {fileURLToPath} from 'url';
 import {dirname, join} from 'path';
 import {access, constants} from 'fs/promises';
 import {spawn} from 'child_process';
+import { Logger } from '@hashgraphonline/standards-sdk';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -26,8 +27,9 @@ async function isBuilt() {
  * Install dependencies
  */
 function installDeps() {
+	const logger = new Logger({ module: 'CLI' });
 	return new Promise((resolve, reject) => {
-		console.log('📦 Installing CLI dependencies...');
+		logger.info('📦 Installing CLI dependencies...');
 		const child = spawn('pnpm', ['install'], {
 			cwd: cliRoot,
 			stdio: 'inherit',
@@ -47,8 +49,9 @@ function installDeps() {
  * Build the CLI
  */
 function build() {
+	const logger = new Logger({ module: 'CLI' });
 	return new Promise((resolve, reject) => {
-		console.log('🔨 Building Conversational Agent CLI...');
+		logger.info('🔨 Building Conversational Agent CLI...');
 		const child = spawn('pnpm', ['build'], {
 			cwd: cliRoot,
 			stdio: 'inherit',
@@ -56,7 +59,7 @@ function build() {
 
 		child.on('close', code => {
 			if (code === 0) {
-				console.log('✅ CLI built successfully!');
+				logger.info('✅ CLI built successfully!');
 				resolve();
 			} else {
 				reject(new Error(`Build failed with code ${code}`));
@@ -100,16 +103,20 @@ async function hasDependencies() {
  * Main function
  */
 async function main() {
+	const logger = new Logger({ module: 'CLI' });
 	try {
 		if (!(await hasDependencies())) {
 			await installDeps();
 		}
 
 		runCli();
-	} catch (error) {
-		console.error('❌ Error:', error.message);
+	} catch (error: any) {
+		logger.error('❌ Error:', error?.message || error);
 		process.exit(1);
 	}
 }
 
-main().catch(console.error);
+main().catch((e) => {
+	const logger = new Logger({ module: 'CLI' });
+	logger.error('Unhandled error in CLI:', e);
+});

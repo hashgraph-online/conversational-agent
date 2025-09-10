@@ -12,7 +12,6 @@ import { dirname, join } from 'path';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// Run the actual CLI from the cli directory
 const cliPath = join(__dirname, '..', 'cli', 'dist', 'cli.js');
 
 const child = spawn('node', [cliPath, ...process.argv.slice(2)], {
