@@ -244,7 +244,7 @@ export class ConversationalAgent {
       let signer: AbstractSigner;
 
       try {
-        type InscriberBuilderAug = typeof InscriberBuilder & {
+        type InscriberBuilderWithWalletMethods = typeof InscriberBuilder & {
           setPreferWalletOnly?: (prefer: boolean) => void;
           setWalletInfoResolver?: (
             fn: () => Promise<{ accountId: string; network: string } | null>
@@ -262,25 +262,7 @@ export class ConversationalAgent {
             ) => Promise<unknown>
           ) => void;
         };
-        type InscriberBuilderAug3 = typeof InscriberBuilder & {
-          setPreferWalletOnly?: (prefer: boolean) => void;
-          setWalletInfoResolver?: (
-            fn: () => Promise<{ accountId: string; network: string } | null>
-          ) => void;
-          setWalletExecutor?: (
-            fn: (
-              base64: string,
-              network: 'mainnet' | 'testnet'
-            ) => Promise<{ transactionId: string }>
-          ) => void;
-          setStartInscriptionDelegate?: (
-            fn: (
-              request: Record<string, unknown>,
-              network: 'mainnet' | 'testnet'
-            ) => Promise<unknown>
-          ) => void;
-        };
-        const IB = InscriberBuilder as InscriberBuilderAug3;
+        const IB = InscriberBuilder as InscriberBuilderWithWalletMethods;
         if (typeof IB.setPreferWalletOnly === 'function') {
           IB.setPreferWalletOnly(false);
         }
@@ -314,7 +296,7 @@ export class ConversationalAgent {
       try {
         const bridge = getWalletBridgeProvider();
         if (bridge) {
-          type InscriberBuilderAug2 = typeof InscriberBuilder & {
+          type InscriberBuilderWithWalletMethods = typeof InscriberBuilder & {
             setWalletInfoResolver?: (
               fn: () => Promise<{ accountId: string; network: string } | null>
             ) => void;
@@ -331,7 +313,7 @@ export class ConversationalAgent {
               ) => Promise<unknown>
             ) => void;
           };
-          const IB = InscriberBuilder as InscriberBuilderAug2;
+          const IB = InscriberBuilder as InscriberBuilderWithWalletMethods;
           if (typeof IB.setWalletInfoResolver === 'function') {
             IB.setWalletInfoResolver(async () => {
               const status = await bridge.status();
@@ -423,10 +405,10 @@ export class ConversationalAgent {
 
             SignerProviderRegistry.setPreferWalletOnly(enforceWallet);
 
-            type InscriberBuilderAug3 = typeof InscriberBuilder & {
+            type InscriberBuilderWithWalletMethods = typeof InscriberBuilder & {
               setPreferWalletOnly?: (prefer: boolean) => void;
             };
-            const IB2 = InscriberBuilder as InscriberBuilderAug3;
+            const IB2 = InscriberBuilder as InscriberBuilderWithWalletMethods;
             if (typeof IB2.setPreferWalletOnly === 'function') {
               IB2.setPreferWalletOnly(enforceWallet);
             }
