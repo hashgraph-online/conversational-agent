@@ -99,9 +99,9 @@ export const commonMocks = {
 
   timers: () => {
     jest.useFakeTimers();
-    global.setInterval = jest.fn(() => ({ unref: jest.fn() }));
+    global.setInterval = jest.fn(() => ({ unref: jest.fn(), hasRef: jest.fn(), refresh: jest.fn() } as any));
     global.clearInterval = jest.fn();
-    global.setTimeout = jest.fn(() => ({ unref: jest.fn() }));
+    global.setTimeout = (() => {}) as any;
     global.clearTimeout = jest.fn();
   },
 

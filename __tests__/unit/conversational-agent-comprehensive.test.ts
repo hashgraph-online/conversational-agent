@@ -156,7 +156,7 @@ describe('ConversationalAgent', () => {
         entityMemoryConfig: memoryConfig 
       };
 
-      new ConversationalAgent(options);
+      new ConversationalAgent(options as any);
 
       expect(mockSmartMemoryManager).toHaveBeenCalledWith(memoryConfig);
     });
@@ -286,7 +286,7 @@ describe('ConversationalAgent', () => {
       await agent.initialize();
 
       const createAgentCall = mockCreateAgent.mock.calls[0][0];
-      expect(createAgentCall.extensions.plugins).toHaveLength(2);
+      expect(createAgentCall.extensions?.plugins).toHaveLength(2);
     });
 
     it('should include additional plugins', async () => {
@@ -297,7 +297,7 @@ describe('ConversationalAgent', () => {
       await agent.initialize();
 
       const createAgentCall = mockCreateAgent.mock.calls[0][0];
-      expect(createAgentCall.extensions.plugins).toContain(additionalPlugin);
+      expect(createAgentCall.extensions?.plugins).toContain(additionalPlugin);
     });
   });
 
@@ -486,6 +486,7 @@ describe('ConversationalAgent', () => {
         formId: 'test-form',
         toolName: 'test-tool',
         parameters: { param1: 'value1' },
+        timestamp: Date.now(),
       };
 
       const result = await agent.processFormSubmission(submission);
@@ -496,7 +497,7 @@ describe('ConversationalAgent', () => {
 
     it('should throw error when not initialized', async () => {
       const uninitializedAgent = new ConversationalAgent(validOptions);
-      const submission: FormSubmission = { formId: 'test', toolName: 'test' };
+      const submission: FormSubmission = { formId: 'test', toolName: 'test', parameters: {}, timestamp: Date.now() };
 
       await expect(uninitializedAgent.processFormSubmission(submission)).rejects.toThrow(
         'Agent not initialized. Call initialize() first.'
@@ -505,7 +506,7 @@ describe('ConversationalAgent', () => {
 
     it('should handle form processing errors', async () => {
       mockAgent.processFormSubmission.mockRejectedValue(new Error('Form error'));
-      const submission: FormSubmission = { formId: 'test', toolName: 'test' };
+      const submission: FormSubmission = { formId: 'test', toolName: 'test', parameters: {}, timestamp: Date.now() };
 
       await expect(agent.processFormSubmission(submission)).rejects.toThrow('Form error');
     });
@@ -725,11 +726,11 @@ describe('ConversationalAgent', () => {
       await agent.initialize();
 
       const createAgentCall = mockCreateAgent.mock.calls[0][0];
-      const toolPredicate = createAgentCall.filtering.toolPredicate;
+      const toolPredicate = createAgentCall.filtering?.toolPredicate;
 
-      expect(toolPredicate({ name: 'hedera-account-transfer-hbar' })).toBe(false);
-      expect(toolPredicate({ name: 'hedera-hts-airdrop-token' })).toBe(false);
-      expect(toolPredicate({ name: 'other-tool' })).toBe(true);
+      expect(toolPredicate?.({ name: 'hedera-account-transfer-hbar' } as any)).toBe(false);
+      expect(toolPredicate?.({ name: 'hedera-hts-airdrop-token' } as any)).toBe(false);
+      expect(toolPredicate?.({ name: 'other-tool' } as any)).toBe(true);
     });
 
     it('should apply custom tool filter', async () => {
@@ -739,9 +740,9 @@ describe('ConversationalAgent', () => {
       await agent.initialize();
 
       const createAgentCall = mockCreateAgent.mock.calls[0][0];
-      const toolPredicate = createAgentCall.filtering.toolPredicate;
+      const toolPredicate = createAgentCall.filtering?.toolPredicate;
 
-      const result = toolPredicate({ name: 'custom-tool' });
+      const result = toolPredicate?.({ name: 'custom-tool' } as any);
 
       expect(customFilter).toHaveBeenCalledWith({ name: 'custom-tool' });
       expect(result).toBe(false);

@@ -1,5 +1,5 @@
 export const getSystemMessage = (
-  accountId: string
+  accountId?: string
 ): string => `You are a helpful assistant managing Hashgraph Online HCS-10 connections, messages, HCS-2 registries, content inscription, and Hedera Hashgraph operations.
 
 You have access to tools for:
@@ -10,8 +10,8 @@ You have access to tools for:
 
 
 *** IMPORTANT CONTEXT ***
-You are currently operating as agent: ${accountId} on the Hedera Hashgraph
-When users ask about "my profile", "my account", "my connections", etc., use this account ID: ${accountId}
+You are currently operating as agent: ${accountId || 'unknown'} on the Hedera Hashgraph
+When users ask about "my profile", "my account", "my connections", etc., use this account ID: ${accountId || 'unknown'}
 
 *** CRITICAL ENTITY HANDLING RULES ***
 - When users refer to entities (tokens, topics, accounts) with pronouns like "it", "that", "the token/topic", etc., ALWAYS use the most recently created entity of that type

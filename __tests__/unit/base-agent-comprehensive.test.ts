@@ -81,8 +81,8 @@ describe('BaseAgent', () => {
     validConfig = {
       signer: mockSigner,
       execution: {
-        mode: 'direct',
-        operationalMode: 'autonomous',
+        mode: 'direct' as const,
+        operationalMode: 'autonomous' as const,
       },
       ai: {
         temperature: 0.1,
@@ -329,8 +329,8 @@ describe('BaseAgent', () => {
       const config = {
         ...validConfig,
         execution: {
-          mode: 'direct',
-          operationalMode: 'autonomous',
+          mode: 'direct' as const,
+          operationalMode: 'autonomous' as const,
         },
       };
       agent = new TestAgent(config);
@@ -345,8 +345,8 @@ describe('BaseAgent', () => {
       const config = {
         ...validConfig,
         execution: {
-          mode: 'bytes',
-          operationalMode: 'returnBytes',
+          mode: 'bytes' as const,
+          operationalMode: 'returnBytes' as const,
         },
       };
       agent = new TestAgent(config);
@@ -361,8 +361,8 @@ describe('BaseAgent', () => {
       const config = {
         ...validConfig,
         execution: {
-          mode: 'bytes',
-          operationalMode: 'returnBytes',
+          mode: 'bytes' as const,
+          operationalMode: 'returnBytes' as const,
           userAccountId: '0.0.456',
           scheduleUserTransactionsInBytesMode: true,
         },
@@ -400,7 +400,7 @@ describe('BaseAgent', () => {
       const config = {
         ...validConfig,
         execution: {
-          mode: 'direct',
+          mode: 'direct' as const,
         },
       };
       agent = new TestAgent(config);
@@ -413,7 +413,6 @@ describe('BaseAgent', () => {
     it('should handle missing execution config', () => {
       const config = {
         ...validConfig,
-        execution: undefined,
       };
       agent = new TestAgent(config);
 
@@ -446,6 +445,8 @@ describe('BaseAgent', () => {
       const submission: FormSubmission = {
         formId: 'test-form',
         toolName: 'test-tool',
+        parameters: {},
+        timestamp: Date.now(),
       };
 
       const result = await agent.processFormSubmission(submission);
@@ -461,7 +462,7 @@ describe('BaseAgent', () => {
     });
 
     it('should implement switchMode method', () => {
-      expect(() => agent.switchMode('autonomous')).not.toThrow();
+      expect(() => agent.switchMode()).not.toThrow();
     });
 
     it('should implement getUsageStats method', () => {
@@ -507,8 +508,8 @@ describe('BaseAgent', () => {
       const fullConfig: HederaAgentConfiguration = {
         signer: mockSigner,
         execution: {
-          mode: 'bytes',
-          operationalMode: 'returnBytes',
+          mode: 'bytes' as const,
+          operationalMode: 'returnBytes' as const,
           userAccountId: '0.0.456',
           scheduleUserTransactions: true,
           scheduleUserTransactionsInBytesMode: true,
@@ -551,7 +552,6 @@ describe('BaseAgent', () => {
     it('should handle undefined debug configuration', () => {
       const config = {
         ...validConfig,
-        debug: undefined,
       };
 
       const agent = new TestAgent(config);
@@ -587,7 +587,7 @@ describe('BaseAgent', () => {
 
       const tools = [
         { name: 'tool1' } as StructuredTool,
-        { name: 'tool2', namespace: undefined } as StructuredTool & { namespace?: string },
+        { name: 'tool2' } as StructuredTool,
       ];
 
       const result = agent.testFilterTools(tools);

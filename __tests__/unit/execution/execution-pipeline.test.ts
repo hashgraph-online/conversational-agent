@@ -76,26 +76,26 @@ describe('ExecutionPipeline', () => {
       registerTool: jest.fn(),
       getTools: jest.fn(),
       removeTool: jest.fn(),
-    } as jest.Mocked<ToolRegistry>;
+    } as any;
 
     mockFormEngine = {
       shouldGenerateForm: jest.fn(),
       generateForm: jest.fn(),
       processSubmission: jest.fn(),
-    } as jest.Mocked<FormEngine>;
+    } as any;
 
     mockMemory = {
       addMessage: jest.fn(),
       getRecentMessages: jest.fn(),
       pruneMemory: jest.fn(),
-    } as unknown as jest.Mocked<SmartMemoryManager>;
+    } as any;
 
     mockLogger = {
       info: jest.fn(),
       warn: jest.fn(),
       error: jest.fn(),
       debug: jest.fn(),
-    } as jest.Mocked<Logger>;
+    } as any;
 
     mockTool = new MockTool();
     mockValidationErrorTool = new MockValidationErrorTool();
@@ -115,7 +115,7 @@ describe('ExecutionPipeline', () => {
       const input = { param: 'test-value' };
       const toolEntry: ToolRegistryEntry = {
         tool: mockTool,
-        name: toolName,
+        metadata: {} as any,
         originalTool: mockTool,
       };
 
@@ -137,24 +137,16 @@ describe('ExecutionPipeline', () => {
       const input = { invalidParam: 'test' };
       const toolEntry: ToolRegistryEntry = {
         tool: mockValidationErrorTool,
-        name: toolName,
+        metadata: {} as any,
         originalTool: mockValidationErrorTool,
       };
       
       const mockFormMessage: FormMessage = {
         type: 'form',
-        formId: TEST_FORM_DATA.TEST_FORM_ID,
+        id: TEST_FORM_DATA.TEST_FORM_ID,
         toolName: toolName,
-        form: {
-          title: 'Test Form',
-          fields: [{
-            name: 'requiredParam',
-            type: 'text',
-            label: 'Required Parameter',
-            required: true
-          }]
-        },
-        renderConfig: {}
+        originalPrompt: 'Test prompt',
+        formConfig: {} as any
       };
 
       mockToolRegistry.getTool.mockReturnValue(toolEntry);
@@ -186,7 +178,7 @@ describe('ExecutionPipeline', () => {
       const input = { param: 'test' };
       const toolEntry: ToolRegistryEntry = {
         tool: mockValidationErrorTool,
-        name: toolName,
+        metadata: {} as any,
         originalTool: mockValidationErrorTool,
       };
 
@@ -205,7 +197,7 @@ describe('ExecutionPipeline', () => {
       const input = { param: 'test' };
       const toolEntry: ToolRegistryEntry = {
         tool: mockErrorTool,
-        name: toolName,
+        metadata: {} as any,
         originalTool: mockErrorTool,
       };
 
@@ -245,7 +237,7 @@ describe('ExecutionPipeline', () => {
       const stringErrorTool = new StringErrorTool();
       const toolEntry: ToolRegistryEntry = {
         tool: stringErrorTool,
-        name: toolName,
+        metadata: {} as any,
         originalTool: stringErrorTool,
       };
 
@@ -271,7 +263,7 @@ describe('ExecutionPipeline', () => {
       const input = { param: 'test' };
       const toolEntry: ToolRegistryEntry = {
         tool: mockTool,
-        name: toolName,
+        metadata: {} as any,
         originalTool: mockTool,
       };
 
@@ -295,7 +287,7 @@ describe('ExecutionPipeline', () => {
       };
       const toolEntry: ToolRegistryEntry = {
         tool: mockTool,
-        name: toolName,
+        metadata: {} as any,
         originalTool: mockTool,
       };
 
@@ -319,7 +311,7 @@ describe('ExecutionPipeline', () => {
       };
       const toolEntry: ToolRegistryEntry = {
         tool: mockTool,
-        name: toolName,
+        metadata: {} as any,
         originalTool: mockTool,
       };
 
@@ -341,7 +333,7 @@ describe('ExecutionPipeline', () => {
       const processedInput = { param: TEST_EXECUTION_MESSAGES.FORM_VALUE, __fromForm: true };
       const toolEntry: ToolRegistryEntry = {
         tool: mockTool,
-        name: toolName,
+        metadata: {} as any,
         originalTool: mockTool,
       };
 
@@ -384,7 +376,7 @@ describe('ExecutionPipeline', () => {
       const input = { param: 'test', __fromForm: true };
       const toolEntry: ToolRegistryEntry = {
         tool: mockTool,
-        name: toolName,
+        metadata: {} as any,
         originalTool: mockTool,
       };
 
@@ -402,7 +394,7 @@ describe('ExecutionPipeline', () => {
       const input = { param: 'test', renderForm: false };
       const toolEntry: ToolRegistryEntry = {
         tool: mockTool,
-        name: toolName,
+        metadata: {} as any,
         originalTool: mockTool,
       };
 
@@ -420,7 +412,7 @@ describe('ExecutionPipeline', () => {
       const input = { param: 'test' };
       const toolEntry: ToolRegistryEntry = {
         tool: mockTool,
-        name: toolName,
+        metadata: {} as any,
         originalTool: mockTool,
       };
 
@@ -441,7 +433,7 @@ describe('ExecutionPipeline', () => {
       const input = { param: 'test' };
       const toolEntry: ToolRegistryEntry = {
         tool: mockTool,
-        name: toolName,
+        metadata: {} as any,
         originalTool: mockTool,
       };
 
@@ -462,11 +454,11 @@ describe('ExecutionPipeline', () => {
       const toolName = TEST_EXECUTION_MESSAGES.WRAPPED_TOOL;
       const input = { param: TEST_EXECUTION_MESSAGES.WRAPPED_TEST };
       const mockWrapper = {
-        executeOriginal: jest.fn().mockResolvedValue('Wrapped result: wrapped-test')
-      };
+        executeOriginal: jest.fn().mockResolvedValue('Wrapped result: wrapped-test' as never)
+      } as any;
       const toolEntry: ToolRegistryEntry = {
         tool: mockTool,
-        name: toolName,
+        metadata: {} as any,
         originalTool: mockTool,
         wrapper: mockWrapper
       };
@@ -488,14 +480,14 @@ describe('ExecutionPipeline', () => {
       const toolName = TEST_EXECUTION_MESSAGES.WRAPPED_TOOL;
       const input = { param: TEST_EXECUTION_MESSAGES.WRAPPED_TEST };
       const mockOriginalTool = {
-        call: jest.fn().mockResolvedValue('Original tool result')
+        call: jest.fn().mockResolvedValue('Original tool result' as never)
       };
       const mockWrapper = {
         originalTool: mockOriginalTool
-      };
+      } as any;
       const toolEntry: ToolRegistryEntry = {
         tool: mockTool,
-        name: toolName,
+        metadata: {} as any,
         originalTool: mockTool,
         wrapper: mockWrapper
       };
@@ -516,10 +508,10 @@ describe('ExecutionPipeline', () => {
     test('should fallback to originalTool when wrapper methods unavailable', async () => {
       const toolName = TEST_EXECUTION_MESSAGES.WRAPPED_TOOL;
       const input = { param: 'fallback-test' };
-      const mockWrapper = {};
+      const mockWrapper = {} as any;
       const toolEntry: ToolRegistryEntry = {
         tool: mockTool,
-        name: toolName,
+        metadata: {} as any,
         originalTool: mockTool,
         wrapper: mockWrapper
       };
@@ -537,14 +529,14 @@ describe('ExecutionPipeline', () => {
       const toolName = TEST_EXECUTION_MESSAGES.WRAPPED_TOOL;
       const input = { param: TEST_EXECUTION_MESSAGES.WRAPPED_TEST };
       const mockOriginalTool = {
-        call: jest.fn().mockResolvedValue('Original tool result')
+        call: jest.fn().mockResolvedValue('Original tool result' as never)
       };
       const mockWrapper = {
         originalTool: mockOriginalTool
-      };
+      } as any;
       const toolEntry: ToolRegistryEntry = {
         tool: mockTool,
-        name: toolName,
+        metadata: {} as any,
         originalTool: mockTool,
         wrapper: mockWrapper
       };
@@ -567,10 +559,10 @@ describe('ExecutionPipeline', () => {
       const input = { param: 'neither-test' };
       const mockWrapper = {
         someOtherMethod: jest.fn()
-      };
+      } as any;
       const toolEntry: ToolRegistryEntry = {
         tool: mockTool,
-        name: toolName,
+        metadata: {} as any,
         originalTool: mockTool,
         wrapper: mockWrapper
       };
@@ -602,7 +594,7 @@ describe('ExecutionPipeline', () => {
       const input = { param: 'test' };
       const toolEntry: ToolRegistryEntry = {
         tool: mockTool,
-        name: toolName,
+        metadata: {} as any,
         originalTool: mockTool,
       };
 

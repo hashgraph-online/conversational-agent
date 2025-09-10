@@ -8,7 +8,7 @@ export interface AttachmentData {
   size: number;
 }
 
-type ContentStoreManager = PackageContentStoreManager;
+export type ContentStoreManager = PackageContentStoreManager;
 
 /**
  * Utility for processing file attachments and content references

@@ -41,7 +41,7 @@ jest.mock('../../../src/constants', () => ({
 
 describe('FormGenerator - Comprehensive Tests', () => {
   let formGenerator: FormGenerator;
-  let mockLogger: jest.Mocked<Logger>;
+  let mockLogger: any;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -51,7 +51,7 @@ describe('FormGenerator - Comprehensive Tests', () => {
       warn: jest.fn(),
       error: jest.fn(),
       debug: jest.fn(),
-    } as jest.Mocked<Logger>;
+    } as any;
 
     (Logger as jest.MockedClass<typeof Logger>).mockImplementation(() => mockLogger);
     formGenerator = new FormGenerator();
@@ -207,9 +207,9 @@ describe('FormGenerator - Comprehensive Tests', () => {
       expect(result.jsonSchema).toBeDefined();
       expect(result.uiSchema).toBeDefined();
       expect(result.jsonSchema.properties).toBeDefined();
-      expect(result.jsonSchema.properties?.name).toBeDefined();
-      expect(result.jsonSchema.properties?.email).toBeDefined();
-      expect(result.jsonSchema.properties?.age).toBeUndefined();
+      expect((result.jsonSchema.properties as any)?.name).toBeDefined();
+      expect((result.jsonSchema.properties as any)?.email).toBeDefined();
+      expect((result.jsonSchema.properties as any)?.age).toBeUndefined();
     });
 
     test('should handle schema with no missing fields', () => {
@@ -222,8 +222,8 @@ describe('FormGenerator - Comprehensive Tests', () => {
 
       expect(result.jsonSchema).toBeDefined();
       expect(result.uiSchema).toBeDefined();
-      expect(result.jsonSchema.properties?.name).toBeDefined();
-      expect(result.jsonSchema.properties?.age).toBeDefined();
+      expect((result.jsonSchema.properties as any)?.name).toBeDefined();
+      expect((result.jsonSchema.properties as any)?.age).toBeDefined();
     });
 
     test('should handle schema with advanced fields', () => {
@@ -235,10 +235,10 @@ describe('FormGenerator - Comprehensive Tests', () => {
 
       const result = formGenerator.generateJsonSchemaForm(schema);
 
-      expect(result.uiSchema.metadata).toBeDefined();
-      expect(result.uiSchema.properties).toBeDefined();
-      expect(result.uiSchema.metadata['ui:options']?.collapsible).toBe(true);
-      expect(result.uiSchema.properties['ui:options']?.collapsible).toBe(true);
+      expect((result.uiSchema as any).metadata).toBeDefined();
+      expect((result.uiSchema as any).properties).toBeDefined();
+      expect((result.uiSchema as any).metadata['ui:options']?.collapsible).toBe(true);
+      expect((result.uiSchema as any).properties['ui:options']?.collapsible).toBe(true);
     });
   });
 
@@ -249,7 +249,7 @@ describe('FormGenerator - Comprehensive Tests', () => {
       });
 
       const result = formGenerator.generateJsonSchemaForm(schema);
-      expect(result.jsonSchema.properties?.name.type).toBe('string');
+      expect((result.jsonSchema.properties as any)?.name.type).toBe('string');
     });
 
     test('should map number field type correctly', () => {
@@ -258,7 +258,7 @@ describe('FormGenerator - Comprehensive Tests', () => {
       });
 
       const result = formGenerator.generateJsonSchemaForm(schema);
-      expect(result.jsonSchema.properties?.age.type).toBe('number');
+      expect((result.jsonSchema.properties as any)?.age.type).toBe('number');
     });
 
     test('should map boolean field type correctly', () => {
@@ -267,7 +267,7 @@ describe('FormGenerator - Comprehensive Tests', () => {
       });
 
       const result = formGenerator.generateJsonSchemaForm(schema);
-      expect(result.jsonSchema.properties?.active.type).toBe('boolean');
+      expect((result.jsonSchema.properties as any)?.active.type).toBe('boolean');
     });
 
     test('should map array field type correctly', () => {
@@ -276,7 +276,7 @@ describe('FormGenerator - Comprehensive Tests', () => {
       });
 
       const result = formGenerator.generateJsonSchemaForm(schema);
-      expect(result.jsonSchema.properties?.tags.type).toBe('array');
+      expect((result.jsonSchema.properties as any)?.tags.type).toBe('array');
     });
   });
 
@@ -316,9 +316,9 @@ describe('FormGenerator - Comprehensive Tests', () => {
 
       const result = formGenerator.generateJsonSchemaForm(schema);
       
-      expect(result.jsonSchema.properties?.field1).toBeDefined();
-      expect(result.jsonSchema.properties?.field2).toBeDefined();
-      expect(result.jsonSchema.properties?.field3).toBeDefined();
+      expect((result.jsonSchema.properties as any)?.field1).toBeDefined();
+      expect((result.jsonSchema.properties as any)?.field2).toBeDefined();
+      expect((result.jsonSchema.properties as any)?.field3).toBeDefined();
     });
 
     test('should handle optional fields correctly', () => {
@@ -341,7 +341,7 @@ describe('FormGenerator - Comprehensive Tests', () => {
         z.object({ type: z.literal('admin'), role: z.string() }),
       ]);
 
-      const result = formGenerator.generateJsonSchemaForm(schema);
+      const result = formGenerator.generateJsonSchemaForm(schema as any);
       
       expect(result.jsonSchema).toBeDefined();
     });
@@ -418,9 +418,9 @@ describe('FormGenerator - Comprehensive Tests', () => {
 
       const result = formGenerator.generateJsonSchemaForm(schema);
       
-      expect(result.jsonSchema.properties?.firstName).toBeDefined();
-      expect(result.jsonSchema.properties?.lastName).toBeDefined();
-      expect(result.jsonSchema.properties?.dateOfBirth).toBeDefined();
+      expect((result.jsonSchema.properties as any)?.firstName).toBeDefined();
+      expect((result.jsonSchema.properties as any)?.lastName).toBeDefined();
+      expect((result.jsonSchema.properties as any)?.dateOfBirth).toBeDefined();
     });
 
     test('should humanize snake_case field names', () => {
@@ -431,8 +431,8 @@ describe('FormGenerator - Comprehensive Tests', () => {
 
       const result = formGenerator.generateJsonSchemaForm(schema);
       
-      expect(result.jsonSchema.properties?.first_name).toBeDefined();
-      expect(result.jsonSchema.properties?.last_name).toBeDefined();
+      expect((result.jsonSchema.properties as any)?.first_name).toBeDefined();
+      expect((result.jsonSchema.properties as any)?.last_name).toBeDefined();
     });
   });
 
@@ -440,7 +440,7 @@ describe('FormGenerator - Comprehensive Tests', () => {
     test('should handle schema extraction errors gracefully', () => {
       const invalidSchema = {} as z.ZodSchema;
 
-      const result = formGenerator.generateJsonSchemaForm(invalidSchema);
+      const result = formGenerator.generateJsonSchemaForm(invalidSchema as any);
       
       expect(result.jsonSchema).toBeDefined();
       expect(result.uiSchema).toBeDefined();
@@ -453,7 +453,7 @@ describe('FormGenerator - Comprehensive Tests', () => {
 
       const result = formGenerator.generateJsonSchemaForm(schema);
       
-      expect(result.jsonSchema.properties?.complexField).toBeDefined();
+      expect((result.jsonSchema.properties as any)?.complexField).toBeDefined();
     });
 
     test('should handle required field detection errors', () => {
@@ -572,10 +572,10 @@ describe('FormGenerator - Comprehensive Tests', () => {
 
       const result = formGenerator.generateJsonSchemaForm(schema);
       
-      expect(result.jsonSchema.properties?.user).toBeDefined();
-      expect(result.jsonSchema.properties?.settings).toBeDefined();
-      expect(result.jsonSchema.properties?.user.type).toBe('object');
-      expect(result.jsonSchema.properties?.settings.type).toBe('object');
+      expect((result.jsonSchema.properties as any)?.user).toBeDefined();
+      expect((result.jsonSchema.properties as any)?.settings).toBeDefined();
+      expect((result.jsonSchema.properties as any)?.user.type).toBe('object');
+      expect((result.jsonSchema.properties as any)?.settings.type).toBe('object');
     });
 
     test('should handle array schemas', () => {
@@ -586,8 +586,8 @@ describe('FormGenerator - Comprehensive Tests', () => {
 
       const result = formGenerator.generateJsonSchemaForm(schema);
       
-      expect(result.jsonSchema.properties?.tags.type).toBe('array');
-      expect(result.jsonSchema.properties?.scores.type).toBe('array');
+      expect((result.jsonSchema.properties as any)?.tags.type).toBe('array');
+      expect((result.jsonSchema.properties as any)?.scores.type).toBe('array');
     });
 
     test('should handle enum schemas', () => {
@@ -598,10 +598,10 @@ describe('FormGenerator - Comprehensive Tests', () => {
 
       const result = formGenerator.generateJsonSchemaForm(schema);
       
-      expect(result.jsonSchema.properties?.status.type).toBe('string');
-      expect(result.jsonSchema.properties?.role.type).toBe('string');
-      expect(result.jsonSchema.properties?.status.enum).toEqual(['active', 'inactive', 'pending']);
-      expect(result.jsonSchema.properties?.role.enum).toEqual(['user', 'admin', 'moderator']);
+      expect((result.jsonSchema.properties as any)?.status.type).toBe('string');
+      expect((result.jsonSchema.properties as any)?.role.type).toBe('string');
+      expect((result.jsonSchema.properties as any)?.status.enum).toEqual(['active', 'inactive', 'pending']);
+      expect((result.jsonSchema.properties as any)?.role.enum).toEqual(['user', 'admin', 'moderator']);
     });
   });
 });

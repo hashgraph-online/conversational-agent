@@ -25,13 +25,13 @@ jest.mock('../../../src/forms/form-generator', () => ({
       formId: 'test-form',
       schema: {},
       data: {},
-    }),
+    } as never),
     generateFormFromError: jest.fn().mockResolvedValue({
       type: 'form',
       formId: 'error-form',
       schema: {},
       data: {},
-    }),
+    } as never),
   })),
 }));
 
@@ -64,7 +64,7 @@ describe('FormEngine', () => {
       description: 'A test tool',
       schema: z.object({ param: z.string() }),
       func: jest.fn(),
-    } as StructuredTool;
+    } as any;
 
     mockFormValidatableTool = {
       name: 'form-validatable-tool',
@@ -72,7 +72,7 @@ describe('FormEngine', () => {
       schema: z.object({ data: z.string() }),
       func: jest.fn(),
       shouldGenerateForm: jest.fn().mockReturnValue(true),
-    } as StructuredTool & { shouldGenerateForm: () => boolean };
+    } as any;
   });
 
   describe('constructor', () => {
@@ -122,7 +122,7 @@ describe('FormEngine', () => {
       const toolWithRenderConfig = {
         ...mockTool,
         schema: { _renderConfig: { type: 'form' } },
-      };
+      } as any;
       
       const result = await formEngine.generateForm('test', toolWithRenderConfig, {});
       
@@ -141,7 +141,7 @@ describe('FormEngine', () => {
       const toolWithoutSchema = {
         ...mockTool,
         schema: 'not-a-zod-object',
-      };
+      } as any;
       
       const result = await formEngine.generateForm('test', toolWithoutSchema, {});
       
@@ -153,7 +153,7 @@ describe('FormEngine', () => {
       const problematicTool = {
         ...mockTool,
         name: undefined as any,
-      };
+      } as any;
       
       await expect(
         formEngine.generateForm('test', problematicTool, {})
@@ -272,7 +272,7 @@ describe('FormEngine', () => {
           number_field: z.number(),
           optional_field: z.string().optional(),
         }),
-      };
+      } as any;
       
       const result = await formEngine.generateForm('test', zodObjectTool, {});
       
@@ -283,7 +283,7 @@ describe('FormEngine', () => {
       const nonZodTool = {
         ...mockTool,
         schema: z.string(),
-      };
+      } as any;
       
       const result = await formEngine.generateForm('test', nonZodTool, {});
       
@@ -303,7 +303,7 @@ describe('FormEngine', () => {
             fields: [],
           },
         },
-      };
+      } as any;
       
       const result = await formEngine.generateForm('test', renderConfigTool, {});
       
@@ -314,7 +314,7 @@ describe('FormEngine', () => {
       const regularTool = {
         ...mockTool,
         schema: z.object({ field: z.string() }),
-      };
+      } as any;
       
       const result = await formEngine.generateForm('test', regularTool, {});
       
@@ -403,7 +403,7 @@ describe('FormEngine', () => {
           }),
           metadata: z.array(z.string()).optional(),
         }),
-      };
+      } as any;
       
       const result = await formEngine.generateForm('test', complexTool, {});
       
@@ -418,7 +418,7 @@ describe('FormEngine', () => {
         shouldGenerateForm: jest.fn().mockImplementation(() => {
           throw new Error('shouldGenerateForm failed');
         }),
-      };
+      } as any;
       
       const result = await formEngine.generateForm('test', errorTool, {});
       expect(result).toBeDefined();

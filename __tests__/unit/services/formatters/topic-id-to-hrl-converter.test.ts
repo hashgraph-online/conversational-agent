@@ -73,7 +73,7 @@ describe('TopicIdToHrlConverter', () => {
 
     it('should handle unknown network type as testnet', async () => {
       const context: ConversionContext = {
-        networkType: 'unknown-network'
+        networkType: 'testnet' as const
       };
       const result = await converter.convert(TEST_TOPIC_IDS.TOPIC_123, context);
       expect(result).toBe(TEST_HRL_VALUES.HCS_1_123);

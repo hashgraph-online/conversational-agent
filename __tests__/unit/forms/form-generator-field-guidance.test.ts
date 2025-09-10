@@ -155,7 +155,7 @@ describe('FormGenerator with Field Guidance', () => {
       );
 
       expect(formMessage.formConfig.metadata?.globalGuidance).toBeDefined();
-      expect(formMessage.formConfig.metadata?.globalGuidance.qualityStandards).toContain(
+      expect((formMessage.formConfig.metadata?.globalGuidance as any).qualityStandards).toContain(
         TEST_FORM_CONSTANTS.USE_MEANINGFUL_NAMES
       );
     });

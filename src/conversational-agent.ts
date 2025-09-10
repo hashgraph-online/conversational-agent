@@ -1,4 +1,9 @@
-import { ServerSigner, getAllHederaCorePlugins, BasePlugin, AbstractSigner } from 'hedera-agent-kit';
+import {
+  ServerSigner,
+  getAllHederaCorePlugins,
+  BasePlugin,
+  AbstractSigner,
+} from 'hedera-agent-kit';
 import { Logger, type NetworkType } from '@hashgraphonline/standards-sdk';
 import { createAgent } from './agent-factory';
 import BrowserSigner from './signers/browser-signer';
@@ -16,7 +21,10 @@ import { HCS10Plugin } from './plugins/hcs-10/HCS10Plugin';
 import { HCS2Plugin } from './plugins/hcs-2/HCS2Plugin';
 import { InscribePlugin } from './plugins/inscribe/InscribePlugin';
 import { getWalletBridgeProvider } from './runtime/wallet-bridge';
-import { InscriberBuilder } from '@hashgraphonline/standards-agent-kit';
+import {
+  InscriberBuilder,
+  SignerProviderRegistry,
+} from '@hashgraphonline/standards-agent-kit';
 import { HbarPlugin } from './plugins/hbar/HbarPlugin';
 import { OpenConvaiState } from '@hashgraphonline/standards-agent-kit';
 import type { IStateManager } from '@hashgraphonline/standards-agent-kit';
@@ -77,7 +85,10 @@ export interface ConversationalAgentOptions {
   enabledPlugins?: string[];
   toolFilter?: (tool: { name: string; namespace?: string }) => boolean;
   mcpServers?: MCPServerConfig[];
-  walletExecutor?: (base64: string, network: 'mainnet' | 'testnet') => Promise<{ transactionId: string }>;
+  walletExecutor?: (
+    base64: string,
+    network: 'mainnet' | 'testnet'
+  ) => Promise<{ transactionId: string }>;
   /** Optional: provide a signer factory to override default signer selection */
   customSignerFactory?: (args: {
     operationalMode: AgentOperationalMode;
@@ -156,7 +167,8 @@ export class ConversationalAgent {
       );
       this.logger.info('Entity memory initialized');
 
-      const provider = options.entityMemoryProvider || options.llmProvider || 'openai';
+      const provider =
+        options.entityMemoryProvider || options.llmProvider || 'openai';
       let modelName = options.entityMemoryModelName;
       if (!modelName) {
         if (provider === 'anthropic') {
@@ -176,7 +188,8 @@ export class ConversationalAgent {
           temperature: 0,
         });
       } else if (provider === 'openrouter') {
-        const baseURL = options.openRouterBaseURL || 'https://openrouter.ai/api/v1';
+        const baseURL =
+          options.openRouterBaseURL || 'https://openrouter.ai/api/v1';
         const apiKey = options.openRouterApiKey || options.openAIApiKey;
         resolverLLM = new ChatOpenAI({
           apiKey,
@@ -185,8 +198,12 @@ export class ConversationalAgent {
           configuration: {
             baseURL,
             defaultHeaders: {
-              'HTTP-Referer': process.env.OPENROUTER_REFERRER || 'https://hashgraphonline.com',
-              'X-Title': process.env.OPENROUTER_TITLE || 'Hashgraph Online Conversational Agent',
+              'HTTP-Referer':
+                process.env.OPENROUTER_REFERRER ||
+                'https://hashgraphonline.com',
+              'X-Title':
+                process.env.OPENROUTER_TITLE ||
+                'Hashgraph Online Conversational Agent',
             },
           },
         });
@@ -221,45 +238,98 @@ export class ConversationalAgent {
     this.validateOptions(accountId, privateKey);
 
     try {
-      const opMode = (this.options.operationalMode || DEFAULT_OPERATIONAL_MODE) as string;
+      const opMode = (this.options.operationalMode ||
+        DEFAULT_OPERATIONAL_MODE) as string;
       const bytesMode = opMode !== 'autonomous';
       let signer: AbstractSigner;
 
       try {
         type InscriberBuilderAug = typeof InscriberBuilder & {
           setPreferWalletOnly?: (prefer: boolean) => void;
-          setWalletInfoResolver?: (fn: () => Promise<{ accountId: string; network: string } | null>) => void;
-          setWalletExecutor?: (fn: (base64: string, network: 'mainnet' | 'testnet') => Promise<{ transactionId: string }>) => void;
-          setStartInscriptionDelegate?: (fn: (request: Record<string, unknown>, network: 'mainnet' | 'testnet') => Promise<unknown>) => void;
+          setWalletInfoResolver?: (
+            fn: () => Promise<{ accountId: string; network: string } | null>
+          ) => void;
+          setWalletExecutor?: (
+            fn: (
+              base64: string,
+              network: 'mainnet' | 'testnet'
+            ) => Promise<{ transactionId: string }>
+          ) => void;
+          setStartInscriptionDelegate?: (
+            fn: (
+              request: Record<string, unknown>,
+              network: 'mainnet' | 'testnet'
+            ) => Promise<unknown>
+          ) => void;
         };
-        const IB = InscriberBuilder as InscriberBuilderAug;
+        type InscriberBuilderAug3 = typeof InscriberBuilder & {
+          setPreferWalletOnly?: (prefer: boolean) => void;
+          setWalletInfoResolver?: (
+            fn: () => Promise<{ accountId: string; network: string } | null>
+          ) => void;
+          setWalletExecutor?: (
+            fn: (
+              base64: string,
+              network: 'mainnet' | 'testnet'
+            ) => Promise<{ transactionId: string }>
+          ) => void;
+          setStartInscriptionDelegate?: (
+            fn: (
+              request: Record<string, unknown>,
+              network: 'mainnet' | 'testnet'
+            ) => Promise<unknown>
+          ) => void;
+        };
+        const IB = InscriberBuilder as InscriberBuilderAug3;
         if (typeof IB.setPreferWalletOnly === 'function') {
-          IB.setPreferWalletOnly(bytesMode);
+          IB.setPreferWalletOnly(false);
         }
       } catch (e) {
         this.logger.warn('Failed to set wallet-only preference', e as Error);
       }
       if (!bytesMode) {
-        signer = new ServerSigner(accountId!, privateKey!, network as MirrorNetwork);
+        signer = new ServerSigner(
+          accountId!,
+          privateKey!,
+          network as MirrorNetwork
+        );
       } else {
-        const chain: 'mainnet' | 'testnet' = String(network || 'testnet') === 'mainnet' ? 'mainnet' : 'testnet';
+        const chain: 'mainnet' | 'testnet' =
+          String(network || 'testnet') === 'mainnet' ? 'mainnet' : 'testnet';
         const effectiveAccount = (this.options.userAccountId || accountId)!;
-        signer = new BrowserSigner(effectiveAccount, chain, this.options.walletExecutor);
+        signer = new BrowserSigner(
+          effectiveAccount,
+          chain,
+          this.options.walletExecutor
+        );
       }
 
       this.logger.info('Signer configured', {
         operationalMode: opMode,
         bytesMode,
-        signerClass: Object.getPrototypeOf(signer)?.constructor?.name || 'unknown',
+        signerClass:
+          Object.getPrototypeOf(signer)?.constructor?.name || 'unknown',
       });
 
       try {
         const bridge = getWalletBridgeProvider();
         if (bridge) {
           type InscriberBuilderAug2 = typeof InscriberBuilder & {
-            setWalletInfoResolver?: (fn: () => Promise<{ accountId: string; network: string } | null>) => void;
-            setWalletExecutor?: (fn: (base64: string, network: 'mainnet' | 'testnet') => Promise<{ transactionId: string }>) => void;
-            setStartInscriptionDelegate?: (fn: (request: Record<string, unknown>, network: 'mainnet' | 'testnet') => Promise<unknown>) => void;
+            setWalletInfoResolver?: (
+              fn: () => Promise<{ accountId: string; network: string } | null>
+            ) => void;
+            setWalletExecutor?: (
+              fn: (
+                base64: string,
+                network: 'mainnet' | 'testnet'
+              ) => Promise<{ transactionId: string }>
+            ) => void;
+            setStartInscriptionDelegate?: (
+              fn: (
+                request: Record<string, unknown>,
+                network: 'mainnet' | 'testnet'
+              ) => Promise<unknown>
+            ) => void;
           };
           const IB = InscriberBuilder as InscriberBuilderAug2;
           if (typeof IB.setWalletInfoResolver === 'function') {
@@ -272,43 +342,106 @@ export class ConversationalAgent {
             });
           }
           if (typeof IB.setWalletExecutor === 'function') {
-            IB.setWalletExecutor(async (base64: string, network: 'mainnet' | 'testnet') => {
-              return await bridge.executeBytes(base64, network);
-            });
+            IB.setWalletExecutor(
+              async (base64: string, network: 'mainnet' | 'testnet') => {
+                return await bridge.executeBytes(base64, network);
+              }
+            );
           }
-          if (typeof IB.setStartInscriptionDelegate === 'function' && bridge.startInscription) {
-            IB.setStartInscriptionDelegate(async (request: Record<string, unknown>, network: 'mainnet' | 'testnet') => {
-              return await bridge.startInscription!(request, network);
-            });
+          if (
+            typeof IB.setStartInscriptionDelegate === 'function' &&
+            bridge.startInscription
+          ) {
+            IB.setStartInscriptionDelegate(
+              async (
+                request: Record<string, unknown>,
+                network: 'mainnet' | 'testnet'
+              ) => {
+                return await bridge.startInscription!(request, network);
+              }
+            );
           }
 
           try {
-            const sak = await import('@hashgraphonline/standards-agent-kit');
-            const reg: any = (sak as any)?.SignerProviderRegistry;
-            if (reg) {
-              reg.setWalletInfoResolver(async () => {
-                const status = await bridge.status();
-                if (status.connected && status.accountId && status.network) {
-                  return { accountId: status.accountId, network: status.network as 'mainnet' | 'testnet' };
-                }
-                return null;
-              });
-              reg.setWalletExecutor(async (base64: string, network: 'mainnet' | 'testnet') => {
-                return await bridge.executeBytes(base64, network);
-              });
-              if (typeof (bridge as any).startHCS === 'function') {
-                reg.setStartHCSDelegate(async (op: any, request: Record<string, unknown>, network: 'mainnet' | 'testnet') => {
-                  return await (bridge as any).startHCS(op, request, network);
-                });
+            type HCSOp =
+              | 'submitConnectionRequest'
+              | 'handleConnectionRequest'
+              | 'sendMessage'
+              | 'hcs2.createRegistry'
+              | 'hcs2.migrateRegistry'
+              | 'hcs2.registerEntry'
+              | 'hcs2.updateEntry'
+              | 'hcs2.deleteEntry'
+              | 'hcs2.submitMessage'
+              | 'hcs6.createRegistry'
+              | 'hcs6.registerEntry'
+              | 'hcs6.submitMessage';
+            type WalletBridgeProviderExt = ReturnType<
+              typeof getWalletBridgeProvider
+            > & {
+              startHCS?: (
+                op: HCSOp,
+                request: Record<string, unknown>,
+                network: 'mainnet' | 'testnet'
+              ) => Promise<{ transactionBytes: string }>;
+            };
+
+            const status = await bridge.status();
+            const enforceWallet = !!(bytesMode && status.connected);
+
+            SignerProviderRegistry.setWalletInfoResolver(async () => {
+              const s = await bridge.status();
+              if (s.connected && s.accountId && s.network) {
+                return {
+                  accountId: s.accountId,
+                  network: s.network as 'mainnet' | 'testnet',
+                };
               }
-              reg.setPreferWalletOnly(!!bytesMode);
+              return null;
+            });
+
+            SignerProviderRegistry.setWalletExecutor(
+              async (base64: string, network: 'mainnet' | 'testnet') => {
+                return await bridge.executeBytes(base64, network);
+              }
+            );
+
+            const extended = bridge as WalletBridgeProviderExt;
+            if (typeof extended?.startHCS === 'function') {
+              SignerProviderRegistry.setStartHCSDelegate(
+                async (op, request, network) => {
+                  return await extended.startHCS!(
+                    op as HCSOp,
+                    request,
+                    network
+                  );
+                }
+              );
+            } else {
+              SignerProviderRegistry.setStartHCSDelegate(null);
+            }
+
+            SignerProviderRegistry.setPreferWalletOnly(enforceWallet);
+
+            type InscriberBuilderAug3 = typeof InscriberBuilder & {
+              setPreferWalletOnly?: (prefer: boolean) => void;
+            };
+            const IB2 = InscriberBuilder as InscriberBuilderAug3;
+            if (typeof IB2.setPreferWalletOnly === 'function') {
+              IB2.setPreferWalletOnly(enforceWallet);
             }
           } catch (sakWireErr) {
-            this.logger.warn('Failed to wire SAK SignerProviderRegistry wallet delegates', sakWireErr as Error);
+            this.logger.warn(
+              'Failed to wire SAK SignerProviderRegistry wallet delegates',
+              sakWireErr as Error
+            );
           }
         }
       } catch (e) {
-        this.logger.warn('Failed to register wallet bridge providers', e as Error);
+        this.logger.warn(
+          'Failed to register wallet bridge providers',
+          e as Error
+        );
       }
 
       let llm: ChatOpenAI | ChatAnthropic;
@@ -325,9 +458,11 @@ export class ConversationalAgent {
           keyPresent: !!openAIApiKey,
         };
       } else if (llmProvider === 'openrouter') {
-        const baseURL = this.options.openRouterBaseURL || 'https://openrouter.ai/api/v1';
+        const baseURL =
+          this.options.openRouterBaseURL || 'https://openrouter.ai/api/v1';
         const apiKey = this.options.openRouterApiKey || openAIApiKey;
-        const modelName = openAIModelName || 'anthropic/claude-3-haiku-20240307';
+        const modelName =
+          openAIModelName || 'anthropic/claude-3-haiku-20240307';
         llm = new ChatOpenAI({
           apiKey,
           model: modelName,
@@ -335,8 +470,12 @@ export class ConversationalAgent {
           configuration: {
             baseURL,
             defaultHeaders: {
-              'HTTP-Referer': process.env.OPENROUTER_REFERRER || 'https://hashgraphonline.com',
-              'X-Title': process.env.OPENROUTER_TITLE || 'Hashgraph Online Conversational Agent',
+              'HTTP-Referer':
+                process.env.OPENROUTER_REFERRER ||
+                'https://hashgraphonline.com',
+              'X-Title':
+                process.env.OPENROUTER_TITLE ||
+                'Hashgraph Online Conversational Agent',
             },
           },
         });
@@ -348,11 +487,15 @@ export class ConversationalAgent {
         };
       } else {
         const modelName2 = openAIModelName || DEFAULT_OPENAI_MODEL;
-        const isGPT5Model = modelName2.toLowerCase().includes('gpt-5') || modelName2.toLowerCase().includes('gpt5');
+        const isGPT5Model =
+          modelName2.toLowerCase().includes('gpt-5') ||
+          modelName2.toLowerCase().includes('gpt5');
         llm = new ChatOpenAI({
           apiKey: openAIApiKey,
           model: modelName2,
-          ...(isGPT5Model ? { temperature: 1 } : { temperature: DEFAULT_TEMPERATURE }),
+          ...(isGPT5Model
+            ? { temperature: 1 }
+            : { temperature: DEFAULT_TEMPERATURE }),
         });
         providerInfo = {
           ...providerInfo,
@@ -366,7 +509,11 @@ export class ConversationalAgent {
       this.logger.info('Preparing plugins...');
       const allPlugins = this.preparePlugins();
       this.logger.info('Creating agent config...');
-      const agentConfig = this.createAgentConfig(signer as ServerSigner, llm, allPlugins);
+      const agentConfig = this.createAgentConfig(
+        signer as ServerSigner,
+        llm,
+        allPlugins
+      );
 
       this.logger.info('Creating agent...');
       this.agent = createAgent(agentConfig);
@@ -563,7 +710,8 @@ export class ConversationalAgent {
    * @throws {Error} If required fields are missing
    */
   private validateOptions(accountId?: string, privateKey?: string): void {
-    const opMode = (this.options.operationalMode || DEFAULT_OPERATIONAL_MODE) as string;
+    const opMode = (this.options.operationalMode ||
+      DEFAULT_OPERATIONAL_MODE) as string;
     const bytesMode = opMode !== 'autonomous';
     if (!accountId) {
       throw new Error('Account ID is required');
@@ -585,7 +733,11 @@ export class ConversationalAgent {
         )}`
       );
     }
-    if (!bytesMode && typeof privateKey === 'string' && privateKey.length < 10) {
+    if (
+      !bytesMode &&
+      typeof privateKey === 'string' &&
+      privateKey.length < 10
+    ) {
       throw new Error('Private key appears to be invalid (too short)');
     }
   }
@@ -995,6 +1147,38 @@ export class ConversationalAgent {
     } catch (error) {
       this.logger.error('Error during cleanup:', error);
     }
+  }
+
+  /**
+   * Switch operational mode
+   */
+  switchMode(mode?: AgentOperationalMode): void {
+    if (this.agent?.switchMode) {
+      this.agent.switchMode(mode || 'autonomous');
+    }
+  }
+
+  /**
+   * Get usage statistics
+   */
+  getUsageStats(): unknown {
+    return this.agent?.getUsageStats?.() ?? {};
+  }
+
+  /**
+   * Clear usage statistics
+   */
+  clearUsageStats(): void {
+    if (this.agent?.clearUsageStats) {
+      this.agent.clearUsageStats();
+    }
+  }
+
+  /**
+   * Shutdown the agent
+   */
+  shutdown(): Promise<void> {
+    return this.agent?.shutdown?.() ?? Promise.resolve();
   }
 
   private extractResponseText(response: unknown): string {

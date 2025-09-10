@@ -77,8 +77,8 @@ class MockRenderConfigTool extends StructuredTool {
 
 describe('FormEngine', () => {
   let formEngine: FormEngine;
-  let mockFormGenerator: jest.Mocked<FormGenerator>;
-  let mockLogger: jest.Mocked<Logger>;
+  let mockFormGenerator: any;
+  let mockLogger: any;
   let mockFormValidatableTool: MockFormValidatableTool;
   let mockStandardTool: MockStandardTool;
   let mockRenderConfigTool: MockRenderConfigTool;
@@ -91,12 +91,12 @@ describe('FormEngine', () => {
       warn: jest.fn(),
       error: jest.fn(),
       debug: jest.fn(),
-    } as jest.Mocked<Logger>;
+    } as any;
 
     mockFormGenerator = {
       generateForm: jest.fn(),
       generateFormFromError: jest.fn(),
-    } as jest.Mocked<FormGenerator>;
+    } as any;
 
     const MockedFormGenerator = FormGenerator as jest.MockedClass<typeof FormGenerator>;
     MockedFormGenerator.mockImplementation(() => mockFormGenerator);
@@ -113,7 +113,7 @@ describe('FormEngine', () => {
       const { isFormValidatable } = require('@hashgraphonline/standards-agent-kit');
       isFormValidatable.mockReturnValue(true);
       
-      const mockFormMessage: FormMessage = {
+      const mockFormMessage = {
         type: 'form',
         formId: TEST_FORM_DATA.TEST_FORM_ID,
         toolName: TEST_FORM_GENERATION.FORM_VALIDATABLE_TOOL,
@@ -127,7 +127,7 @@ describe('FormEngine', () => {
           }]
         },
         renderConfig: {}
-      };
+      } as any;
 
       mockFormGenerator.generateForm.mockResolvedValue(mockFormMessage);
       const input = { invalidParam: 'test' };
@@ -161,7 +161,7 @@ describe('FormEngine', () => {
         message: TEST_FORM_GENERATION.REQUIRED_PARAMETER_MISSING
       }]);
 
-      const mockFormMessage: FormMessage = {
+      const mockFormMessage = {
         type: 'form',
         formId: TEST_FORM_GENERATION.ERROR_FORM_ID,
         toolName: TEST_FORM_GENERATION.STANDARD_TOOL,
@@ -178,7 +178,7 @@ describe('FormEngine', () => {
         renderConfig: {}
       };
 
-      mockFormGenerator.generateFormFromError.mockResolvedValue(mockFormMessage);
+      mockFormGenerator.generateFormFromError.mockResolvedValue(mockFormMessage as never);
 
       const result = await formEngine.generateForm(
         TEST_FORM_GENERATION.STANDARD_TOOL,
@@ -199,7 +199,7 @@ describe('FormEngine', () => {
       const { isFormValidatable } = require('@hashgraphonline/standards-agent-kit');
       isFormValidatable.mockReturnValue(false);
       
-      const mockFormMessage: FormMessage = {
+      const mockFormMessage = {
         type: 'form',
         formId: 'render-config-form-id',
         toolName: 'render-config-tool',
@@ -231,7 +231,7 @@ describe('FormEngine', () => {
       const { isFormValidatable } = require('@hashgraphonline/standards-agent-kit');
       isFormValidatable.mockReturnValue(false);
       
-      const mockFormMessage: FormMessage = {
+      const mockFormMessage = {
         type: 'form',
         formId: 'schema-form-id',
         toolName: TEST_FORM_GENERATION.STANDARD_TOOL,
@@ -275,7 +275,7 @@ describe('FormEngine', () => {
         name: 'non-zod-tool',
         description: 'Tool without Zod schema',
         schema: 'string-schema',
-      } as StructuredTool;
+      } as any;
 
       const result = await formEngine.generateForm('non-zod-tool', nonZodTool, {});
 
@@ -435,7 +435,7 @@ describe('FormEngine', () => {
         message: TEST_FORM_GENERATION.REQUIRED_PARAMETER_MISSING
       }]);
 
-      const mockFormMessage: FormMessage = {
+      const mockFormMessage = {
         type: 'form',
         formId: TEST_FORM_GENERATION.ERROR_FORM_ID,
         toolName: TEST_FORM_GENERATION.STANDARD_TOOL,
@@ -452,7 +452,7 @@ describe('FormEngine', () => {
         renderConfig: {}
       };
 
-      mockFormGenerator.generateFormFromError.mockResolvedValue(mockFormMessage);
+      mockFormGenerator.generateFormFromError.mockResolvedValue(mockFormMessage as never);
 
       const result = await formEngine.generateFormFromError(
         zodError,
@@ -489,7 +489,7 @@ describe('FormEngine', () => {
       const { isFormValidatable } = require('@hashgraphonline/standards-agent-kit');
       isFormValidatable.mockReturnValue(false);
       
-      const mockFormMessage: FormMessage = {
+      const mockFormMessage = {
         type: 'form',
         formId: 'schema-form',
         toolName: 'test-tool',

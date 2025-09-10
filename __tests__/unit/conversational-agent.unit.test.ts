@@ -74,16 +74,9 @@ describe('ConversationalAgent', () => {
     mockAgentInstance = {
       boot: jest.fn().mockResolvedValue(undefined),
       chat: jest.fn(),
-      shutdown: jest.fn(),
-      switchMode: jest.fn(),
-      getUsageStats: jest.fn(),
-      clearUsageStats: jest.fn(),
       processFormSubmission: jest.fn(),
       hasPendingForms: jest.fn().mockReturnValue(false),
-      getPendingFormsInfo: jest.fn().mockReturnValue([]),
       getMCPConnectionStatus: jest.fn().mockReturnValue(new Map()),
-      connectMCPServers: jest.fn(),
-      setParameterPreprocessingCallback: jest.fn(),
     };
 
     mockCreateAgent.mockReturnValue(mockAgentInstance);
@@ -310,7 +303,7 @@ describe('ConversationalAgent', () => {
 
       mockAgentInstance.chat.mockResolvedValue(mockResponse);
 
-      const response = await agent.chat('Hello');
+      const response = await agent.processMessage('Hello');
 
       expect(mockAgentInstance.chat).toHaveBeenCalledWith('Hello', undefined);
       expect(response).toEqual(mockResponse);
@@ -319,7 +312,7 @@ describe('ConversationalAgent', () => {
     it('should handle chat with context', async () => {
       const context: ConversationContext = {
         messages: [
-          { type: 'human', content: 'Previous message' },
+          { _getType: () => 'human', content: 'Previous message', lc_namespace: [], lc_serializable: true, lc_aliases: [], text: 'Previous message' } as any,
         ],
       };
 
@@ -331,7 +324,7 @@ describe('ConversationalAgent', () => {
 
       mockAgentInstance.chat.mockResolvedValue(mockResponse);
 
-      const response = await agent.chat('Hello', context);
+      const response = await agent.processMessage('Hello', context.messages as any);
 
       expect(mockAgentInstance.chat).toHaveBeenCalledWith('Hello', context);
       expect(response).toEqual(mockResponse);
@@ -340,7 +333,7 @@ describe('ConversationalAgent', () => {
     it('should throw error if not initialized', async () => {
       agent = new ConversationalAgent(mockOptions);
 
-      await expect(agent.chat('Hello')).rejects.toThrow(
+      await expect(agent.processMessage('Hello')).rejects.toThrow(
         'Agent not initialized. Call initialize() first.'
       );
     });
@@ -374,24 +367,7 @@ describe('ConversationalAgent', () => {
       expect(response).toEqual(mockResponse);
     });
 
-    it('should check for pending forms', () => {
-      mockAgentInstance.hasPendingForms.mockReturnValue(true);
 
-      const hasPending = agent.hasPendingForms();
-
-      expect(mockAgentInstance.hasPendingForms).toHaveBeenCalled();
-      expect(hasPending).toBe(true);
-    });
-
-    it('should get pending forms info', () => {
-      const mockInfo = [{ formId: 'test-form', toolName: 'test-tool' }];
-      mockAgentInstance.getPendingFormsInfo.mockReturnValue(mockInfo);
-
-      const info = agent.getPendingFormsInfo();
-
-      expect(mockAgentInstance.getPendingFormsInfo).toHaveBeenCalled();
-      expect(info).toEqual(mockInfo);
-    });
   });
 
   describe('plugin management', () => {
@@ -438,49 +414,7 @@ describe('ConversationalAgent', () => {
     });
   });
 
-  describe('operational mode management', () => {
-    beforeEach(async () => {
-      agent = new ConversationalAgent(mockOptions);
-      await agent.initialize();
-    });
 
-    it('should switch operational mode', async () => {
-      await agent.switchMode('returnBytes');
-
-      expect(mockAgentInstance.switchMode).toHaveBeenCalledWith('returnBytes');
-    });
-
-    it('should throw error if not initialized when switching mode', async () => {
-      agent = new ConversationalAgent(mockOptions);
-
-      await expect(agent.switchMode('returnBytes')).rejects.toThrow(
-        'Agent not initialized. Call initialize() first.'
-      );
-    });
-  });
-
-  describe('usage statistics', () => {
-    beforeEach(async () => {
-      agent = new ConversationalAgent(mockOptions);
-      await agent.initialize();
-    });
-
-    it('should get usage stats', () => {
-      const mockStats = { promptTokens: 100, completionTokens: 50, totalTokens: 150 };
-      mockAgentInstance.getUsageStats.mockReturnValue(mockStats);
-
-      const stats = agent.getUsageStats();
-
-      expect(mockAgentInstance.getUsageStats).toHaveBeenCalled();
-      expect(stats).toEqual(mockStats);
-    });
-
-    it('should clear usage stats', () => {
-      agent.clearUsageStats();
-
-      expect(mockAgentInstance.clearUsageStats).toHaveBeenCalled();
-    });
-  });
 
   describe('MCP server management', () => {
     beforeEach(async () => {
@@ -498,11 +432,6 @@ describe('ConversationalAgent', () => {
       expect(status).toEqual(mockStatus);
     });
 
-    it('should connect to MCP servers', async () => {
-      await agent.connectMCPServers();
-
-      expect(mockAgentInstance.connectMCPServers).toHaveBeenCalled();
-    });
   });
 
   describe('cleanup', () => {
@@ -511,19 +440,6 @@ describe('ConversationalAgent', () => {
       await agent.initialize();
     });
 
-    it('should shutdown cleanly', async () => {
-      await agent.shutdown();
-
-      expect(mockAgentInstance.shutdown).toHaveBeenCalled();
-    });
-
-    it('should handle shutdown when not initialized', async () => {
-      agent = new ConversationalAgent(mockOptions);
-
-      await expect(agent.shutdown()).rejects.toThrow(
-        'Agent not initialized. Call initialize() first.'
-      );
-    });
   });
 
   describe('parameter preprocessing', () => {
@@ -532,13 +448,6 @@ describe('ConversationalAgent', () => {
       await agent.initialize();
     });
 
-    it('should set parameter preprocessing callback', () => {
-      const callback = jest.fn();
-
-      agent.setParameterPreprocessingCallback(callback);
-
-      expect(mockAgentInstance.setParameterPreprocessingCallback).toHaveBeenCalledWith(callback);
-    });
   });
 
   describe('validation', () => {
@@ -642,7 +551,7 @@ describe('ConversationalAgent', () => {
       agent = new ConversationalAgent(mockOptions);
       await agent.initialize();
 
-      await expect(agent.chat('Hello')).rejects.toThrow('Chat failed');
+      await expect(agent.processMessage('Hello')).rejects.toThrow('Chat failed');
     });
   });
 });

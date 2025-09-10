@@ -36,12 +36,12 @@ jest.mock('@hashgraphonline/standards-sdk', () => ({
     debug: jest.fn(),
   })),
       ContentStoreService: {
-      setInstance: jest.fn().mockResolvedValue(undefined),
-      dispose: jest.fn().mockResolvedValue(undefined),
+      setInstance: jest.fn(),
+      dispose: jest.fn(),
     },
     ContentResolverRegistry: {
-      register: jest.fn().mockResolvedValue(undefined),
-      unregister: jest.fn().mockResolvedValue(undefined),
+      register: jest.fn(),
+      unregister: jest.fn(),
     },
   extractReferenceId: jest.fn(),
   shouldUseReference: jest.fn(),
@@ -56,6 +56,12 @@ describe('ContentStoreManager', () => {
     jest.clearAllMocks();
 
     mockLogger = new Logger({ module: 'ContentStoreManager' }) as jest.Mocked<Logger>;
+
+    const { ContentStoreService, ContentResolverRegistry } = require('@hashgraphonline/standards-sdk');
+    ContentStoreService.setInstance.mockResolvedValue(undefined);
+    ContentStoreService.dispose.mockResolvedValue(undefined);
+    ContentResolverRegistry.register.mockResolvedValue(undefined);
+    ContentResolverRegistry.unregister.mockResolvedValue(undefined);
 
     contentStoreManager = new ContentStoreManager(
       1000,
@@ -150,7 +156,7 @@ describe('ContentStoreManager', () => {
     test('should handle initialization errors', async () => {
       const { ContentStoreService } = require('@hashgraphonline/standards-sdk');
       const error = new Error('Initialization failed');
-      ContentStoreService.setInstance.mockRejectedValue(error);
+      ContentStoreService.setInstance.mockRejectedValue(error as any);
 
       await expect(contentStoreManager.initialize()).rejects.toThrow('Initialization failed');
       expect(mockLogger.error).toHaveBeenCalledWith(
@@ -170,7 +176,7 @@ describe('ContentStoreManager', () => {
   describe('Storage Operations', () => {
     test('should get stats successfully', async () => {
       const mockStats = { totalReferences: 10, totalSize: 1024 };
-      mockGetStats.mockResolvedValue(mockStats);
+      (mockGetStats as any).mockResolvedValue(mockStats);
 
       const stats = await contentStoreManager.getStats();
 
@@ -180,7 +186,7 @@ describe('ContentStoreManager', () => {
 
     test('should update config successfully', async () => {
       const config = { sizeThresholdBytes: 5000 };
-      mockUpdateConfig.mockResolvedValue(undefined);
+      (mockUpdateConfig as any).mockResolvedValue(undefined);
 
       await contentStoreManager.updateConfig(config);
 
@@ -189,7 +195,7 @@ describe('ContentStoreManager', () => {
 
     test('should perform cleanup successfully', async () => {
       const cleanupResult = { cleanedUp: 5, errors: [] };
-      mockPerformCleanup.mockResolvedValue(cleanupResult);
+      (mockPerformCleanup as any).mockResolvedValue(cleanupResult);
 
       const result = await contentStoreManager.performCleanup();
 
@@ -201,7 +207,7 @@ describe('ContentStoreManager', () => {
       const content = Buffer.from('test content');
       const metadata = { mimeType: 'text/plain', fileName: 'test.txt' };
       const mockReference = { referenceId: 'ref123', sizeBytes: 1024 };
-      mockStoreContentIfLarge.mockResolvedValue(mockReference);
+      mockStoreContentIfLarge.mockResolvedValue(mockReference as any);
 
       const result = await contentStoreManager.storeContentIfLarge(content, metadata);
 
@@ -217,7 +223,7 @@ describe('ContentStoreManager', () => {
       const content = 'test string content';
       const metadata = { mimeType: 'text/plain' };
       const mockReference = { referenceId: 'ref456', sizeBytes: 512 };
-      mockStoreContentIfLarge.mockResolvedValue(mockReference);
+      mockStoreContentIfLarge.mockResolvedValue(mockReference as any);
 
       const result = await contentStoreManager.storeContentIfLarge(content, metadata);
 
@@ -258,21 +264,21 @@ describe('ContentStoreManager', () => {
   describe('Error Handling', () => {
     test('should handle storage operation errors', async () => {
       const error = new Error('Storage operation failed');
-      mockGetStats.mockRejectedValue(error);
+      mockGetStats.mockRejectedValue(error as any);
 
       await expect(contentStoreManager.getStats()).rejects.toThrow('Storage operation failed');
     });
 
     test('should handle cleanup errors', async () => {
       const error = new Error('Cleanup failed');
-      mockPerformCleanup.mockRejectedValue(error);
+      mockPerformCleanup.mockRejectedValue(error as any);
 
       await expect(contentStoreManager.performCleanup()).rejects.toThrow('Cleanup failed');
     });
 
     test('should handle config update errors', async () => {
       const error = new Error('Config update failed');
-      mockUpdateConfig.mockRejectedValue(error);
+      mockUpdateConfig.mockRejectedValue(error as any);
 
       await expect(contentStoreManager.updateConfig({})).rejects.toThrow('Config update failed');
     });

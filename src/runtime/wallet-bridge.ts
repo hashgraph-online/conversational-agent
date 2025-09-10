@@ -28,6 +28,11 @@ export interface WalletBridgeProvider {
     request: Record<string, unknown>,
     network: WalletNetwork
   ) => Promise<StartInscriptionResult>;
+  startHCS?: (
+    op: string,
+    request: Record<string, unknown>,
+    network: WalletNetwork
+  ) => Promise<{ transactionBytes: string }>;
 }
 
 let providerRef: WalletBridgeProvider | null = null;

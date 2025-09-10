@@ -138,7 +138,7 @@ export class ContentStoreManager {
   private adapter: ContentStorageAdapter;
   private resolver: ContentResolver;
   private logger: Logger;
-  private isRegistered = false;
+  protected isRegistered = false;
 
   constructor(
     maxMessageStorage: number = 1000,

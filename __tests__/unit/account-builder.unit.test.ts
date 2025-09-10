@@ -1,5 +1,5 @@
 import { AccountBuilder } from '../../src/plugins/hbar/AccountBuilder';
-import { AccountId, Hbar, TransferTransaction } from '@hashgraph/sdk';
+import { AccountId, Hbar, TransferTransaction, Long } from '@hashgraph/sdk';
 import { HederaAgentKit } from 'hedera-agent-kit';
 import BigNumber from 'bignumber.js';
 
@@ -45,6 +45,9 @@ describe('AccountBuilder', () => {
     mockHederaKit = {
       userAccountId: '0.0.123',
       operationalMode: 'returnBytes',
+      loadedPlugins: [],
+      aggregatedTools: [],
+      isInitialized: true,
     } as any;
 
     mockTransaction = {
@@ -54,7 +57,7 @@ describe('AccountBuilder', () => {
 
     mockHbarInstance = {
       toString: jest.fn(() => '1 ℏ'),
-      toTinybars: jest.fn(() => new BigNumber('100000000')),
+      toTinybars: jest.fn(() => Long.fromNumber(100000000)),
       negated: jest.fn(() => mockHbarInstance),
     } as any;
 
@@ -137,7 +140,7 @@ describe('AccountBuilder', () => {
     });
 
     it('should handle user-initiated scheduled transfer', () => {
-      mockHederaKit.operationalMode = 'provideBytes';
+      mockHederaKit.operationalMode = 'returnBytes';
       
       const params = {
         transfers: [
@@ -154,7 +157,7 @@ describe('AccountBuilder', () => {
     });
 
     it('should skip user-initiated logic for multiple transfers', () => {
-      mockHederaKit.operationalMode = 'provideBytes';
+      mockHederaKit.operationalMode = 'returnBytes';
       
       const params = {
         transfers: [
@@ -169,7 +172,7 @@ describe('AccountBuilder', () => {
     });
 
     it('should skip user-initiated logic for negative amounts', () => {
-      mockHederaKit.operationalMode = 'provideBytes';
+      mockHederaKit.operationalMode = 'returnBytes';
       
       const params = {
         transfers: [
@@ -201,9 +204,9 @@ describe('AccountBuilder', () => {
 
     it('should adjust transfers when sum is not zero', () => {
       mockHbarInstance.toTinybars
-        .mockReturnValueOnce(new BigNumber('500000000'))
-        .mockReturnValueOnce(new BigNumber('-200000000'))
-        .mockReturnValueOnce(new BigNumber('-200000000'));
+        .mockReturnValueOnce(Long.fromNumber(500000000))
+        .mockReturnValueOnce(Long.fromNumber(-200000000))
+        .mockReturnValueOnce(Long.fromNumber(-200000000));
 
       const params = {
         transfers: [
@@ -244,7 +247,6 @@ describe('AccountBuilder', () => {
     it('should handle undefined memo', () => {
       const params = {
         transfers: [{ accountId: '0.0.800', amount: 1 }],
-        memo: undefined,
       };
 
       accountBuilder.transferHbar(params);
@@ -331,11 +333,10 @@ describe('AccountBuilder', () => {
     it('should handle when userAccountId is not set', () => {
       const kitWithoutUser = {
         ...mockHederaKit,
-        userAccountId: undefined,
-        operationalMode: 'provideBytes',
+        operationalMode: 'returnBytes' as const,
       };
 
-      const builderWithoutUser = new AccountBuilder(kitWithoutUser);
+      const builderWithoutUser = new AccountBuilder(kitWithoutUser as any);
       const params = {
         transfers: [
           {
@@ -353,10 +354,10 @@ describe('AccountBuilder', () => {
     it('should handle when operationalMode is not provideBytes', () => {
       const kitWithDifferentMode = {
         ...mockHederaKit,
-        operationalMode: 'returnBytes',
+        operationalMode: 'returnBytes' as const,
       };
 
-      const builderWithDifferentMode = new AccountBuilder(kitWithDifferentMode);
+      const builderWithDifferentMode = new AccountBuilder(kitWithDifferentMode as any);
       const params = {
         transfers: [
           {

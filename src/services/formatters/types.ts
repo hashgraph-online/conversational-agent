@@ -1,3 +1,5 @@
+import { NetworkType } from '@hashgraphonline/standards-sdk';
+
 export enum EntityFormat {
   TOPIC_ID = 'topicId',
   HRL = 'hrl',
@@ -16,7 +18,7 @@ export enum EntityFormat {
 }
 
 export interface ConversionContext {
-  networkType?: string;
+  networkType?: NetworkType;
   sessionId?: string;
   toolName?: string;
   toolPreferences?: Record<string, string>;

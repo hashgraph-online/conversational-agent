@@ -152,7 +152,7 @@ describe('HCS10Plugin', () => {
           inboundTopic: '0.0.1001',
           outboundTopic: '0.0.1002'
         }
-      })
+      } as any)
     };
 
     const { HCS10Client } = require('@hashgraphonline/standards-sdk');
@@ -163,11 +163,9 @@ describe('HCS10Plugin', () => {
 
     mockContext = {
       config: {
-        hederaKit: mockHederaKit,
-        stateManager: undefined
+        hederaKit: mockHederaKit
       },
-      logger: mockLogger,
-      stateManager: undefined
+      logger: mockLogger
     };
 
     plugin = new HCS10Plugin();
@@ -175,7 +173,7 @@ describe('HCS10Plugin', () => {
 
   describe('initialization', () => {
     test('should initialize successfully with valid HederaKit', async () => {
-      await plugin.initialize(mockContext);
+      await plugin.initialize(mockContext as any);
 
       expect(mockLogger.info).toHaveBeenCalledWith('HCS-10 Plugin initialized successfully');
       expect(mockStateManager.setCurrentAgent).toHaveBeenCalledWith(
@@ -190,9 +188,9 @@ describe('HCS10Plugin', () => {
     });
 
     test('should handle missing HederaKit gracefully', async () => {
-      mockContext.config.hederaKit = undefined;
+      delete mockContext.config.hederaKit;
 
-      await plugin.initialize(mockContext);
+      await plugin.initialize(mockContext as any);
 
       expect(mockLogger.warn).toHaveBeenCalledWith(
         'HederaKit not found in context. HCS-10 tools will not be available.'
@@ -203,7 +201,7 @@ describe('HCS10Plugin', () => {
     test('should use provided StateManager from context', async () => {
       mockContext.stateManager = mockStateManager;
 
-      await plugin.initialize(mockContext);
+      await plugin.initialize(mockContext as any);
 
       expect(mockStateManager.setCurrentAgent).toHaveBeenCalled();
       expect(plugin.getStateManager()).toBe(mockStateManager);
@@ -212,7 +210,7 @@ describe('HCS10Plugin', () => {
     test('should use provided StateManager from config', async () => {
       mockContext.config.stateManager = mockStateManager;
 
-      await plugin.initialize(mockContext);
+      await plugin.initialize(mockContext as any);
 
       expect(mockStateManager.setCurrentAgent).toHaveBeenCalled();
       expect(plugin.getStateManager()).toBe(mockStateManager);
@@ -220,16 +218,16 @@ describe('HCS10Plugin', () => {
 
     test('should create default OpenConvaiState when no StateManager provided', async () => {
       const { OpenConvaiState } = require('@hashgraphonline/standards-agent-kit');
-      await plugin.initialize(mockContext);
+      await plugin.initialize(mockContext as any);
 
       expect(OpenConvaiState).toHaveBeenCalled();
       expect(plugin.getStateManager()).toBeDefined();
     });
 
     test('should handle profile retrieval failure gracefully', async () => {
-      mockHCS10Client.retrieveProfile.mockRejectedValue(new Error('Profile retrieval failed'));
+      mockHCS10Client.retrieveProfile.mockRejectedValue(new Error('Profile retrieval failed') as any);
 
-      await plugin.initialize(mockContext);
+      await plugin.initialize(mockContext as any);
 
       expect(mockLogger.warn).toHaveBeenCalledWith(
         'Could not retrieve profile topics:',
@@ -244,7 +242,7 @@ describe('HCS10Plugin', () => {
     });
 
     test('should initialize ConnectionsManager when StateManager supports it', async () => {
-      await plugin.initialize(mockContext);
+      await plugin.initialize(mockContext as any);
 
       expect(mockStateManager.initializeConnectionsManager).toHaveBeenCalledWith(mockHCS10Client);
       expect(mockLogger.info).toHaveBeenCalledWith(
@@ -260,7 +258,7 @@ describe('HCS10Plugin', () => {
       const { OpenConvaiState } = require('@hashgraphonline/standards-agent-kit');
       OpenConvaiState.mockImplementation(() => mockStateManagerWithoutCM);
 
-      await plugin.initialize(mockContext);
+      await plugin.initialize(mockContext as any);
 
       expect(mockLogger.warn).toHaveBeenCalledWith(
         'StateManager does not support connection manager initialization'
@@ -272,7 +270,7 @@ describe('HCS10Plugin', () => {
         throw new Error('Signer error');
       });
 
-      await plugin.initialize(mockContext);
+      await plugin.initialize(mockContext as any);
 
       expect(mockLogger.error).toHaveBeenCalledWith(
         'Failed to initialize HCS-10 plugin:',
@@ -283,7 +281,7 @@ describe('HCS10Plugin', () => {
 
   describe('tool management', () => {
     beforeEach(async () => {
-      await plugin.initialize(mockContext);
+      await plugin.initialize(mockContext as any);
     });
 
     test('should return all 11 HCS-10 tools when properly initialized', () => {
@@ -353,7 +351,7 @@ describe('HCS10Plugin', () => {
 
   describe('private key extraction', () => {
     test('should extract private key using toStringRaw method', async () => {
-      await plugin.initialize(mockContext);
+      await plugin.initialize(mockContext as any);
 
       expect(mockStateManager.setCurrentAgent).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -373,7 +371,7 @@ describe('HCS10Plugin', () => {
       };
       mockHederaKit.signer = mockSignerWithToString;
 
-      await plugin.initialize(mockContext);
+      await plugin.initialize(mockContext as any);
 
       expect(mockStateManager.setCurrentAgent).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -391,7 +389,7 @@ describe('HCS10Plugin', () => {
       };
       mockHederaKit.signer = mockSignerWithRawValue;
 
-      await plugin.initialize(mockContext);
+      await plugin.initialize(mockContext as any);
 
       expect(mockStateManager.setCurrentAgent).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -414,7 +412,7 @@ describe('HCS10Plugin', () => {
 
   describe('cleanup', () => {
     test('should cleanup resources properly', async () => {
-      await plugin.initialize(mockContext);
+      await plugin.initialize(mockContext as any);
       expect(plugin.getTools()).toHaveLength(11);
       expect(plugin.getStateManager()).toBeDefined();
 
@@ -434,7 +432,7 @@ describe('HCS10Plugin', () => {
 
   describe('state manager access', () => {
     test('should provide access to StateManager', async () => {
-      await plugin.initialize(mockContext);
+      await plugin.initialize(mockContext as any);
       const stateManager = plugin.getStateManager();
 
       expect(stateManager).toBeDefined();
@@ -460,7 +458,7 @@ describe('HCS10Plugin', () => {
         }
       });
 
-      await plugin.initialize(mockContext);
+      await plugin.initialize(mockContext as any);
 
       expect(mockLogger.info).toHaveBeenCalledWith(
         expect.stringContaining('Set current agent: 0.0.123 with topics 0.0.2001/0.0.2002')
@@ -473,7 +471,7 @@ describe('HCS10Plugin', () => {
         topicInfo: null
       });
 
-      await plugin.initialize(mockContext);
+      await plugin.initialize(mockContext as any);
 
       expect(mockStateManager.setCurrentAgent).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -489,7 +487,7 @@ describe('HCS10Plugin', () => {
         topicInfo: null
       });
 
-      await plugin.initialize(mockContext);
+      await plugin.initialize(mockContext as any);
 
       expect(mockStateManager.setCurrentAgent).toHaveBeenCalledWith(
         expect.objectContaining({

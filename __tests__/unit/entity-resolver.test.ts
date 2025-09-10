@@ -175,7 +175,6 @@ describe('EntityResolver Type Safety', () => {
           entityName: TEST_ENTITY_CONSTANTS.TEST_TOKEN_NAME,
           entityType: TEST_ENTITY_CONSTANTS.TOKEN_ENTITY_TYPE,
           createdAt: new Date(),
-          confidence: 0.9
         }
       ];
 
@@ -200,14 +199,12 @@ describe('EntityResolver Type Safety', () => {
         entityName: 'TestToken',
         entityType: 'token',
         createdAt: new Date('2023-01-01'),
-        confidence: 0.9
       },
       {
         entityId: '0.0.789012',
         entityName: 'TestTopic',
         entityType: 'topic',
         createdAt: new Date('2023-01-02'),
-        confidence: 0.8
       }
     ];
 
@@ -248,7 +245,6 @@ describe('EntityResolver Type Safety', () => {
           entityName: TEST_ENTITY_CONSTANTS.TEST_TOKEN_NAME,
           entityType: TEST_ENTITY_CONSTANTS.TOKEN_ENTITY_TYPE,
           createdAt: new Date(),
-          confidence: 0.9
         }
       ];
 
@@ -260,7 +256,6 @@ describe('EntityResolver Type Safety', () => {
         expect(typeof entity.entityName).toBe('string');
         expect(typeof entity.entityType).toBe('string');
         expect(entity.createdAt instanceof Date).toBe(true);
-        expect(typeof entity.confidence).toBe('number');
       });
     });
   });

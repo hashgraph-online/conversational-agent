@@ -1,8 +1,8 @@
 import { getSystemMessage } from '../../src/config/system-message';
-import { ENTITY_REFERENCES } from '../../src/constants/entity-references';
+import { ENTITY_PATTERNS, ENTITY_TYPES } from '../../src/constants/entity-references';
 import { FIELD_PRIORITIES } from '../../src/constants/form-priorities';
 import { ERROR_MESSAGES } from '../../src/constants/messages';
-import { TEST_CONSTANTS } from '../../src/constants/test-constants';
+import { TEST_ACCOUNT_IDS, TEST_NETWORK_CONFIGS, TEST_MESSAGES } from '../../src/constants/test-constants';
 
 describe('Configuration and Constants', () => {
   describe('getSystemMessage', () => {
@@ -30,15 +30,15 @@ describe('Configuration and Constants', () => {
     });
 
     it('should handle undefined account ID', () => {
-      const message = getSystemMessage(undefined);
-      
+      const message = getSystemMessage();
+
       expect(typeof message).toBe('string');
       expect(message.length).toBeGreaterThan(0);
     });
 
     it('should handle null account ID', () => {
-      const message = getSystemMessage(null as any);
-      
+      const message = getSystemMessage();
+
       expect(typeof message).toBe('string');
       expect(message.length).toBeGreaterThan(0);
     });
@@ -59,24 +59,24 @@ describe('Configuration and Constants', () => {
     });
   });
 
-  describe('ENTITY_REFERENCES', () => {
+  describe('ENTITY_PATTERNS', () => {
     it('should be defined as an object', () => {
-      expect(typeof ENTITY_REFERENCES).toBe('object');
-      expect(ENTITY_REFERENCES).not.toBeNull();
+      expect(typeof ENTITY_PATTERNS).toBe('object');
+      expect(ENTITY_PATTERNS).not.toBeNull();
     });
 
     it('should contain entity reference patterns', () => {
-      expect(ENTITY_REFERENCES).toBeDefined();
+      expect(ENTITY_PATTERNS).toBeDefined();
       
-      if (typeof ENTITY_REFERENCES === 'object' && ENTITY_REFERENCES !== null) {
-        const keys = Object.keys(ENTITY_REFERENCES);
+      if (typeof ENTITY_PATTERNS === 'object' && ENTITY_PATTERNS !== null) {
+        const keys = Object.keys(ENTITY_PATTERNS);
         expect(keys.length).toBeGreaterThanOrEqual(0);
       }
     });
 
     it('should have string values for all keys', () => {
-      if (typeof ENTITY_REFERENCES === 'object' && ENTITY_REFERENCES !== null) {
-        Object.values(ENTITY_REFERENCES).forEach(value => {
+      if (typeof ENTITY_PATTERNS === 'object' && ENTITY_PATTERNS !== null) {
+        Object.values(ENTITY_PATTERNS).forEach(value => {
           expect(typeof value).toBe('string');
         });
       }
@@ -158,24 +158,24 @@ describe('Configuration and Constants', () => {
     });
   });
 
-  describe('TEST_CONSTANTS', () => {
+  describe('TEST_ACCOUNT_IDS', () => {
     it('should be defined as an object', () => {
-      expect(typeof TEST_CONSTANTS).toBe('object');
-      expect(TEST_CONSTANTS).not.toBeNull();
+      expect(typeof TEST_ACCOUNT_IDS).toBe('object');
+      expect(TEST_ACCOUNT_IDS).not.toBeNull();
     });
 
     it('should contain test-related constants', () => {
-      expect(TEST_CONSTANTS).toBeDefined();
+      expect(TEST_ACCOUNT_IDS).toBeDefined();
       
-      if (typeof TEST_CONSTANTS === 'object' && TEST_CONSTANTS !== null) {
-        const keys = Object.keys(TEST_CONSTANTS);
+      if (typeof TEST_ACCOUNT_IDS === 'object' && TEST_ACCOUNT_IDS !== null) {
+        const keys = Object.keys(TEST_ACCOUNT_IDS);
         expect(keys.length).toBeGreaterThanOrEqual(0);
       }
     });
 
     it('should have appropriate test values', () => {
-      if (typeof TEST_CONSTANTS === 'object' && TEST_CONSTANTS !== null) {
-        Object.entries(TEST_CONSTANTS).forEach(([key, value]) => {
+      if (typeof TEST_ACCOUNT_IDS === 'object' && TEST_ACCOUNT_IDS !== null) {
+        Object.entries(TEST_ACCOUNT_IDS).forEach(([key, value]) => {
           expect(typeof key).toBe('string');
           expect(key.length).toBeGreaterThan(0);
           
@@ -185,8 +185,8 @@ describe('Configuration and Constants', () => {
     });
 
     it('should contain reasonable test data', () => {
-      if (typeof TEST_CONSTANTS === 'object' && TEST_CONSTANTS !== null) {
-        const keys = Object.keys(TEST_CONSTANTS);
+      if (typeof TEST_ACCOUNT_IDS === 'object' && TEST_ACCOUNT_IDS !== null) {
+        const keys = Object.keys(TEST_ACCOUNT_IDS);
         
         const testPatterns = ['test', 'mock', 'sample', 'example', 'dummy'];
         
@@ -204,14 +204,14 @@ describe('Configuration and Constants', () => {
 
   describe('Constants Integration', () => {
     it('should all constants be importable', () => {
-      expect(ENTITY_REFERENCES).toBeDefined();
+      expect(ENTITY_PATTERNS).toBeDefined();
       expect(FIELD_PRIORITIES).toBeDefined();
       expect(ERROR_MESSAGES).toBeDefined();
-      expect(TEST_CONSTANTS).toBeDefined();
+      expect(TEST_ACCOUNT_IDS).toBeDefined();
     });
 
     it('should not have circular references', () => {
-      const constants = [ENTITY_REFERENCES, FIELD_PRIORITIES, ERROR_MESSAGES, TEST_CONSTANTS];
+      const constants = [ENTITY_PATTERNS, FIELD_PRIORITIES, ERROR_MESSAGES, TEST_ACCOUNT_IDS];
       
       constants.forEach(constant => {
         expect(() => JSON.stringify(constant)).not.toThrow();
@@ -220,10 +220,10 @@ describe('Configuration and Constants', () => {
 
     it('should be serializable', () => {
       const constants = {
-        ENTITY_REFERENCES,
+        ENTITY_PATTERNS,
         FIELD_PRIORITIES,
         ERROR_MESSAGES,
-        TEST_CONSTANTS,
+        TEST_ACCOUNT_IDS,
       };
 
       expect(() => JSON.stringify(constants)).not.toThrow();
@@ -234,10 +234,10 @@ describe('Configuration and Constants', () => {
     });
 
     it('should maintain referential integrity', () => {
-      expect(ENTITY_REFERENCES).toBe(ENTITY_REFERENCES);
+      expect(ENTITY_PATTERNS).toBe(ENTITY_PATTERNS);
       expect(FIELD_PRIORITIES).toBe(FIELD_PRIORITIES);
       expect(ERROR_MESSAGES).toBe(ERROR_MESSAGES);
-      expect(TEST_CONSTANTS).toBe(TEST_CONSTANTS);
+      expect(TEST_ACCOUNT_IDS).toBe(TEST_ACCOUNT_IDS);
     });
   });
 
@@ -259,23 +259,23 @@ describe('Configuration and Constants', () => {
     });
 
     it('should maintain constant immutability', () => {
-      const originalEntityRefs = { ...ENTITY_REFERENCES };
+      const originalEntityRefs = { ...ENTITY_PATTERNS };
       const originalFieldPriorities = { ...FIELD_PRIORITIES };
       const originalErrorMessages = { ...ERROR_MESSAGES };
-      const originalTestConstants = { ...TEST_CONSTANTS };
+      const originalTestConstants = { ...TEST_ACCOUNT_IDS };
 
       try {
-        (ENTITY_REFERENCES as any).newKey = 'newValue';
+        (ENTITY_PATTERNS as any).newKey = 'newValue';
         (FIELD_PRIORITIES as any).newPriority = 'newValue';
         (ERROR_MESSAGES as any).newError = 'newValue';
-        (TEST_CONSTANTS as any).newTest = 'newValue';
+        (TEST_ACCOUNT_IDS as any).newTest = 'newValue';
       } catch {
       }
 
-      expect(typeof ENTITY_REFERENCES).toBe('object');
+      expect(typeof ENTITY_PATTERNS).toBe('object');
       expect(typeof FIELD_PRIORITIES).toBe('object');
       expect(typeof ERROR_MESSAGES).toBe('object');
-      expect(typeof TEST_CONSTANTS).toBe('object');
+      expect(typeof TEST_ACCOUNT_IDS).toBe('object');
     });
   });
 });

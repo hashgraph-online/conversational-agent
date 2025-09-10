@@ -225,7 +225,7 @@ describe('Agent Factory Unit Tests', () => {
         },
       };
 
-      const agent = createAgent(config);
+      const agent = createAgent(config as any);
       expect(agent).toBeInstanceOf(LangChainAgent);
       
       expect(agent['config'].execution?.mode).toBe('bytes');

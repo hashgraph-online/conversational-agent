@@ -317,7 +317,11 @@ export class ContentStorage implements ContentReferenceStore {
    * Get the current storage configuration
    * @returns Storage configuration object
    */
-  getConfig(): { maxStorage: number; currentUsage: number; utilizationPercentage: number } {
+  getConfig(): {
+    maxStorage: number;
+    currentUsage: number;
+    utilizationPercentage: number;
+  } {
     return {
       maxStorage: this.maxStorage,
       currentUsage: this.messages.length,
@@ -354,11 +358,17 @@ export class ContentStorage implements ContentReferenceStore {
    * Export messages to a JSON-serializable format
    * @returns Serializable representation of stored messages
    */
-  exportMessages(): Array<{ content: string; type: string; storedAt: string; id: string }> {
+  exportMessages(): Array<{
+    content: string;
+    type: string;
+    storedAt: string;
+    id: string;
+  }> {
     return this.messages.map((stored) => ({
-      content: typeof stored.message.content === 'string' 
-        ? stored.message.content 
-        : JSON.stringify(stored.message.content),
+      content:
+        typeof stored.message.content === 'string'
+          ? stored.message.content
+          : JSON.stringify(stored.message.content),
       type: stored.message._getType(),
       storedAt: stored.storedAt.toISOString(),
       id: stored.id,
@@ -832,7 +842,10 @@ export class ContentStorage implements ContentReferenceStore {
     return new Date(Date.now() + policy.maxAgeMs);
   }
 
-  private getCleanupPolicy(source: ContentSource): { maxAgeMs: number; priority: number } {
+  private getCleanupPolicy(source: ContentSource): {
+    maxAgeMs: number;
+    priority: number;
+  } {
     switch (source) {
       case 'mcp_tool':
         return this.referenceConfig.cleanupPolicies.recent;

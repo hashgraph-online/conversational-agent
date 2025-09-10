@@ -27,12 +27,12 @@ describe('StringNormalizationConverter', () => {
     mockMirrorInstance = {
       getTopicInfo: jest.fn(),
       configureRetry: jest.fn(),
-    } as jest.Mocked<HederaMirrorNode>;
+    } as unknown as jest.Mocked<HederaMirrorNode>;
     
     mockResolverInstance = {
       resolve: jest.fn(),
       parseHRL: jest.fn(),
-    } as jest.Mocked<HRLResolver>;
+    } as unknown as jest.Mocked<HRLResolver>;
 
     MockHederaMirrorNode.mockImplementation(() => mockMirrorInstance);
     MockHRLResolver.mockImplementation(() => mockResolverInstance);
@@ -46,7 +46,7 @@ describe('StringNormalizationConverter', () => {
   });
 
   describe('canConvert', () => {
-    const mockContext = { networkType: TEST_STRING_NORMALIZER_CONSTANTS.TESTNET_NETWORK as const };
+    const mockContext = { networkType: TEST_STRING_NORMALIZER_CONSTANTS.TESTNET_NETWORK };
 
     it('should return false for non-string input', () => {
       expect(converter.canConvert(123 as unknown as string, mockContext)).toBe(false);
@@ -105,7 +105,7 @@ describe('StringNormalizationConverter', () => {
 
   describe('convert', () => {
     const mockContext = { 
-      networkType: TEST_STRING_NORMALIZER_CONSTANTS.TESTNET_NETWORK as const,
+        networkType: TEST_STRING_NORMALIZER_CONSTANTS.TESTNET_NETWORK,
       toolPreferences: {
         hrlStandard: '2',
         inscriptionHrlStandard: '3'
@@ -116,8 +116,15 @@ describe('StringNormalizationConverter', () => {
       it('should convert CDN URL to HRL using topic memo standard', async () => {
         const source = TEST_STRING_NORMALIZER_CONSTANTS.INSCRIPTION_CDN_123456;
         mockMirrorInstance.getTopicInfo.mockResolvedValue({
-          memo: 'hcs-5-inscription'
-        });
+          memo: 'hcs-5-inscription',
+          admin_key: {} as any,
+          auto_renew_account: '0.0.12345',
+          auto_renew_period: 2592000,
+          created_timestamp: '1234567890.123456789',
+          deleted: false,
+          submit_key: {} as any,
+          topic_id: TEST_STRING_NORMALIZER_CONSTANTS.TOPIC_123456,
+        } as any);
 
         const result = await converter.convert(source, mockContext);
 
@@ -128,8 +135,15 @@ describe('StringNormalizationConverter', () => {
       it('should use default standard "1" when memo does not contain hcs pattern', async () => {
         const source = TEST_STRING_NORMALIZER_CONSTANTS.INSCRIPTION_CDN_123456;
         mockMirrorInstance.getTopicInfo.mockResolvedValue({
-          memo: 'random memo'
-        });
+          memo: 'random memo',
+          admin_key: {} as any,
+          auto_renew_account: '0.0.12345',
+          auto_renew_period: 2592000,
+          created_timestamp: '1234567890.123456789',
+          deleted: false,
+          submit_key: {} as any,
+          topic_id: TEST_STRING_NORMALIZER_CONSTANTS.TOPIC_123456,
+        } as any);
 
         const result = await converter.convert(source, mockContext);
 
@@ -139,8 +153,15 @@ describe('StringNormalizationConverter', () => {
       it('should use default standard "1" when memo is empty', async () => {
         const source = TEST_STRING_NORMALIZER_CONSTANTS.INSCRIPTION_CDN_123456;
         mockMirrorInstance.getTopicInfo.mockResolvedValue({
-          memo: ''
-        });
+          memo: '',
+          admin_key: {} as any,
+          auto_renew_account: '0.0.12345',
+          auto_renew_period: 2592000,
+          created_timestamp: '1234567890.123456789',
+          deleted: false,
+          submit_key: {} as any,
+          topic_id: TEST_STRING_NORMALIZER_CONSTANTS.TOPIC_123456,
+        } as any);
 
         const result = await converter.convert(source, mockContext);
 
@@ -158,7 +179,7 @@ describe('StringNormalizationConverter', () => {
 
       it('should use default fallback standard when none provided', async () => {
         const source = TEST_STRING_NORMALIZER_CONSTANTS.INSCRIPTION_CDN_123456;
-        const contextWithoutStandard = { networkType: TEST_STRING_NORMALIZER_CONSTANTS.TESTNET_NETWORK as const };
+        const contextWithoutStandard = { networkType: TEST_STRING_NORMALIZER_CONSTANTS.TESTNET_NETWORK };
         mockMirrorInstance.getTopicInfo.mockRejectedValue(new Error(TEST_STRING_NORMALIZER_CONSTANTS.MIRROR_ERROR));
 
         const result = await converter.convert(source, contextWithoutStandard);
@@ -169,8 +190,15 @@ describe('StringNormalizationConverter', () => {
       it('should handle case-insensitive CDN URLs', async () => {
         const source = 'INSCRIPTION-CDN/0.0.123456';
         mockMirrorInstance.getTopicInfo.mockResolvedValue({
-          memo: 'hcs-7'
-        });
+          memo: 'hcs-7',
+          admin_key: {} as any,
+          auto_renew_account: '0.0.12345',
+          auto_renew_period: 2592000,
+          created_timestamp: '1234567890.123456789',
+          deleted: false,
+          submit_key: {} as any,
+          topic_id: '0.0.123456',
+        } as any);
 
         const result = await converter.convert(source, mockContext);
 
@@ -183,10 +211,11 @@ describe('StringNormalizationConverter', () => {
         const source = TEST_STRING_NORMALIZER_CONSTANTS.CONTENT_REF_123456;
         mockResolverInstance.resolve.mockResolvedValue({
           topicId: TEST_STRING_NORMALIZER_CONSTANTS.TOPIC_123456
-        });
+        } as any);
         mockResolverInstance.parseHRL.mockReturnValue({
-          standard: '4'
-        });
+          standard: '4',
+          topicId: TEST_STRING_NORMALIZER_CONSTANTS.TOPIC_123456
+        } as any);
 
         const result = await converter.convert(source, mockContext);
 
@@ -201,8 +230,8 @@ describe('StringNormalizationConverter', () => {
         const source = TEST_STRING_NORMALIZER_CONSTANTS.CONTENT_REF_123456;
         mockResolverInstance.resolve.mockResolvedValue({
           topicId: TEST_STRING_NORMALIZER_CONSTANTS.TOPIC_123456
-        });
-        mockResolverInstance.parseHRL.mockReturnValue(undefined);
+        } as any);
+        mockResolverInstance.parseHRL.mockReturnValue(null as any);
 
         const result = await converter.convert(source, mockContext);
 
@@ -213,8 +242,11 @@ describe('StringNormalizationConverter', () => {
         const source = TEST_STRING_NORMALIZER_CONSTANTS.CONTENT_REF_123456;
         mockResolverInstance.resolve.mockResolvedValue({
           topicId: TEST_STRING_NORMALIZER_CONSTANTS.TOPIC_123456
-        });
-        mockResolverInstance.parseHRL.mockReturnValue({});
+        } as any);
+        mockResolverInstance.parseHRL.mockReturnValue({
+          standard: '',
+          topicId: TEST_STRING_NORMALIZER_CONSTANTS.TOPIC_123456
+        } as any);
 
         const result = await converter.convert(source, mockContext);
 
@@ -234,10 +266,11 @@ describe('StringNormalizationConverter', () => {
         const source = 'CONTENT-REF:0.0.123456';
         mockResolverInstance.resolve.mockResolvedValue({
           topicId: '0.0.123456'
-        });
+        } as any);
         mockResolverInstance.parseHRL.mockReturnValue({
-          standard: '6'
-        });
+          standard: '6',
+          topicId: '0.0.123456'
+        } as any);
 
         const result = await converter.convert(source, mockContext as any);
 
@@ -250,7 +283,7 @@ describe('StringNormalizationConverter', () => {
         const source = '0.0.123456';
         mockResolverInstance.resolve.mockResolvedValue({
           topicId: '0.0.123456'
-        });
+        } as any);
         mockResolverInstance.parseHRL.mockReturnValue({
           standard: '8'
         });
@@ -277,7 +310,7 @@ describe('StringNormalizationConverter', () => {
         const source = '0.0.123456';
         mockResolverInstance.resolve.mockResolvedValue({
           topicId: '0.0.123456'
-        });
+        } as any);
         mockResolverInstance.parseHRL.mockReturnValue(null as any);
 
         const result = await converter.convert(source, mockContext as any);
@@ -346,7 +379,7 @@ describe('StringNormalizationConverter', () => {
         };
         mockResolverInstance.resolve.mockResolvedValue({
           topicId: '0.0.123456'
-        });
+        } as any);
         mockResolverInstance.parseHRL.mockReturnValue({
           standard: '1'
         });
@@ -363,7 +396,7 @@ describe('StringNormalizationConverter', () => {
         const contextWithoutNetwork = {};
         mockResolverInstance.resolve.mockResolvedValue({
           topicId: '0.0.123456'
-        });
+        } as any);
         mockResolverInstance.parseHRL.mockReturnValue({
           standard: '1'
         });

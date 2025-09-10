@@ -70,9 +70,9 @@ describe('FormAwareAgentExecutor', () => {
       {
         name: 'test-tool',
         description: 'Test tool',
-        schema: z.object({ name: z.string() }),
+        schema: z.object({ name: z.string() }) as any,
         call: jest.fn(),
-      },
+      } as any,
     ];
 
     mockIsFormValidatable.mockReturnValue(false);
@@ -470,7 +470,7 @@ describe('FormAwareAgentExecutor', () => {
         toolName: 'test-tool',
         originalInput: { input: 'test' },
         originalToolInput: {},
-        schema: z.object({ name: z.string() }),
+        schema: z.object({ name: z.string() }) as any,
         toolRef: mockTools[0],
       };
 
@@ -536,7 +536,7 @@ describe('FormAwareAgentExecutor', () => {
         toolName: 'test-tool',
         originalInput: { input: 'test' },
         originalToolInput: {},
-        schema: z.object({ name: z.string() }),
+        schema: z.object({ name: z.string() }) as any,
         toolRef: mockTools[0],
       };
 
@@ -561,7 +561,7 @@ describe('FormAwareAgentExecutor', () => {
         toolName: 'test-tool',
         originalInput: { input: 'test' },
         originalToolInput: {},
-        schema: z.object({ name: z.string() }),
+        schema: z.object({ name: z.string() }) as any,
         toolRef: mockTools[0],
       };
 
@@ -682,6 +682,12 @@ describe('FormAwareAgentExecutor', () => {
   });
 
   describe('tool wrapper handling', () => {
+    let mockInputs: ChainValues;
+
+    beforeEach(() => {
+      mockInputs = { input: 'test input' };
+    });
+
     it('should use original tool when wrapper is detected', async () => {
       const agentAction: AgentAction = {
         tool: 'test-tool',
@@ -744,7 +750,7 @@ describe('FormAwareAgentExecutor', () => {
         toolName: 'test-tool',
         originalInput: { input: 'test' },
         originalToolInput: {},
-        schema: z.object({ name: z.string() }),
+        schema: z.object({ name: z.string() }) as any,
         toolRef: mockTools[0],
       };
 

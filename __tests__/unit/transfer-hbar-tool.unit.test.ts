@@ -11,7 +11,9 @@ jest.mock('hedera-agent-kit', () => ({
     namespace = '';
     specificInputSchema: any;
 
-    constructor() {}
+    constructor(params: any) {
+      this.hederaKit = params?.hederaKit;
+    }
 
     protected getServiceBuilder() {
       return null;
@@ -29,9 +31,14 @@ const mockAccountBuilder = AccountBuilder as jest.MockedClass<typeof AccountBuil
 describe('TransferHbarTool', () => {
   let transferTool: TransferHbarTool;
   let mockBuilder: jest.Mocked<AccountBuilder>;
+  let mockHederaKit: any;
 
   beforeEach(() => {
     jest.clearAllMocks();
+
+    mockHederaKit = {
+      logger: { info: jest.fn(), error: jest.fn(), warn: jest.fn() },
+    };
 
     mockBuilder = {
       transferHbar: jest.fn().mockReturnThis(),
@@ -39,7 +46,7 @@ describe('TransferHbarTool', () => {
 
     mockAccountBuilder.mockImplementation(() => mockBuilder);
 
-    transferTool = new TransferHbarTool();
+    transferTool = new TransferHbarTool({ hederaKit: mockHederaKit });
   });
 
   describe('tool properties', () => {

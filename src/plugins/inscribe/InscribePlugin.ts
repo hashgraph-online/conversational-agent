@@ -71,7 +71,7 @@ export class InscribePlugin extends BasePlugin {
           }),
         };
         this.providerId = fieldGuidanceRegistry.registerToolProvider(
-          /inscribe.*hashinal/i,
+          /hashinal/i,
           provider,
           { id: 'inscribe:hashinal:provider', priority: 1 }
         );

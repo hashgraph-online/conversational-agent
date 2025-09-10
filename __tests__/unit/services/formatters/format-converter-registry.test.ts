@@ -99,7 +99,7 @@ describe('FormatConverterRegistry', () => {
     it('should convert entity when converter exists and can convert', async () => {
       const entity = '0.0.123456';
       
-      mockMirrorInstance.getTopicInfo.mockResolvedValue({ topicId: '0.0.123456' });
+      mockMirrorInstance.getTopicInfo.mockResolvedValue({ topic_id: '0.0.123456' });
       mockMirrorInstance.getAccountBalance.mockRejectedValue(new Error('Not found'));
       mockMirrorInstance.getTokenInfo.mockRejectedValue(new Error('Not found'));
       mockMirrorInstance.getContract.mockRejectedValue(new Error('Not found'));
@@ -114,7 +114,7 @@ describe('FormatConverterRegistry', () => {
     it('should throw error when no converter found', async () => {
       const entity = '0.0.123456';
       
-      mockMirrorInstance.getAccountBalance.mockResolvedValue({ accountId: '0.0.123456' });
+      mockMirrorInstance.getAccountBalance.mockResolvedValue(1000000000); // Mock balance in tinybars
       mockMirrorInstance.getTokenInfo.mockRejectedValue(new Error('Not found'));
       mockMirrorInstance.getTopicInfo.mockRejectedValue(new Error('Not found'));
       mockMirrorInstance.getContract.mockRejectedValue(new Error('Not found'));
@@ -127,7 +127,7 @@ describe('FormatConverterRegistry', () => {
     it('should throw error when converter cannot convert entity', async () => {
       const entity = '0.0.123456';
       
-      mockMirrorInstance.getTopicInfo.mockResolvedValue({ topicId: '0.0.123456' });
+      mockMirrorInstance.getTopicInfo.mockResolvedValue({ topic_id: '0.0.123456' });
       mockMirrorInstance.getAccountBalance.mockRejectedValue(new Error('Not found'));
       mockMirrorInstance.getTokenInfo.mockRejectedValue(new Error('Not found'));
       mockMirrorInstance.getContract.mockRejectedValue(new Error('Not found'));
@@ -158,7 +158,7 @@ describe('FormatConverterRegistry', () => {
       
       mockMirrorInstance.getAccountBalance.mockRejectedValue(new Error('Not found'));
       mockMirrorInstance.getTokenInfo.mockRejectedValue(new Error('Not found'));
-      mockMirrorInstance.getTopicInfo.mockResolvedValue({ topicId: '0.0.123456' });
+      mockMirrorInstance.getTopicInfo.mockResolvedValue({ topic_id: '0.0.123456' });
       mockMirrorInstance.getContract.mockRejectedValue(new Error('Not found'));
       
       const format = await registry.detectEntityFormat(entity, mockContext);
@@ -169,7 +169,7 @@ describe('FormatConverterRegistry', () => {
     it('should detect ACCOUNT_ID format via API', async () => {
       const entity = '0.0.123456';
       
-      mockMirrorInstance.getAccountBalance.mockResolvedValue({ accountId: '0.0.123456' });
+      mockMirrorInstance.getAccountBalance.mockResolvedValue(1000000000); // Mock balance in tinybars
       mockMirrorInstance.getTokenInfo.mockRejectedValue(new Error('Not found'));
       mockMirrorInstance.getTopicInfo.mockRejectedValue(new Error('Not found'));
       mockMirrorInstance.getContract.mockRejectedValue(new Error('Not found'));
@@ -183,7 +183,7 @@ describe('FormatConverterRegistry', () => {
       const entity = '0.0.123456';
       
       mockMirrorInstance.getAccountBalance.mockRejectedValue(new Error('Not found'));
-      mockMirrorInstance.getTokenInfo.mockResolvedValue({ tokenId: '0.0.123456' });
+      mockMirrorInstance.getTokenInfo.mockResolvedValue({ token_id: '0.0.123456' });
       mockMirrorInstance.getTopicInfo.mockRejectedValue(new Error('Not found'));
       mockMirrorInstance.getContract.mockRejectedValue(new Error('Not found'));
       
@@ -198,7 +198,7 @@ describe('FormatConverterRegistry', () => {
       mockMirrorInstance.getAccountBalance.mockRejectedValue(new Error('Not found'));
       mockMirrorInstance.getTokenInfo.mockRejectedValue(new Error('Not found'));
       mockMirrorInstance.getTopicInfo.mockRejectedValue(new Error('Not found'));
-      mockMirrorInstance.getContract.mockResolvedValue({ contractId: '0.0.123456' });
+      mockMirrorInstance.getContract.mockResolvedValue({ contract_id: '0.0.123456' });
       
       const format = await registry.detectEntityFormat(entity, mockContext);
       
@@ -229,7 +229,7 @@ describe('FormatConverterRegistry', () => {
     it('should use cached format when available', async () => {
       const entity = '0.0.123456';
       
-      mockMirrorInstance.getTopicInfo.mockResolvedValue({ topicId: '0.0.123456' });
+      mockMirrorInstance.getTopicInfo.mockResolvedValue({ topic_id: '0.0.123456' });
       mockMirrorInstance.getAccountBalance.mockRejectedValue(new Error('Not found'));
       mockMirrorInstance.getTokenInfo.mockRejectedValue(new Error('Not found'));
       mockMirrorInstance.getContract.mockRejectedValue(new Error('Not found'));
@@ -330,7 +330,7 @@ describe('FormatConverterRegistry', () => {
       const entity = '0.0.123456';
       const mockContext: ConversionContext = { networkType: 'testnet' as const };
       
-      mockMirrorInstance.getTopicInfo.mockResolvedValue({ topicId: '0.0.123456' });
+      mockMirrorInstance.getTopicInfo.mockResolvedValue({ topic_id: '0.0.123456' });
       mockMirrorInstance.getAccountBalance.mockRejectedValue(new Error('Not found'));
       mockMirrorInstance.getTokenInfo.mockRejectedValue(new Error('Not found'));
       mockMirrorInstance.getContract.mockRejectedValue(new Error('Not found'));
@@ -357,7 +357,7 @@ describe('FormatConverterRegistry', () => {
       let currentTime = 1000000;
       Date.now = jest.fn(() => currentTime);
       
-      mockMirrorInstance.getTopicInfo.mockResolvedValue({ topicId: '0.0.123456' });
+      mockMirrorInstance.getTopicInfo.mockResolvedValue({ topic_id: '0.0.123456' });
       mockMirrorInstance.getAccountBalance.mockRejectedValue(new Error('Not found'));
       mockMirrorInstance.getTokenInfo.mockRejectedValue(new Error('Not found'));
       mockMirrorInstance.getContract.mockRejectedValue(new Error('Not found'));

@@ -79,7 +79,7 @@ describe('FormEngine - Core Functionality', () => {
       warn: jest.fn(),
       error: jest.fn(),
       debug: jest.fn(),
-    } as jest.Mocked<Logger>;
+    } as any;
 
     formEngine = new FormEngine(mockLogger);
     mockFormValidatableTool = new MockFormValidatableTool();
@@ -396,7 +396,7 @@ describe('FormEngine - Core Functionality', () => {
 
   describe('Error Handling', () => {
     test('should log errors when form generation fails', async () => {
-      const problematicTool = new StructuredTool({
+      const problematicTool = {
         name: 'problematic-tool',
         description: 'A tool that causes form generation errors',
         schema: z.object({
@@ -405,7 +405,7 @@ describe('FormEngine - Core Functionality', () => {
         _call: async () => {
           throw new Error('Tool execution error');
         }
-      });
+      } as any;
 
       const originalGenerateForm = (formEngine as any).formGenerator.generateForm;
       (formEngine as any).formGenerator.generateForm = jest.fn().mockImplementation(() => {
@@ -438,7 +438,7 @@ describe('FormEngine - Core Functionality', () => {
         getFormSchema: jest.fn().mockReturnValue(z.object({ focusedField: z.string() })),
         getEssentialFields: jest.fn().mockReturnValue(['field']),
         isFieldEmpty: jest.fn().mockReturnValue(false),
-      };
+      } as any;
 
       const result = await formEngine.generateForm('form-validatable-tool', formValidatableTool, {});
 
@@ -451,7 +451,7 @@ describe('FormEngine - Core Functionality', () => {
         name: 'render-config-tool',
         description: 'A tool with render config',
         schema: z.object({ field: z.string() }),
-      };
+      } as any;
 
       (renderConfigTool.schema as any)._renderConfig = { renderType: 'custom' };
 
@@ -466,7 +466,7 @@ describe('FormEngine - Core Functionality', () => {
         name: 'zod-object-tool',
         description: 'A tool with ZodObject schema',
         schema: z.object({ field: z.string() }),
-      };
+      } as any;
 
       const result = await formEngine.generateForm('zod-object-tool', zodObjectTool, {});
 
@@ -479,7 +479,7 @@ describe('FormEngine - Core Functionality', () => {
         name: 'zod-error-tool',
         description: 'A tool that generates ZodError',
         schema: z.object({ field: z.string() }),
-      };
+      } as any;
 
       const zodError = new ZodError([
         { code: 'invalid_type', expected: 'string', received: 'number', path: ['field'], message: 'Expected string' }
@@ -498,7 +498,7 @@ describe('FormEngine - Core Functionality', () => {
         name: 'session-tool',
         description: 'A tool with session context',
         schema: z.object({ field: z.string() }),
-      };
+      } as any;
 
       const context = {
         sessionId: 'session-123',
@@ -517,7 +517,7 @@ describe('FormEngine - Core Functionality', () => {
         name: 'missing-fields-tool',
         description: 'A tool with missing fields',
         schema: z.object({ field1: z.string(), field2: z.string() }),
-      };
+      } as any;
 
       const context = {
         missingFields: new Set(['field1', 'field2']),
@@ -699,7 +699,7 @@ describe('FormEngine - Core Functionality', () => {
         name: 'skip-form-tool',
         description: 'A tool that should skip form generation',
         schema: z.object({ field: z.string() }),
-      };
+      } as any;
 
       const input = { __fromForm: true };
       const shouldGenerate = formEngine.shouldGenerateForm(tool, input);
@@ -712,7 +712,7 @@ describe('FormEngine - Core Functionality', () => {
         name: 'skip-render-tool',
         description: 'A tool that should skip form generation',
         schema: z.object({ field: z.string() }),
-      };
+      } as any;
 
       const input = { renderForm: false };
       const shouldGenerate = formEngine.shouldGenerateForm(tool, input);
@@ -729,7 +729,7 @@ describe('FormEngine - Core Functionality', () => {
         description: 'A FormValidatable tool',
         schema: z.object({ field: z.string() }),
         shouldGenerateForm: jest.fn().mockReturnValue(false),
-      };
+      } as any;
 
       const input = { field: 'value' };
       const shouldGenerate = formEngine.shouldGenerateForm(tool, input);
@@ -749,7 +749,7 @@ describe('FormEngine - Core Functionality', () => {
         shouldGenerateForm: jest.fn().mockImplementation(() => {
           throw new Error('shouldGenerateForm error');
         }),
-      };
+      } as any;
 
       const input = { field: 'value' };
       const shouldGenerate = formEngine.shouldGenerateForm(tool, input);

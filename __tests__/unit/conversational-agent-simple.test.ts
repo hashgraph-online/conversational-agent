@@ -67,7 +67,7 @@ jest.mock('hedera-agent-kit', () => ({
     getNetwork: jest.fn(() => network),
     sign: jest.fn(),
     freeze: jest.fn().mockReturnThis(),
-    submit: jest.fn().mockResolvedValue({}),
+    submit: jest.fn().mockResolvedValue({ transactionId: 'test-tx-id' } as never),
   })),
   getAllHederaCorePlugins: jest.fn(() => []),
 }));
@@ -84,13 +84,15 @@ jest.mock('@hashgraphonline/standards-sdk', () => ({
 
 jest.mock('../../src/agent-factory', () => ({
   createAgent: jest.fn(() => ({
-    chat: jest.fn().mockResolvedValue({
+    processMessage: jest.fn().mockResolvedValue(({
       output: 'Test response',
       intermediateSteps: [],
-    }),
-    boot: jest.fn().mockResolvedValue(undefined),
-  })),
-}));
+      message: 'Test response',
+      notes: [],
+    } as any) as never),
+    boot: jest.fn().mockResolvedValue(undefined as never),
+  } as any)),
+})) as any;
 
 import { ConversationalAgent } from '../../src/conversational-agent';
 
@@ -120,6 +122,7 @@ describe('ConversationalAgent - Basic Functionality', () => {
         new ConversationalAgent({
           accountId: '0.0.12345',
           privateKey: 'mock-private-key',
+          openAIApiKey: 'mock-api-key',
           entityMemoryEnabled: true
         });
       }).toThrow('OpenAI/Anthropic API key is required when entity memory is enabled');
@@ -226,12 +229,11 @@ describe('ConversationalAgent - Basic Functionality', () => {
         network: 'testnet',
         openAIApiKey: 'sk-test',
         openAIModelName: 'gpt-4',
-        framework: 'langchain',
         operationalMode: 'autonomous',
         disableLogging: false,
         stateManager: {} as any,
         entityMemoryEnabled: true,
-        entityMemoryConfig: { maxMessages: 100 },
+        entityMemoryConfig: { storageLimit: 100 },
         mcpServers: [],
         toolFilter: () => true
       });
@@ -404,8 +406,7 @@ describe('ConversationalAgent - Basic Functionality', () => {
       const agent = new ConversationalAgent({
         accountId: '0.0.12345',
         privateKey: 'mock-private-key',
-        openAIApiKey: 'sk-test',
-        toolFilter: undefined
+        openAIApiKey: 'sk-test'
       });
 
       expect(agent).toBeDefined();

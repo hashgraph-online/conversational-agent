@@ -59,6 +59,12 @@ export interface ToolRegistryEntry {
   metadata: ToolMetadata;
   wrapper?: FormValidatingToolWrapper<z.ZodObject<z.ZodRawShape>> | undefined;
   originalTool: StructuredTool;
+  options?: {
+    priority?: ToolCapabilities['priority'];
+    capability?: string;
+    enabled?: boolean;
+    namespace?: string;
+  };
 }
 
 /**
@@ -197,6 +203,12 @@ export class ToolRegistry {
       metadata,
       wrapper,
       originalTool: tool,
+      options: {
+        priority: capabilities.priority,
+        capability: 'basic', // Default capability
+        enabled: true, // All tools are enabled by default
+        namespace: metadata.category,
+      },
     };
 
     this.tools.set(tool.name, entry);
@@ -301,6 +313,55 @@ export class ToolRegistry {
    */
   getToolNames(): string[] {
     return Array.from(this.tools.keys());
+  }
+
+  /**
+   * Get tools by priority
+   */
+  getToolsByPriority(priority: ToolCapabilities['priority']): ToolRegistryEntry[] {
+    return this.getToolsByCapability('priority', priority);
+  }
+
+  /**
+   * Get enabled tools (all tools are considered enabled by default)
+   */
+  getEnabledTools(): ToolRegistryEntry[] {
+    return this.getAllRegistryEntries();
+  }
+
+  /**
+   * Get tools by namespace/category
+   */
+  getToolsByNamespace(namespace?: string): ToolRegistryEntry[] {
+    if (!namespace) {
+      return this.getAllRegistryEntries();
+    }
+    return this.getToolsByQuery({ category: namespace as ToolMetadata['category'] });
+  }
+
+  /**
+   * Check if registry has capability
+   */
+  hasCapability(capability: keyof ToolCapabilities): boolean {
+    for (const entry of this.tools.values()) {
+      if (entry.metadata.capabilities[capability]) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * Update tool options (metadata)
+   */
+  updateToolOptions(name: string, options: Partial<ToolMetadata>): boolean {
+    const entry = this.tools.get(name);
+    if (!entry) {
+      return false;
+    }
+
+    entry.metadata = { ...entry.metadata, ...options };
+    return true;
   }
 
   /**

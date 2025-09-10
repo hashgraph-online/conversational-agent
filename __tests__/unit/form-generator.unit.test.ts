@@ -86,7 +86,8 @@ describe('FormGenerator', () => {
 
     mockGenerateFieldOrdering.mockReturnValue({
       sections: {},
-    });
+      fieldOrder: [],
+    } as any);
 
     mockZodToJsonSchema.mockReturnValue({
       type: 'object',
@@ -185,7 +186,7 @@ describe('FormGenerator', () => {
         'Original prompt'
       );
 
-      expect(result.validationErrors[0]).toEqual({
+      expect((result.validationErrors as any)[0]).toEqual({
         path: ['nested', 'field'],
         message: 'Invalid nested field',
         code: z.ZodIssueCode.invalid_type,
@@ -312,9 +313,9 @@ describe('FormGenerator', () => {
     });
 
     it('should detect field types from field path', () => {
-      mockFieldTypeRegistry.detectType.mockReturnValue('email');
+      mockFieldTypeRegistry.detectType.mockReturnValue('email' as any);
 
-      const result = formGenerator['mapFieldType'](undefined, undefined, 'email');
+      const result = formGenerator['mapFieldType'](undefined, undefined, 'email' as any);
 
       expect(mockFieldTypeRegistry.detectType).toHaveBeenCalledWith('email');
       expect(result).toBe('email');
@@ -329,6 +330,7 @@ describe('FormGenerator', () => {
 
     it('should use render config priority when available', () => {
       const renderConfig: RenderConfigSchema = {
+        fieldType: 'text',
         ui: { priority: 'advanced' },
       };
 
@@ -338,7 +340,8 @@ describe('FormGenerator', () => {
 
     it('should return advanced priority for advanced UI fields', () => {
       const renderConfig: RenderConfigSchema = {
-        ui: { advanced: true },
+        fieldType: 'text',
+        ui: { priority: 'advanced' } as any,
       };
 
       const priority = formGenerator['getFieldPriority']('name', renderConfig, false);
@@ -347,7 +350,8 @@ describe('FormGenerator', () => {
 
     it('should return expert priority for expert UI fields', () => {
       const renderConfig: RenderConfigSchema = {
-        ui: { expert: true },
+        fieldType: 'text',
+        ui: { priority: 'expert' } as any,
       };
 
       const priority = formGenerator['getFieldPriority']('name', renderConfig, false);
@@ -467,7 +471,7 @@ describe('FormGenerator', () => {
             forbidTechnicalTerms: ['tech', 'api'],
           },
         },
-      };
+      } as any;
 
       mockFieldGuidanceRegistry.getFieldGuidance.mockReturnValue(guidance);
 
@@ -600,10 +604,10 @@ describe('FormGenerator', () => {
   describe('render config extraction', () => {
     it('should extract render configs safely', () => {
       const mockConfig: ExtractedRenderConfig = {
-        fields: { name: { ui: { label: 'Name' } } },
+        fields: { name: { fieldType: 'text', ui: { label: 'Name' } } },
         groups: {},
         order: ['name'],
-        metadata: { version: '1.0' },
+        metadata: { version: '1.0' } as any,
       };
 
       mockExtractRenderConfigs.mockReturnValue(mockConfig);
@@ -640,9 +644,10 @@ describe('FormGenerator', () => {
     it('should generate field ordering safely', () => {
       const mockOrdering = {
         sections: {
-          section1: { fields: ['field1', 'field2'] },
-          section2: { fields: ['field3'] },
+          section1: { title: 'Section 1', fields: ['field1', 'field2'], order: 1 },
+          section2: { title: 'Section 2', fields: ['field3'], order: 2 },
         },
+        fieldOrder: ['field1', 'field2', 'field3'],
       };
 
       mockGenerateFieldOrdering.mockReturnValue(mockOrdering);

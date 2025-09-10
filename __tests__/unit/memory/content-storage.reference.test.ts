@@ -421,9 +421,9 @@ describe('ContentStorage - Reference-Based Storage', () => {
   describe('integration with message storage', () => {
     test('should maintain backward compatibility with message storage', () => {
       const messages = [
-        { content: 'test message 1', _getType: () => 'human' } as unknown as { content: string; _getType: () => string },
-        { content: 'test message 2', _getType: () => 'ai' } as unknown as { content: string; _getType: () => string },
-      ];
+        { content: 'test message 1', _getType: () => 'human' },
+        { content: 'test message 2', _getType: () => 'ai' },
+      ] as any;
 
       const result = storage.storeMessages(messages);
 

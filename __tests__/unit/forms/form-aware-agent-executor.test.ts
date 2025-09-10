@@ -73,10 +73,10 @@ describe('FormAwareAgentExecutor', () => {
         maxSupply: z.number(),
       }),
       _call: jest.fn(),
-    } as StructuredTool;
+    } as any;
 
     executor = new FormAwareAgentExecutor({
-      agent: {} as unknown,
+      agent: {} as any,
       tools: [mockTool],
       verbose: false,
       returnIntermediateSteps: true,
@@ -104,9 +104,9 @@ describe('FormAwareAgentExecutor', () => {
 
       expect(result.requiresForm).toBe(true);
       expect(result.formMessage).toBeDefined();
-      expect(result.formMessage.type).toBe('form');
-      expect(result.formMessage.toolName).toBe('HederaCreateNftTool');
-      expect(result.formMessage.originalPrompt).toBe(
+      expect((result.formMessage as any).type).toBe('form');
+      expect((result.formMessage as any).toolName).toBe('HederaCreateNftTool');
+      expect((result.formMessage as any).originalPrompt).toBe(
         TEST_FORM_CONSTANTS.CREATE_NFT_COLLECTION
       );
       expect(result.output).toContain('I need some additional information');
@@ -163,13 +163,13 @@ describe('FormAwareAgentExecutor', () => {
 
       const formSubmission: FormSubmission = {
         formId: pendingForms[0].formId,
-        data: {
+        parameters: {
           tokenName: 'Test Token',
           tokenSymbol: 'TEST',
           maxSupply: 1000,
         },
         timestamp: Date.now(),
-      };
+      } as any;
 
       const originalSuper = Object.getPrototypeOf(
         Object.getPrototypeOf(executor)
@@ -193,9 +193,9 @@ describe('FormAwareAgentExecutor', () => {
     test('should throw error for non-existent form ID', async () => {
       const formSubmission: FormSubmission = {
         formId: 'non-existent-id',
-        data: { test: 'value' },
+        parameters: { test: 'value' },
         timestamp: Date.now(),
-      };
+      } as any;
 
       await expect(
         executor.processFormSubmission(formSubmission)
@@ -207,10 +207,10 @@ describe('FormAwareAgentExecutor', () => {
 
       const formSubmission: FormSubmission = {
         formId: pendingForms[0].formId,
-        data: {
+        parameters: {
         },
         timestamp: Date.now(),
-      };
+      } as any;
 
       const result = await executor.processFormSubmission(formSubmission);
 
@@ -237,7 +237,7 @@ describe('FormAwareAgentExecutor', () => {
 
       const result = await executor._call(inputs);
 
-      expect(result.formMessage.toolName).toBe('HederaCreateNftTool');
+      expect((result.formMessage as any).toolName).toBe('HederaCreateNftTool');
     });
 
     test('should detect tool from input context when no intermediate steps', async () => {

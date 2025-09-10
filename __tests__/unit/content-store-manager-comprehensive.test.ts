@@ -68,7 +68,7 @@ describe('ContentStoreManager', () => {
 
       await contentStoreManager.initialize();
 
-      expect(contentStoreManager.isRegistered).toBe(true);
+      expect(contentStoreManager.isInitialized()).toBe(true);
     });
 
     it('should handle initialization failure', async () => {
@@ -84,7 +84,7 @@ describe('ContentStoreManager', () => {
 
       await contentStoreManager.initialize();
 
-      expect(contentStoreManager.isRegistered).toBe(true);
+      expect(contentStoreManager.isInitialized()).toBe(true);
     });
   });
 
@@ -96,9 +96,9 @@ describe('ContentStoreManager', () => {
 
     it('should store content successfully', async () => {
       const content = 'test content';
-      const options = { metadata: { type: 'text' } };
+      const options = { metadata: { contentType: 'text' as const, sizeBytes: content.length, source: 'user_upload' as const } };
 
-      const result = await contentStoreManager.store(content, options);
+      const result = await contentStoreManager.getContentStorage().storeContent(Buffer.from(content), options.metadata);
 
       expect(mockAdapter.store).toHaveBeenCalledWith(content, options);
       expect(result).toBe('stored-id');
@@ -107,7 +107,7 @@ describe('ContentStoreManager', () => {
     it('should store content without options', async () => {
       const content = 'test content';
 
-      const result = await contentStoreManager.store(content);
+      const result = await contentStoreManager.getContentStorage().storeContent(Buffer.from(content), { contentType: 'text', sizeBytes: content.length, source: 'user_upload' as const });
 
       expect(mockAdapter.store).toHaveBeenCalledWith(content, undefined);
       expect(result).toBe('stored-id');
@@ -116,7 +116,7 @@ describe('ContentStoreManager', () => {
     it('should throw error when not initialized', async () => {
       (contentStoreManager as any).isRegistered = false;
 
-      await expect(contentStoreManager.store('content')).rejects.toThrow(
+      await expect(contentStoreManager.getContentStorage().storeContent(Buffer.from('content'), { contentType: 'text', sizeBytes: 7, source: 'user_upload' as const })).rejects.toThrow(
         'ContentStoreManager not initialized'
       );
     });
@@ -124,7 +124,7 @@ describe('ContentStoreManager', () => {
     it('should handle adapter errors', async () => {
       mockAdapter.store.mockRejectedValue(new Error('Storage failed'));
 
-      await expect(contentStoreManager.store('content')).rejects.toThrow(
+      await expect(contentStoreManager.getContentStorage().storeContent(Buffer.from('content'), { contentType: 'text', sizeBytes: 7, source: 'user_upload' as const })).rejects.toThrow(
         'Storage failed'
       );
     });
@@ -139,7 +139,7 @@ describe('ContentStoreManager', () => {
     it('should retrieve content successfully', async () => {
       const contentId = 'test-id';
 
-      const result = await contentStoreManager.retrieve(contentId);
+      const result = await contentStoreManager.getContentStorage().resolveReference(contentId);
 
       expect(mockAdapter.retrieve).toHaveBeenCalledWith(contentId);
       expect(result).toBe('retrieved-content');
@@ -148,7 +148,7 @@ describe('ContentStoreManager', () => {
     it('should throw error when not initialized', async () => {
       (contentStoreManager as any).isRegistered = false;
 
-      await expect(contentStoreManager.retrieve('test-id')).rejects.toThrow(
+      await expect(contentStoreManager.getContentStorage().resolveReference('test-id')).rejects.toThrow(
         'ContentStoreManager not initialized'
       );
     });
@@ -156,7 +156,7 @@ describe('ContentStoreManager', () => {
     it('should handle adapter errors', async () => {
       mockAdapter.retrieve.mockRejectedValue(new Error('Retrieval failed'));
 
-      await expect(contentStoreManager.retrieve('test-id')).rejects.toThrow(
+      await expect(contentStoreManager.getContentStorage().resolveReference('test-id')).rejects.toThrow(
         'Retrieval failed'
       );
     });
@@ -171,7 +171,7 @@ describe('ContentStoreManager', () => {
     it('should check if content exists', async () => {
       const contentId = 'test-id';
 
-      const result = await contentStoreManager.exists(contentId);
+      const result = await contentStoreManager.getContentStorage().hasReference(contentId);
 
       expect(mockAdapter.exists).toHaveBeenCalledWith(contentId);
       expect(result).toBe(true);
@@ -181,7 +181,7 @@ describe('ContentStoreManager', () => {
       mockAdapter.exists.mockResolvedValue(false);
       const contentId = 'non-existent-id';
 
-      const result = await contentStoreManager.exists(contentId);
+      const result = await contentStoreManager.getContentStorage().hasReference(contentId);
 
       expect(result).toBe(false);
     });
@@ -189,7 +189,7 @@ describe('ContentStoreManager', () => {
     it('should throw error when not initialized', async () => {
       (contentStoreManager as any).isRegistered = false;
 
-      await expect(contentStoreManager.exists('test-id')).rejects.toThrow(
+      await expect(contentStoreManager.getContentStorage().hasReference('test-id')).rejects.toThrow(
         'ContentStoreManager not initialized'
       );
     });
@@ -204,7 +204,7 @@ describe('ContentStoreManager', () => {
     it('should delete content successfully', async () => {
       const contentId = 'test-id';
 
-      const result = await contentStoreManager.delete(contentId);
+      const result = await contentStoreManager.getContentStorage().cleanupReference(contentId);
 
       expect(mockAdapter.delete).toHaveBeenCalledWith(contentId);
       expect(result).toBe(true);
@@ -214,7 +214,7 @@ describe('ContentStoreManager', () => {
       mockAdapter.delete.mockResolvedValue(false);
       const contentId = 'test-id';
 
-      const result = await contentStoreManager.delete(contentId);
+      const result = await contentStoreManager.getContentStorage().cleanupReference(contentId);
 
       expect(result).toBe(false);
     });
@@ -222,7 +222,7 @@ describe('ContentStoreManager', () => {
     it('should throw error when not initialized', async () => {
       (contentStoreManager as any).isRegistered = false;
 
-      await expect(contentStoreManager.delete('test-id')).rejects.toThrow(
+      await expect(contentStoreManager.getContentStorage().cleanupReference('test-id')).rejects.toThrow(
         'ContentStoreManager not initialized'
       );
     });
@@ -237,7 +237,7 @@ describe('ContentStoreManager', () => {
     it('should resolve reference successfully', async () => {
       const reference = 'test-reference';
 
-      const result = await contentStoreManager.resolve(reference);
+      const result = await contentStoreManager.getContentStorage().resolveReference(reference);
 
       expect(mockResolver.resolve).toHaveBeenCalledWith(reference);
       expect(result).toBe('resolved-content');
@@ -246,7 +246,7 @@ describe('ContentStoreManager', () => {
     it('should throw error when not initialized', async () => {
       (contentStoreManager as any).isRegistered = false;
 
-      await expect(contentStoreManager.resolve('test-reference')).rejects.toThrow(
+      await expect(contentStoreManager.getContentStorage().resolveReference('test-reference')).rejects.toThrow(
         'ContentStoreManager not initialized'
       );
     });
@@ -254,7 +254,7 @@ describe('ContentStoreManager', () => {
     it('should handle resolver errors', async () => {
       mockResolver.resolve.mockRejectedValue(new Error('Resolution failed'));
 
-      await expect(contentStoreManager.resolve('test-reference')).rejects.toThrow(
+      await expect(contentStoreManager.getContentStorage().resolveReference('test-reference')).rejects.toThrow(
         'Resolution failed'
       );
     });
@@ -269,7 +269,7 @@ describe('ContentStoreManager', () => {
     it('should check if reference can be resolved', () => {
       const reference = 'test-reference';
 
-      const result = contentStoreManager.canResolve(reference);
+      const result = contentStoreManager.getContentStorage().hasReference(reference);
 
       expect(mockResolver.canResolve).toHaveBeenCalledWith(reference);
       expect(result).toBe(true);
@@ -279,7 +279,7 @@ describe('ContentStoreManager', () => {
       mockResolver.canResolve.mockReturnValue(false);
       const reference = 'invalid-reference';
 
-      const result = contentStoreManager.canResolve(reference);
+      const result = contentStoreManager.getContentStorage().hasReference(reference);
 
       expect(result).toBe(false);
     });
@@ -287,7 +287,7 @@ describe('ContentStoreManager', () => {
     it('should throw error when not initialized', () => {
       (contentStoreManager as any).isRegistered = false;
 
-      expect(() => contentStoreManager.canResolve('test-reference')).toThrow(
+      expect(() => contentStoreManager.getContentStorage().hasReference('test-reference')).toThrow(
         'ContentStoreManager not initialized'
       );
     });
@@ -301,14 +301,14 @@ describe('ContentStoreManager', () => {
 
       await contentStoreManager.dispose();
 
-      expect(contentStoreManager.isRegistered).toBe(false);
+      expect(contentStoreManager.isInitialized()).toBe(false);
     });
 
     it('should handle disposal when not initialized', async () => {
       (contentStoreManager as any).isRegistered = false;
 
       await expect(contentStoreManager.dispose()).resolves.not.toThrow();
-      expect(contentStoreManager.isRegistered).toBe(false);
+      expect(contentStoreManager.isInitialized()).toBe(false);
     });
 
     it('should handle disposal errors gracefully', async () => {
@@ -323,7 +323,7 @@ describe('ContentStoreManager', () => {
       }));
 
       await expect(contentStoreManager.dispose()).resolves.not.toThrow();
-      expect(contentStoreManager.isRegistered).toBe(false);
+      expect(contentStoreManager.isInitialized()).toBe(false);
     });
   });
 
@@ -332,7 +332,7 @@ describe('ContentStoreManager', () => {
       (contentStoreManager as any).isRegistered = true;
       (contentStoreManager as any).adapter = mockAdapter;
 
-      const status = contentStoreManager.getStatus();
+      const status = contentStoreManager.getStats();
 
       expect(status).toEqual({
         initialized: true,
@@ -344,7 +344,7 @@ describe('ContentStoreManager', () => {
     it('should return status when not initialized', () => {
       (contentStoreManager as any).isRegistered = false;
 
-      const status = contentStoreManager.getStatus();
+      const status = contentStoreManager.getStats();
 
       expect(status).toEqual({
         initialized: false,
@@ -358,7 +358,7 @@ describe('ContentStoreManager', () => {
       (contentStoreManager as any).adapter = mockAdapter;
       (contentStoreManager as any).resolver = mockResolver;
 
-      const status = contentStoreManager.getStatus();
+      const status = contentStoreManager.getStats();
 
       expect(status).toEqual({
         initialized: true,

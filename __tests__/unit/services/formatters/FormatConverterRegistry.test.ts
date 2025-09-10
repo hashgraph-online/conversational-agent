@@ -4,6 +4,7 @@
 
 import { FormatConverterRegistry } from '../../../../src/services/formatters/format-converter-registry';
 import { EntityFormat, FormatConverter, ConversionContext } from '../../../../src/services/formatters/types';
+import { NetworkType } from '@hashgraphonline/standards-sdk';
 import {
   TEST_FORMAT_TYPES,
   TEST_TOPIC_IDS,
@@ -11,18 +12,13 @@ import {
   TEST_ACCOUNT_IDS
 } from '../../../test-constants';
 
-enum NetworkType {
-  TESTNET = TEST_FORMAT_TYPES.TESTNET,
-  MAINNET = TEST_FORMAT_TYPES.MAINNET
-}
-
 jest.mock('@hashgraphonline/standards-sdk', () => ({
   HederaMirrorNode: jest.fn().mockImplementation(() => ({
     getAccountBalance: jest.fn().mockResolvedValue(null),
     getTokenInfo: jest.fn().mockResolvedValue(null),
     getTopicInfo: jest.fn().mockImplementation((entity: string) => {
       if (/^0\.0\.\d+$/.test(entity)) {
-        return Promise.resolve({ topicId: entity });
+        return Promise.resolve({ topic_id: entity });
       }
       return Promise.resolve(null);
     }),
@@ -45,8 +41,8 @@ class TopicIdToHrlConverter implements FormatConverter<string, string> {
   }
   
   async convert(topicId: string, context: ConversionContext): Promise<string> {
-    const network = context.networkType as NetworkType || NetworkType.TESTNET;
-    const networkId = network === NetworkType.MAINNET ? '0' : '1';
+    const network = context.networkType || 'testnet';
+    const networkId = network === 'mainnet' ? '0' : '1';
     return `hcs://${networkId}/${topicId}`;
   }
 }
@@ -102,7 +98,7 @@ describe('FormatConverterRegistry', () => {
       const result = await registry.convertEntity(
         TEST_TOPIC_IDS.TOPIC_6624800,
         EntityFormat.HRL,
-        { networkType: NetworkType.TESTNET }
+        { networkType: 'testnet' }
       );
       
       expect(result).toBe(TEST_HRL_VALUES.HCS_1_6624800);
@@ -112,7 +108,7 @@ describe('FormatConverterRegistry', () => {
       const result = await registry.convertEntity(
         TEST_TOPIC_IDS.TOPIC_6624800, 
         EntityFormat.HRL,
-        { networkType: NetworkType.MAINNET }
+        { networkType: 'mainnet' }
       );
       
       expect(result).toBe(TEST_HRL_VALUES.HCS_0_6624800);
@@ -206,7 +202,7 @@ describe('FormatConverterRegistry', () => {
       const context = { 
         sessionId: 'test-session',
         toolName: 'test-tool',
-        networkType: NetworkType.TESTNET 
+        networkType: 'testnet' 
       };
       
       registry['detectFormat'] = jest.fn().mockReturnValue(EntityFormat.TOKEN_ID);

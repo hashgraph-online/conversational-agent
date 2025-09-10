@@ -40,7 +40,6 @@ describe('ConversationalAgent Missing Coverage Tests', () => {
         entityMemoryEnabled: true,
         entityMemoryConfig: {
           maxTokens: 50000,
-          priorityDecay: 0.9,
         },
       });
 
@@ -70,9 +69,6 @@ describe('ConversationalAgent Missing Coverage Tests', () => {
         entityMemoryEnabled: true,
         entityMemoryConfig: {
           maxTokens: 100000,
-          priorityDecay: 0.8,
-          enablePersistence: true,
-          persistenceKey: 'test-key',
         },
       });
 
@@ -126,7 +122,6 @@ describe('ConversationalAgent Missing Coverage Tests', () => {
       const agent = new ConversationalAgent({
         ...mockOptions,
         llmProvider: 'anthropic',
-        anthropicApiKey: 'test-anthropic-key',
       });
 
       try {
@@ -193,7 +188,9 @@ describe('ConversationalAgent Missing Coverage Tests', () => {
         namespace: 'test',
         initialize: jest.fn(),
         cleanup: jest.fn(),
-      };
+        context: {},
+        getTools: jest.fn().mockReturnValue([]),
+      } as any;
 
       const agent = new ConversationalAgent({
         ...mockOptions,
@@ -217,7 +214,7 @@ describe('ConversationalAgent Missing Coverage Tests', () => {
     test('should handle execute operational mode', async () => {
       const agent = new ConversationalAgent({
         ...mockOptions,
-        operationalMode: 'execute',
+        operationalMode: 'autonomous' as const,
       });
 
       expect(agent).toBeDefined();
@@ -250,7 +247,6 @@ describe('ConversationalAgent Missing Coverage Tests', () => {
       const agent = new ConversationalAgent({
         ...mockOptions,
         mirrorNodeConfig: {
-          baseUrl: 'https://custom-mirror.example.com',
           apiKey: 'custom-api-key',
         },
       });
@@ -287,7 +283,15 @@ describe('ConversationalAgent Missing Coverage Tests', () => {
         set: jest.fn(),
         clear: jest.fn(),
         getAll: jest.fn(),
-      };
+        setCurrentAgent: jest.fn(),
+        getCurrentAgent: jest.fn(),
+        addActiveConnection: jest.fn(),
+        updateOrAddConnection: jest.fn(),
+        removeConnection: jest.fn(),
+        getConnections: jest.fn(),
+        getActiveConnections: jest.fn(),
+        getConnection: jest.fn(),
+      } as any;
 
       const agent = new ConversationalAgent({
         ...mockOptions,

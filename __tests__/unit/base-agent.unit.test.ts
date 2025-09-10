@@ -4,6 +4,8 @@ import { LangChainProvider } from '../../src/providers';
 import { ChatOpenAI } from '@langchain/openai';
 import { BaseChatModel } from '@langchain/core/language_models/chat_models';
 import { createMockServerSigner, createMockTool, createMockAgentExecutor, MockStructuredToolInterface, MockAgentExecutorInterface } from '../mock-factory';
+
+type MockAgentExecutor = MockAgentExecutorInterface;
 import { TEST_RESPONSE_MESSAGES, TEST_MCP_DATA, TEST_FRAMEWORK_VALUES, TEST_TOOL_VALUES } from '../test-constants';
 
 jest.mock('hedera-agent-kit', () => ({
@@ -259,7 +261,7 @@ describe('BaseAgent Unit Tests', () => {
       const mockExecutor = createMockAgentExecutor({
         invoke: jest.fn().mockRejectedValue(new Error(TEST_RESPONSE_MESSAGES.TEST_ERROR)),
       });
-      agent['executor'] = mockExecutor as MockAgentExecutorInterface;
+      agent['executor'] = mockExecutor as any;
 
       const response = await agent.chat(TEST_RESPONSE_MESSAGES.TEST_MESSAGE);
 
@@ -368,7 +370,7 @@ describe('BaseAgent Unit Tests', () => {
         createMockTool('tool3'),
       ];
 
-      const filtered = agent['filterTools'](mockTools as MockStructuredToolInterface[]);
+      const filtered = agent['filterTools'](mockTools as any);
       expect(filtered).toHaveLength(2);
     });
 
@@ -389,7 +391,7 @@ describe('BaseAgent Unit Tests', () => {
         createMockTool(TEST_TOOL_VALUES.ANOTHER_TOOL),
       ];
 
-      const filtered = agent['filterTools'](mockTools as MockStructuredToolInterface[]);
+      const filtered = agent['filterTools'](mockTools as any);
       expect(filtered).toHaveLength(2);
       expect(filtered.find(t => t.name === TEST_TOOL_VALUES.UNWANTED_TOOL)).toBeUndefined();
     });
@@ -411,7 +413,7 @@ describe('BaseAgent Unit Tests', () => {
         createMockTool(TEST_TOOL_VALUES.KEEP_THAT),
       ];
 
-      const filtered = agent['filterTools'](mockTools as MockStructuredToolInterface[]);
+      const filtered = agent['filterTools'](mockTools as any);
       expect(filtered).toHaveLength(2);
       expect(filtered.every(t => t.name.startsWith('keep-'))).toBe(true);
     });

@@ -163,18 +163,19 @@ describe('ConversationalAgent Plugin Support', () => {
       chat: jest.fn().mockResolvedValue({
         output: 'Test response',
         intermediateSteps: []
-      })
-    };
+      }),
+      generateFormFields: jest.fn(),
+      callTool: jest.fn(),
+    } as any;
     
     mockConversationalAgent = {
-      initialize: jest.fn().mockResolvedValue(undefined),
       processMessage: jest.fn().mockResolvedValue({
         output: 'Test response',
         transactionId: '0.0.12345@1234567890.123',
       })
-    };
+    } as any;
     
-    (HederaConversationalAgent as unknown as Mock).mockImplementation(() => mockConversationalAgent);
+    (HederaConversationalAgent as jest.MockedFunction<any>).mockImplementation(() => mockConversationalAgent);
   });
 
   class MockPlugin extends BasePlugin {
@@ -211,7 +212,7 @@ describe('ConversationalAgent Plugin Support', () => {
     await agent.initialize();
 
     const { createAgent } = await import('../../src/agent-factory');
-    const createAgentCall = (createAgent as unknown as Mock).mock.calls[0];
+    const createAgentCall = (createAgent as jest.MockedFunction<any>).mock.calls[0];
     const config = createAgentCall[0];
     
     expect(config.extensions?.plugins).toBeDefined();
@@ -234,7 +235,7 @@ describe('ConversationalAgent Plugin Support', () => {
       privateKey: mockPrivateKey,
       network: 'testnet',
       openAIApiKey: mockOpenAIKey,
-      stateManager: customStateManager as unknown
+      stateManager: customStateManager as any
     });
 
     await agent.initialize();
@@ -242,14 +243,14 @@ describe('ConversationalAgent Plugin Support', () => {
     expect(agent.getStateManager()).toBe(customStateManager);
     
     const { createAgent } = await import('../../src/agent-factory');
-    const createAgentCall = (createAgent as unknown as Mock).mock.calls[0];
+    const createAgentCall = (createAgent as jest.MockedFunction<any>).mock.calls[0];
     const _config = createAgentCall[0];
     
     expect(agent.getStateManager()).toBe(customStateManager);
     
     const hcs10Plugin = agent.getPlugin();
     expect(hcs10Plugin.appConfig).toBeDefined();
-    expect(hcs10Plugin.appConfig.stateManager).toBe(customStateManager);
+    expect(hcs10Plugin.appConfig?.stateManager).toBe(customStateManager);
   });
 
   test('ConversationalAgent passes optional configuration correctly', async () => {
@@ -273,7 +274,7 @@ describe('ConversationalAgent Plugin Support', () => {
     await agent.initialize();
 
     const { createAgent } = await import('../../src/agent-factory');
-    const createAgentCall = (createAgent as unknown as Mock).mock.calls[0];
+    const createAgentCall = (createAgent as jest.MockedFunction<any>).mock.calls[0];
     const config = createAgentCall[0];
     
     expect(config.execution?.operationalMode).toBe('returnBytes');
@@ -296,7 +297,7 @@ describe('ConversationalAgent Plugin Support', () => {
     await agent.initialize();
 
     const { createAgent } = await import('../../src/agent-factory');
-    const createAgentCall = (createAgent as unknown as Mock).mock.calls[0];
+    const createAgentCall = (createAgent as jest.MockedFunction<any>).mock.calls[0];
     const config = createAgentCall[0];
     
     expect(config.messaging?.systemPreamble).toBeDefined();

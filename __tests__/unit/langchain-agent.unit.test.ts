@@ -274,7 +274,7 @@ describe('LangChainAgent', () => {
         autoConnect: true,
       };
 
-      agent = new LangChainAgent({ ...mockConfig, mcp: mcpConfig }, mockLogger);
+      agent = new LangChainAgent({ ...mockConfig, mcp: mcpConfig } as any, mockLogger);
 
       const mockConnectionStatus = {
         connected: true,
@@ -313,7 +313,7 @@ describe('LangChainAgent', () => {
         intermediateSteps: [],
       };
 
-      const mockExecutor = agent['executor'] as jest.Mocked<FormAwareAgentExecutor>;
+      const mockExecutor = agent['executor'] as any;
       mockExecutor.invoke.mockResolvedValue(mockResult);
 
       const response = await agent.chat('test message');
@@ -338,12 +338,12 @@ describe('LangChainAgent', () => {
       const mockTool = {
         name: 'test-tool',
         call: jest.fn().mockResolvedValue('tool result'),
-      };
+      } as any;
 
       const mockToolRegistry = agent['toolRegistry'] as jest.Mocked<ToolRegistry>;
       mockToolRegistry.getTool.mockReturnValue({
         tool: mockTool,
-        wrapper: false,
+        wrapper: false as any,
       });
 
       const response = await agent.chat(toolExecutionMessage);
@@ -359,12 +359,12 @@ Arguments: {"param1": "value1"}`;
       const mockTool = {
         name: 'test-tool',
         call: jest.fn().mockResolvedValue('direct tool result'),
-      };
+      } as any;
 
       const mockToolRegistry = agent['toolRegistry'] as jest.Mocked<ToolRegistry>;
       mockToolRegistry.getTool.mockReturnValue({
         tool: mockTool,
-        wrapper: false,
+        wrapper: false as any,
       });
 
       const response = await agent.chat(directToolMessage);
@@ -381,12 +381,12 @@ Arguments: {"param1": "value1"}`;
       const mockTool = {
         name: 'test-tool',
         call: jest.fn().mockResolvedValue('json tool result'),
-      };
+      } as any;
 
       const mockToolRegistry = agent['toolRegistry'] as jest.Mocked<ToolRegistry>;
       mockToolRegistry.getTool.mockReturnValue({
         tool: mockTool,
-        wrapper: false,
+        wrapper: false as any,
       });
 
       const response = await agent.chat(jsonToolCall);
@@ -405,11 +405,11 @@ Arguments: {"param1": "value1"}`;
           formMessage: { id: 'test-form' },
           message: 'Please complete the form',
         })),
-      };
+      } as any;
 
       const mockToolRegistry = agent['toolRegistry'] as jest.Mocked<ToolRegistry>;
       mockToolRegistry.getToolsByCapability.mockReturnValue([
-        { tool: mockInscriptionTool, wrapper: false },
+        { tool: mockInscriptionTool, wrapper: false as any },
       ]);
 
       const response = await agent.chat(contentRefMessage);
@@ -431,7 +431,7 @@ Arguments: {"param1": "value1"}`;
         intermediateSteps: [],
       };
 
-      const mockExecutor = agent['executor'] as jest.Mocked<FormAwareAgentExecutor>;
+      const mockExecutor = agent['executor'] as any;
       mockExecutor.invoke.mockResolvedValue(mockResult);
 
       const mockMemory = agent['smartMemory'] as jest.Mocked<SmartMemoryManager>;
@@ -446,7 +446,7 @@ Arguments: {"param1": "value1"}`;
 
     it('should handle chat errors properly', async () => {
       const error = new Error('Chat error');
-      const mockExecutor = agent['executor'] as jest.Mocked<FormAwareAgentExecutor>;
+      const mockExecutor = agent['executor'] as any;
       mockExecutor.invoke.mockRejectedValue(error);
 
       const response = await agent.chat('test message');
@@ -489,7 +489,7 @@ Arguments: {"param1": "value1"}`;
         intermediateSteps: [],
       };
 
-      const mockExecutor = agent['executor'] as jest.Mocked<FormAwareAgentExecutor>;
+      const mockExecutor = agent['executor'] as any;
       mockExecutor.processFormSubmission.mockResolvedValue(mockResult);
 
       const response = await agent.processFormSubmission(submission);
@@ -545,7 +545,7 @@ Arguments: {"param1": "value1"}`;
     });
 
     it('should switch operational mode successfully', () => {
-      const newMode: OperationalMode = 'submitTransactions';
+      const newMode: OperationalMode = 'submitTransactions' as any;
       
       agent.switchMode(newMode);
 
@@ -555,7 +555,7 @@ Arguments: {"param1": "value1"}`;
 
     it('should create execution config if not present', () => {
       delete agent['config'].execution;
-      const newMode: OperationalMode = 'submitTransactions';
+      const newMode: OperationalMode = 'submitTransactions' as any;
       
       agent.switchMode(newMode);
 
@@ -658,7 +658,7 @@ Arguments: {"param1": "value1"}`;
     it('should return executor pending forms status', async () => {
       await agent.boot();
 
-      const mockExecutor = agent['executor'] as jest.Mocked<FormAwareAgentExecutor>;
+      const mockExecutor = agent['executor'] as any;
       mockExecutor.hasPendingForms.mockReturnValue(true);
 
       expect(agent.hasPendingForms()).toBe(true);
@@ -676,7 +676,7 @@ Arguments: {"param1": "value1"}`;
       await agent.boot();
 
       const mockInfo = [{ formId: 'test-form', toolName: 'test-tool' }];
-      const mockExecutor = agent['executor'] as jest.Mocked<FormAwareAgentExecutor>;
+      const mockExecutor = agent['executor'] as any;
       mockExecutor.getPendingFormsInfo.mockReturnValue(mockInfo);
 
       expect(agent.getPendingFormsInfo()).toEqual(mockInfo);
@@ -734,7 +734,7 @@ Arguments: {"param1": "value1"}`;
       const callback = jest.fn();
       agent.setParameterPreprocessingCallback(callback);
 
-      const mockExecutor = agent['executor'] as jest.Mocked<FormAwareAgentExecutor>;
+      const mockExecutor = agent['executor'] as any;
       expect(mockExecutor.setParameterPreprocessingCallback).toHaveBeenCalledWith(callback);
     });
 

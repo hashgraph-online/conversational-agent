@@ -28,7 +28,7 @@ describe('ParameterService - Comprehensive (moved)', () => {
       getRegisteredConverters: jest.fn().mockReturnValue(['converter1'])
     };
 
-    parameterService = new ParameterService(mockFormatConverterRegistry, NetworkType.TESTNET as any);
+    parameterService = new ParameterService(mockFormatConverterRegistry, 'testnet');
   });
 
   describe('preprocessParameters', () => {

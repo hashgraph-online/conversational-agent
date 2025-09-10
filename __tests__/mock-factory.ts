@@ -153,6 +153,19 @@ export interface MockStructuredToolInterface {
   verboseParsingErrors?: boolean;
   lc_namespace?: string[];
   _call?: jest.Mock;
+  lc_serializable?: boolean;
+  lc_kwargs?: Record<string, unknown>;
+  lc_runnable?: boolean;
+  lc_attributes?: Record<string, unknown>;
+  InputType?: any;
+  OutputType?: any;
+  lc_graph_name?: string;
+  lc_multiple?: boolean;
+  lc_used?: boolean;
+  description_lines?: string[];
+  args?: Record<string, unknown>;
+  lc_aliases?: string[];
+  lc_secrets?: Record<string, string>;
   [key: string]: unknown;
 }
 
@@ -170,6 +183,17 @@ export function createMockTool(name: string, namespace?: string, overrides?: Par
     returnDirect: false,
     verboseParsingErrors: false,
     lc_namespace: ['langchain', 'tools'],
+    lc_serializable: true,
+    lc_kwargs: {},
+    lc_runnable: true,
+    lc_attributes: {},
+    lc_graph_name: 'test-tool',
+    lc_multiple: false,
+    lc_used: false,
+    description_lines: ['Mock tool for testing'],
+    args: {},
+    lc_aliases: [],
+    lc_secrets: {},
     _call: jest.fn().mockResolvedValue('mock-result'),
     ...overrides,
   };
@@ -185,6 +209,88 @@ export interface MockAgentExecutorInterface {
   formLogger?: jest.Mock;
   pendingForms?: jest.Mock;
   parameterPreprocessingCallback?: jest.Mock;
+  isZodObject?: boolean;
+  hasHashLinkBlock?: jest.Mock;
+  setParameterPreprocessingCallback?: jest.Mock;
+  _takeNextStep?: jest.Mock;
+  isFieldRequired?: jest.Mock;
+  _call?: jest.Mock;
+  handleValidationError?: jest.Mock;
+  getPendingForms?: jest.Mock;
+  restorePendingForms?: jest.Mock;
+  processFormSubmission?: jest.Mock;
+  extractToolInfoFromError?: jest.Mock;
+  findToolFromContext?: jest.Mock;
+  detectToolFromErrorContext?: jest.Mock;
+  schemaMatchesErrorPaths?: jest.Mock;
+  extractToolKeywords?: jest.Mock;
+  formatFormResponse?: jest.Mock;
+  hasPendingForms?: jest.Mock;
+  getPendingFormsInfo?: jest.Mock;
+  processHashLinkResponse?: jest.Mock;
+  getFormEngineStatistics?: jest.Mock;
+  lc_namespace?: string[];
+  agent?: any;
+  tools?: any[];
+  returnIntermediateSteps?: boolean;
+  earlyStoppingMethod?: jest.Mock;
+  returnOnlyOutputs?: boolean;
+  handleParsingErrors?: jest.Mock;
+  inputKeys?: string[];
+  outputKeys?: string[];
+  shouldContinueGetter?: jest.Mock;
+  shouldContinue?: jest.Mock;
+  _return?: jest.Mock;
+  _getToolReturn?: jest.Mock;
+  _returnStoppedResponse?: jest.Mock;
+  _streamIterator?: jest.Mock;
+  _chainType?: string;
+  serialize?: jest.Mock;
+  _selectMemoryInputs?: jest.Mock;
+  _validateOutputs?: jest.Mock;
+  prepOutputs?: jest.Mock;
+  run?: jest.Mock;
+  _formatValues?: jest.Mock;
+  call?: jest.Mock;
+  apply?: jest.Mock;
+  verbose?: boolean;
+  lc_attributes?: Record<string, unknown>;
+  lc_runnable?: boolean;
+  getName?: jest.Mock;
+  bind?: jest.Mock;
+  map?: jest.Mock;
+  withRetry?: jest.Mock;
+  withConfig?: jest.Mock;
+  withFallbacks?: jest.Mock;
+  _getOptionsList?: jest.Mock;
+  batch?: jest.Mock;
+  stream?: jest.Mock;
+  _separateRunnableConfigFromCallOptions?: jest.Mock;
+  _callWithConfig?: jest.Mock;
+  _batchWithConfig?: jest.Mock;
+  _concatOutputChunks?: jest.Mock;
+  _transformStreamWithConfig?: jest.Mock;
+  getGraph?: jest.Mock;
+  pipe?: jest.Mock;
+  pick?: jest.Mock;
+  assign?: jest.Mock;
+  transform?: jest.Mock;
+  streamLog?: jest.Mock;
+  _streamLog?: jest.Mock;
+  streamEvents?: jest.Mock;
+  _streamEventsV2?: jest.Mock;
+  _streamEventsV1?: jest.Mock;
+  withListeners?: jest.Mock;
+  asTool?: jest.Mock;
+  lc_serializable?: boolean;
+  lc_kwargs?: Record<string, unknown>;
+  lc_id?: string[];
+  lc_secrets?: Record<string, string>;
+  lc_aliases?: string[];
+  lc_serializable_keys?: string[];
+  toJSON?: jest.Mock;
+  toJSONNotImplemented?: jest.Mock;
+  [key: string]: any; // Allow additional properties for compatibility
 }
 
 /**
@@ -198,6 +304,87 @@ export function createMockAgentExecutor(overrides?: Partial<MockAgentExecutorInt
     formLogger: jest.fn(),
     pendingForms: jest.fn(),
     parameterPreprocessingCallback: jest.fn(),
+    isZodObject: false,
+    hasHashLinkBlock: jest.fn().mockReturnValue(false),
+    setParameterPreprocessingCallback: jest.fn(),
+    _takeNextStep: jest.fn(),
+    isFieldRequired: jest.fn().mockReturnValue(false),
+    _call: jest.fn(),
+    handleValidationError: jest.fn(),
+    getPendingForms: jest.fn().mockReturnValue([]),
+    restorePendingForms: jest.fn(),
+    processFormSubmission: jest.fn(),
+    extractToolInfoFromError: jest.fn(),
+    findToolFromContext: jest.fn(),
+    detectToolFromErrorContext: jest.fn(),
+    schemaMatchesErrorPaths: jest.fn(),
+    extractToolKeywords: jest.fn(),
+    formatFormResponse: jest.fn(),
+    hasPendingForms: jest.fn().mockReturnValue(false),
+    getPendingFormsInfo: jest.fn().mockReturnValue([]),
+    processHashLinkResponse: jest.fn(),
+    getFormEngineStatistics: jest.fn().mockReturnValue({}),
+    lc_namespace: ['langchain', 'agents'],
+    agent: {},
+    tools: [],
+    returnIntermediateSteps: false,
+    earlyStoppingMethod: jest.fn(),
+    returnOnlyOutputs: false,
+    handleParsingErrors: jest.fn(),
+    inputKeys: [],
+    outputKeys: [],
+    shouldContinueGetter: jest.fn(),
+    shouldContinue: jest.fn().mockReturnValue(false),
+    _return: jest.fn(),
+    _getToolReturn: jest.fn(),
+    _returnStoppedResponse: jest.fn(),
+    _streamIterator: jest.fn(),
+    _chainType: 'agent',
+    serialize: jest.fn(),
+    _selectMemoryInputs: jest.fn(),
+    _validateOutputs: jest.fn(),
+    prepOutputs: jest.fn(),
+    run: jest.fn(),
+    _formatValues: jest.fn(),
+    call: jest.fn(),
+    apply: jest.fn(),
+    verbose: false,
+    lc_attributes: {},
+    lc_runnable: true,
+    getName: jest.fn().mockReturnValue('MockAgentExecutor'),
+    bind: jest.fn(),
+    map: jest.fn(),
+    withRetry: jest.fn(),
+    withConfig: jest.fn(),
+    withFallbacks: jest.fn(),
+    _getOptionsList: jest.fn(),
+    batch: jest.fn(),
+    stream: jest.fn(),
+    _separateRunnableConfigFromCallOptions: jest.fn(),
+    _callWithConfig: jest.fn(),
+    _batchWithConfig: jest.fn(),
+    _concatOutputChunks: jest.fn(),
+    _transformStreamWithConfig: jest.fn(),
+    getGraph: jest.fn(),
+    pipe: jest.fn(),
+    pick: jest.fn(),
+    assign: jest.fn(),
+    transform: jest.fn(),
+    streamLog: jest.fn(),
+    _streamLog: jest.fn(),
+    streamEvents: jest.fn(),
+    _streamEventsV2: jest.fn(),
+    _streamEventsV1: jest.fn(),
+    withListeners: jest.fn(),
+    asTool: jest.fn(),
+    lc_serializable: true,
+    lc_kwargs: {},
+    lc_id: ['mock-agent-executor'],
+    lc_secrets: {},
+    lc_aliases: [],
+    lc_serializable_keys: [],
+    toJSON: jest.fn(),
+    toJSONNotImplemented: jest.fn(),
     ...overrides,
   };
 }

@@ -3,7 +3,7 @@
  */
 
 import { z } from 'zod';
-import type { EntityResolutionPreferences, ToolMetadata } from '../ToolRegistry';
+import type { EntityResolutionPreferences, ToolMetadata } from '../../src/core/tool-registry';
 
 describe('EntityResolutionPreferences Interface', () => {
   describe('type validation', () => {
@@ -33,9 +33,9 @@ describe('EntityResolutionPreferences Interface', () => {
     });
 
     it('should accept all valid inscription formats', () => {
-      const validFormats: Array<EntityResolutionPreferences['inscription']> = [
-        'hrl', 'topicId', 'metadata', 'any', undefined
-      ];
+      const validFormats = [
+        'hrl', 'topicId', 'metadata', 'any'
+      ] as const;
 
       validFormats.forEach(format => {
         const preferences: EntityResolutionPreferences = {
@@ -46,9 +46,9 @@ describe('EntityResolutionPreferences Interface', () => {
     });
 
     it('should accept all valid token formats', () => {
-      const validFormats: Array<EntityResolutionPreferences['token']> = [
-        'tokenId', 'address', 'symbol', 'any', undefined
-      ];
+      const validFormats = [
+        'tokenId', 'address', 'symbol', 'any'
+      ] as const;
 
       validFormats.forEach(format => {
         const preferences: EntityResolutionPreferences = {
@@ -59,9 +59,9 @@ describe('EntityResolutionPreferences Interface', () => {
     });
 
     it('should accept all valid nft formats', () => {
-      const validFormats: Array<EntityResolutionPreferences['nft']> = [
-        'serialNumber', 'metadata', 'hrl', 'any', undefined
-      ];
+      const validFormats = [
+        'serialNumber', 'metadata', 'hrl', 'any'
+      ] as const;
 
       validFormats.forEach(format => {
         const preferences: EntityResolutionPreferences = {
@@ -72,9 +72,9 @@ describe('EntityResolutionPreferences Interface', () => {
     });
 
     it('should accept all valid account formats', () => {
-      const validFormats: Array<EntityResolutionPreferences['account']> = [
-        'accountId', 'alias', 'evmAddress', 'any', undefined
-      ];
+      const validFormats = [
+        'accountId', 'alias', 'evmAddress', 'any'
+      ] as const;
 
       validFormats.forEach(format => {
         const preferences: EntityResolutionPreferences = {

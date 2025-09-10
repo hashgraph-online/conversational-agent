@@ -8,7 +8,11 @@ import { Logger } from '@hashgraphonline/standards-sdk';
  */
 interface MockHederaKit {
   client: { network: { toString: () => string } };
-  signer: { getAccountId: () => { toString: () => string } };
+  signer: {
+    getAccountId: () => { toString: () => string };
+    getOperatorPrivateKey: () => { toStringRaw: () => string };
+  };
+  operationalMode: string;
 }
 
 interface MockContext {
@@ -17,6 +21,14 @@ interface MockContext {
     sessionId: string;
   };
   state: Record<string, unknown>;
+  kit: MockHederaKit;
+  logger: Logger;
+  modelCapability: string;
+  config: {
+    hederaKit: MockHederaKit;
+    [key: string]: unknown;
+  };
+  stateManager?: any;
 }
 
 describe('OpenConvAIPlugin Unit Tests', () => {
@@ -38,6 +50,11 @@ describe('OpenConvAIPlugin Unit Tests', () => {
     };
 
     mockContext = {
+      request: {
+        message: 'test message',
+        sessionId: 'test-session'
+      },
+      state: {},
       kit: mockHederaKit,
       logger: new Logger({ module: 'test' }),
       modelCapability: 'MEDIUM',
@@ -65,7 +82,7 @@ describe('OpenConvAIPlugin Unit Tests', () => {
       mockContext.logger.info = jest.fn();
       mockContext.logger.error = jest.fn();
       
-      await plugin.initialize(mockContext);
+      await plugin.initialize(mockContext as any);
       
       const tools = plugin.getTools();
       
@@ -79,11 +96,11 @@ describe('OpenConvAIPlugin Unit Tests', () => {
     test('Plugin warns when hederaKit is missing', async () => {
       const plugin = new OpenConvAIPlugin();
       
-      mockContext.config.hederaKit = undefined;
+      delete mockContext.config.hederaKit;
       mockContext.logger.warn = jest.fn();
       mockContext.logger.info = jest.fn();
       
-      await plugin.initialize(mockContext);
+      await plugin.initialize(mockContext as any);
       
       const tools = plugin.getTools();
       
@@ -99,7 +116,7 @@ describe('OpenConvAIPlugin Unit Tests', () => {
       mockContext.logger.warn = jest.fn();
       mockContext.logger.info = jest.fn();
       mockContext.logger.error = jest.fn();
-      await plugin.initialize(mockContext);
+      await plugin.initialize(mockContext as any);
       
       const tools = plugin.getTools();
       
@@ -119,7 +136,7 @@ describe('OpenConvAIPlugin Unit Tests', () => {
       mockContext.logger.warn = jest.fn();
       mockContext.logger.info = jest.fn();
       mockContext.logger.error = jest.fn();
-      await plugin.initialize(mockContext);
+      await plugin.initialize(mockContext as any);
       
       const tools = plugin.getTools();
       const registerTool = tools.find(t => t.name === 'register_agent');
@@ -135,7 +152,7 @@ describe('OpenConvAIPlugin Unit Tests', () => {
       mockContext.logger.warn = jest.fn();
       mockContext.logger.info = jest.fn();
       mockContext.logger.error = jest.fn();
-      await plugin.initialize(mockContext);
+      await plugin.initialize(mockContext as any);
       
       const tools = plugin.getTools();
       const names = tools.map(t => t.name);
@@ -149,7 +166,7 @@ describe('OpenConvAIPlugin Unit Tests', () => {
       mockContext.logger.warn = jest.fn();
       mockContext.logger.info = jest.fn();
       mockContext.logger.error = jest.fn();
-      await plugin.initialize(mockContext);
+      await plugin.initialize(mockContext as any);
       
       const tools = plugin.getTools();
       
@@ -168,7 +185,7 @@ describe('OpenConvAIPlugin Unit Tests', () => {
       mockContext.logger.warn = jest.fn();
       mockContext.logger.info = jest.fn();
       mockContext.logger.error = jest.fn();
-      await plugin.initialize(mockContext);
+      await plugin.initialize(mockContext as any);
       
       const tools = plugin.getTools();
       
@@ -205,7 +222,7 @@ describe('OpenConvAIPlugin Unit Tests', () => {
       mockContext.logger.warn = jest.fn();
       mockContext.logger.info = jest.fn();
       mockContext.logger.error = jest.fn();
-      await plugin.initialize(mockContext);
+      await plugin.initialize(mockContext as any);
       
       const stateManager = plugin.getStateManager();
       expect(stateManager).toBe(customStateManager);
@@ -217,7 +234,7 @@ describe('OpenConvAIPlugin Unit Tests', () => {
       mockContext.logger.warn = jest.fn();
       mockContext.logger.info = jest.fn();
       mockContext.logger.error = jest.fn();
-      await plugin.initialize(mockContext);
+      await plugin.initialize(mockContext as any);
       
       const stateManager = plugin.getStateManager();
       expect(stateManager).toBeDefined();
@@ -238,7 +255,7 @@ describe('OpenConvAIPlugin Unit Tests', () => {
       mockContext.logger.info = jest.fn();
       mockContext.logger.error = jest.fn();
       
-      await plugin.initialize(mockContext);
+      await plugin.initialize(mockContext as any);
       
       expect(mockContext.logger.error).toHaveBeenCalledWith(
         'Failed to initialize HCS-10 plugin:',
@@ -257,7 +274,7 @@ describe('OpenConvAIPlugin Unit Tests', () => {
       mockContext.logger.info = jest.fn();
       mockContext.logger.error = jest.fn();
       
-      await plugin.initialize(mockContext);
+      await plugin.initialize(mockContext as any);
       
       expect(plugin.getTools().length).toBe(11);
       expect(plugin.getStateManager()).toBeDefined();

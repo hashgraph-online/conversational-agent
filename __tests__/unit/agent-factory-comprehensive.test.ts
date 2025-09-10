@@ -151,7 +151,6 @@ describe('createAgent', () => {
   it('should handle undefined framework gracefully', () => {
     const configWithUndefinedFramework = {
       ...baseConfig,
-      framework: undefined,
     };
 
     const agent = createAgent(configWithUndefinedFramework);

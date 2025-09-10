@@ -44,7 +44,7 @@ describe('ParameterService (moved)', () => {
       getConverter: jest.fn(),
       hasConverter: jest.fn().mockReturnValue(true),
     };
-    parameterService = new ParameterService(mockFormatConverterRegistry, NetworkType.TESTNET as any);
+    parameterService = new ParameterService(mockFormatConverterRegistry, 'testnet');
     (parameterService as any).logger = mockLogger;
   });
 

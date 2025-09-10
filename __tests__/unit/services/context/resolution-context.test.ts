@@ -3,7 +3,7 @@
  */
 
 import { ResolutionContext, ResolutionContextBuilder, EntityHint, ConversionRecord, EntityType } from '../../../../src/services/context/resolution-context';
-import type { ToolMetadata } from '../../../../src/core/ToolRegistry';
+import type { ToolMetadata } from '../../../src/core/tool-registry';
 import {
   TEST_CONTEXT_STRINGS,
   TEST_TOOL_NAMES,

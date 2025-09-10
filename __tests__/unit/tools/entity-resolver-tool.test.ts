@@ -1,6 +1,6 @@
 import { ResolveEntitiesTool, ExtractEntitiesTool, createEntityTools } from '@/tools/entity-resolver-tool';
 import { ChatOpenAI } from '@langchain/openai';
-import { AIMessage } from '@langchain/core/messages';
+import { AIMessage, AIMessageChunk } from '@langchain/core/messages';
 
 jest.mock('@langchain/openai');
 jest.mock('@hashgraphonline/standards-sdk', () => ({
@@ -84,7 +84,7 @@ describe('ResolveEntitiesTool', () => {
         entities: sampleEntities,
       };
 
-      const mockResponse = new AIMessage('submit on 0.0.789012');
+      const mockResponse = new AIMessageChunk('submit on 0.0.789012');
       mockLLM.invoke.mockResolvedValue(mockResponse);
 
       const result = await resolveEntities._call(input);
@@ -102,7 +102,7 @@ describe('ResolveEntitiesTool', () => {
         entities: sampleEntities,
       };
 
-      const mockResponse = new AIMessage('  airdrop 0.0.123456  ');
+      const mockResponse = new AIMessageChunk('  airdrop 0.0.123456  ');
       mockLLM.invoke.mockResolvedValue(mockResponse);
 
       const result = await resolveEntities._call(input);
@@ -134,7 +134,7 @@ describe('ResolveEntitiesTool', () => {
         entities: multipleEntities,
       };
 
-      const mockResponse = new AIMessage('resolved message');
+      const mockResponse = new AIMessageChunk('resolved message');
       mockLLM.invoke.mockResolvedValue(mockResponse);
 
       await resolveEntities._call(input);
@@ -152,7 +152,7 @@ describe('ResolveEntitiesTool', () => {
         entities: sampleEntities,
       };
 
-      const mockResponse = new AIMessage('mint 0.0.123456 100');
+      const mockResponse = new AIMessageChunk('mint 0.0.123456 100');
       mockLLM.invoke.mockResolvedValue(mockResponse);
 
       await resolveEntities._call(input);
@@ -211,7 +211,7 @@ describe('ExtractEntitiesTool', () => {
         userMessage: 'create a topic',
       };
 
-      const mockResponse = new AIMessage('[{"id": "0.0.123456", "name": "Test Topic", "type": "topic"}]');
+      const mockResponse = new AIMessageChunk('[{"id": "0.0.123456", "name": "Test Topic", "type": "topic"}]');
       mockLLM.invoke.mockResolvedValue(mockResponse);
 
       const result = await extractEntities._call(input);
@@ -224,7 +224,7 @@ describe('ExtractEntitiesTool', () => {
         userMessage: 'create a topic',
       };
 
-      const mockResponse = new AIMessage('No entities were created. []');
+      const mockResponse = new AIMessageChunk('No entities were created. []');
       mockLLM.invoke.mockResolvedValue(mockResponse);
 
       const result = await extractEntities._call(input);
@@ -237,7 +237,7 @@ describe('ExtractEntitiesTool', () => {
         userMessage: 'create entities',
       };
 
-      const mockResponse = new AIMessage('Based on the analysis: [{"id": "0.0.789", "name": "New Token", "type": "token"}] were created.');
+      const mockResponse = new AIMessageChunk('Based on the analysis: [{"id": "0.0.789", "name": "New Token", "type": "token"}] were created.');
       mockLLM.invoke.mockResolvedValue(mockResponse);
 
       const result = await extractEntities._call(input);
@@ -254,7 +254,7 @@ describe('ExtractEntitiesTool', () => {
         {"id": "0.0.111", "name": "Entity 1", "type": "topic"},
         {"id": "0.0.222", "name": "Entity 2", "type": "token"}
       ]`;
-      const mockResponse = new AIMessage(`Here are the entities: ${jsonResponse}`);
+      const mockResponse = new AIMessageChunk(`Here are the entities: ${jsonResponse}`);
       mockLLM.invoke.mockResolvedValue(mockResponse);
 
       const result = await extractEntities._call(input);
@@ -267,7 +267,7 @@ describe('ExtractEntitiesTool', () => {
         userMessage: 'failed operation',
       };
 
-      const mockResponse = new AIMessage('Nothing was created successfully');
+      const mockResponse = new AIMessageChunk('Nothing was created successfully');
       mockLLM.invoke.mockResolvedValue(mockResponse);
 
       const result = await extractEntities._call(input);
@@ -295,7 +295,7 @@ describe('ExtractEntitiesTool', () => {
         userMessage: longUserMessage,
       };
 
-      const mockResponse = new AIMessage('[]');
+      const mockResponse = new AIMessageChunk('[]');
       mockLLM.invoke.mockResolvedValue(mockResponse);
 
       await extractEntities._call(input);
@@ -317,7 +317,7 @@ describe('ExtractEntitiesTool', () => {
         userMessage: 'make a token',
       };
 
-      const mockResponse = new AIMessage('[]');
+      const mockResponse = new AIMessageChunk('[]');
       mockLLM.invoke.mockResolvedValue(mockResponse);
 
       await extractEntities._call(input);

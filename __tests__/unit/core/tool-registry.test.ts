@@ -69,7 +69,7 @@ describe('ToolRegistry', () => {
       description: 'A test tool',
       schema: z.object({ input: z.string() }),
       func: jest.fn(),
-    } as StructuredTool;
+    } as any;
 
     mockZodObjectTool = {
       name: 'zod-tool',
@@ -79,7 +79,7 @@ describe('ToolRegistry', () => {
         metadata: z.array(z.string()),
       }),
       func: jest.fn(),
-    } as StructuredTool;
+    } as any;
 
     mockFormValidatableTool = {
       name: 'form-tool',
@@ -87,7 +87,7 @@ describe('ToolRegistry', () => {
       schema: z.object({ data: z.string() }),
       func: jest.fn(),
       shouldGenerateForm: jest.fn().mockReturnValue(true),
-    } as StructuredTool & { shouldGenerateForm?: () => boolean };
+    } as any;
   });
 
   describe('constructor', () => {
@@ -141,7 +141,8 @@ describe('ToolRegistry', () => {
       const zodTool = {
         ...mockFormValidatableTool,
         schema: z.object({ data: z.string() }),
-      };
+        responseFormat: undefined,
+      } as any;
       
       registry.registerTool(zodTool);
       
@@ -188,7 +189,10 @@ describe('ToolRegistry', () => {
       const toolWithPrefs = {
         ...mockTool,
         schema: schemaWithPrefs,
-      };
+        responseFormat: undefined,
+        returnDirect: false,
+        verboseParsingErrors: false,
+      } as any;
       
       registry.registerTool(toolWithPrefs);
       
@@ -204,7 +208,11 @@ describe('ToolRegistry', () => {
         ...mockZodObjectTool,
         name: 'inscription-tool',
         description: 'Tool for inscriptions',
-      };
+        responseFormat: undefined,
+        returnDirect: false,
+        verboseParsingErrors: false,
+        defaultConfig: {} as any,
+      } as any;
       
       registry.registerTool(inscriptionTool);
       
@@ -217,7 +225,7 @@ describe('ToolRegistry', () => {
         ...mockZodObjectTool,
         name: 'inscription-tool',
         description: 'Tool for inscriptions. NOTE: When referencing inscriptions or media, provide canonical Hashlink Resource Locators',
-      };
+      } as any;
       
       registry.registerTool(inscriptionTool);
       
@@ -229,8 +237,11 @@ describe('ToolRegistry', () => {
     test('should handle schema parsing errors gracefully', () => {
       const toolWithBadSchema = {
         ...mockTool,
-        schema: { invalid: 'schema' },
-      };
+        schema: { invalid: 'schema' } as any,
+        responseFormat: undefined,
+        returnDirect: false,
+        verboseParsingErrors: false,
+      } as any;
       
       expect(() => registry.registerTool(toolWithBadSchema)).not.toThrow();
       expect(registry.hasTool('test-tool')).toBe(true);
@@ -262,7 +273,17 @@ describe('ToolRegistry', () => {
       registry.registerTool({
         ...mockTool,
         name: 'high-priority-tool',
-      });
+        responseFormat: undefined,
+        returnDirect: false,
+        verboseParsingErrors: false,
+        defaultConfig: undefined,
+        lc_kwargs: undefined,
+        lc_serializable: undefined,
+        lc_id: undefined,
+        lc_secrets: undefined,
+        lc_aliases: undefined,
+        lc_serializable_keys: undefined,
+      } as any);
       
       (isFormValidatable as jest.Mock).mockReturnValue(true);
       registry.registerTool(mockFormValidatableTool);
@@ -290,7 +311,17 @@ describe('ToolRegistry', () => {
       registry.registerTool({
         ...mockTool,
         name: 'extension-tool',
-      }, { metadata: { category: 'extension' } });
+        responseFormat: undefined,
+        returnDirect: false,
+        verboseParsingErrors: false,
+        defaultConfig: undefined,
+        lc_kwargs: undefined,
+        lc_serializable: undefined,
+        lc_id: undefined,
+        lc_secrets: undefined,
+        lc_aliases: undefined,
+        lc_serializable_keys: undefined,
+      } as any, { metadata: { category: 'extension' } });
     });
 
     test('should find tools by name', () => {
@@ -334,8 +365,8 @@ describe('ToolRegistry', () => {
   describe('getAllTools', () => {
     test('should return all tool instances', () => {
       registry.registerTool(mockTool);
-      registry.registerTool({ ...mockTool, name: 'tool2' });
-      
+      registry.registerTool({ ...mockTool, name: 'tool2', responseFormat: undefined, returnDirect: false, verboseParsingErrors: false, defaultConfig: undefined, lc_kwargs: undefined, lc_serializable: undefined, lc_id: undefined, lc_secrets: undefined, lc_aliases: undefined, lc_serializable_keys: undefined } as any);
+
       const tools = registry.getAllTools();
       
       expect(tools).toHaveLength(2);
@@ -352,8 +383,8 @@ describe('ToolRegistry', () => {
   describe('getAllRegistryEntries', () => {
     test('should return all registry entries', () => {
       registry.registerTool(mockTool);
-      registry.registerTool({ ...mockTool, name: 'tool2' });
-      
+      registry.registerTool({ ...mockTool, name: 'tool2', responseFormat: undefined, returnDirect: false, verboseParsingErrors: false, defaultConfig: undefined, lc_kwargs: undefined, lc_serializable: undefined, lc_id: undefined, lc_secrets: undefined, lc_aliases: undefined, lc_serializable_keys: undefined } as any);
+
       const entries = registry.getAllRegistryEntries();
       
       expect(entries).toHaveLength(2);
@@ -364,8 +395,8 @@ describe('ToolRegistry', () => {
   describe('getToolNames', () => {
     test('should return all tool names', () => {
       registry.registerTool(mockTool);
-      registry.registerTool({ ...mockTool, name: 'tool2' });
-      
+      registry.registerTool({ ...mockTool, name: 'tool2', responseFormat: undefined, returnDirect: false, verboseParsingErrors: false, defaultConfig: undefined, lc_kwargs: undefined, lc_serializable: undefined, lc_id: undefined, lc_secrets: undefined, lc_aliases: undefined, lc_serializable_keys: undefined } as any);
+
       const names = registry.getToolNames();
       
       expect(names).toHaveLength(2);
@@ -412,8 +443,8 @@ describe('ToolRegistry', () => {
   describe('clear', () => {
     test('should remove all tools', () => {
       registry.registerTool(mockTool);
-      registry.registerTool({ ...mockTool, name: 'tool2' });
-      
+      registry.registerTool({ ...mockTool, name: 'tool2', responseFormat: undefined, returnDirect: false, verboseParsingErrors: false, defaultConfig: undefined, lc_kwargs: undefined, lc_serializable: undefined, lc_id: undefined, lc_secrets: undefined, lc_aliases: undefined, lc_serializable_keys: undefined } as any);
+
       expect(registry.getAllTools()).toHaveLength(2);
       
       registry.clear();
@@ -425,7 +456,7 @@ describe('ToolRegistry', () => {
   describe('getStatistics', () => {
     beforeEach(() => {
       registry.registerTool(mockTool);
-      registry.registerTool({ ...mockTool, name: 'tool2' }, { metadata: { category: 'extension' } });
+      registry.registerTool({ ...mockTool, name: 'tool2', responseFormat: undefined, returnDirect: false, verboseParsingErrors: false, defaultConfig: undefined, lc_kwargs: undefined, lc_serializable: undefined, lc_id: undefined, lc_secrets: undefined, lc_aliases: undefined, lc_serializable_keys: undefined } as any, { metadata: { category: 'extension' } });
       
       (isFormValidatable as jest.Mock).mockReturnValue(true);
       registry.registerTool(mockFormValidatableTool);
@@ -462,7 +493,17 @@ describe('ToolRegistry', () => {
       const toolWithRenderConfig = {
         ...mockTool,
         schema: { _renderConfig: { type: 'form' } },
-      };
+        responseFormat: undefined,
+        returnDirect: false,
+        verboseParsingErrors: false,
+        defaultConfig: undefined,
+        lc_kwargs: undefined,
+        lc_serializable: undefined,
+        lc_id: undefined,
+        lc_secrets: undefined,
+        lc_aliases: undefined,
+        lc_serializable_keys: undefined,
+      } as any;
       
       registry.registerTool(toolWithRenderConfig);
       
@@ -475,7 +516,17 @@ describe('ToolRegistry', () => {
         ...mockTool,
         name: 'query-tool',
         description: 'A tool for querying data',
-      };
+        responseFormat: undefined,
+        returnDirect: false,
+        verboseParsingErrors: false,
+        defaultConfig: undefined,
+        lc_kwargs: undefined,
+        lc_serializable: undefined,
+        lc_id: undefined,
+        lc_secrets: undefined,
+        lc_aliases: undefined,
+        lc_serializable_keys: undefined,
+      } as any;
       
       registry.registerTool(queryTool);
       
@@ -488,7 +539,17 @@ describe('ToolRegistry', () => {
       const testTool = {
         ...mockTool,
         name: 'categorized-tool',
-      };
+        responseFormat: undefined,
+        returnDirect: false,
+        verboseParsingErrors: false,
+        defaultConfig: undefined,
+        lc_kwargs: undefined,
+        lc_serializable: undefined,
+        lc_id: undefined,
+        lc_secrets: undefined,
+        lc_aliases: undefined,
+        lc_serializable_keys: undefined,
+      } as any;
       
       registry.registerTool(testTool);
       
@@ -511,7 +572,17 @@ describe('ToolRegistry', () => {
           ...mockTool,
           name: `schema-test-tool-${index}`,
           schema,
-        };
+          responseFormat: undefined,
+          returnDirect: false,
+          verboseParsingErrors: false,
+          defaultConfig: undefined,
+          lc_kwargs: undefined,
+          lc_serializable: undefined,
+          lc_id: undefined,
+          lc_secrets: undefined,
+          lc_aliases: undefined,
+          lc_serializable_keys: undefined,
+        } as any;
         
         expect(() => registry.registerTool(tool)).not.toThrow();
         expect(registry.hasTool(`schema-test-tool-${index}`)).toBe(true);
@@ -524,7 +595,17 @@ describe('ToolRegistry', () => {
       const zodObjectTool = {
         ...mockTool,
         schema: z.object({ test: z.string() }),
-      };
+        responseFormat: undefined,
+        returnDirect: false,
+        verboseParsingErrors: false,
+        defaultConfig: undefined,
+        lc_kwargs: undefined,
+        lc_serializable: undefined,
+        lc_id: undefined,
+        lc_secrets: undefined,
+        lc_aliases: undefined,
+        lc_serializable_keys: undefined,
+      } as any;
       
       registry.registerTool(zodObjectTool);
       
@@ -536,7 +617,17 @@ describe('ToolRegistry', () => {
       const stringTool = {
         ...mockTool,
         schema: 'not an object',
-      };
+        responseFormat: undefined,
+        returnDirect: false,
+        verboseParsingErrors: false,
+        defaultConfig: undefined,
+        lc_kwargs: undefined,
+        lc_serializable: undefined,
+        lc_id: undefined,
+        lc_secrets: undefined,
+        lc_aliases: undefined,
+        lc_serializable_keys: undefined,
+      } as any;
       
       expect(() => registry.registerTool(stringTool)).not.toThrow();
     });
@@ -545,7 +636,17 @@ describe('ToolRegistry', () => {
       const nullSchemaTool = {
         ...mockTool,
         schema: null,
-      };
+        responseFormat: undefined,
+        returnDirect: false,
+        verboseParsingErrors: false,
+        defaultConfig: undefined,
+        lc_kwargs: undefined,
+        lc_serializable: undefined,
+        lc_id: undefined,
+        lc_secrets: undefined,
+        lc_aliases: undefined,
+        lc_serializable_keys: undefined,
+      } as any;
       
       expect(() => registry.registerTool(nullSchemaTool)).not.toThrow();
     });

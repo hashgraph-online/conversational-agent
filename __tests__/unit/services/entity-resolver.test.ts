@@ -109,7 +109,7 @@ describe('EntityResolver', () => {
           entityName: 'My Account',
           entityType: 'account',
           transactionId: '0.0.123@1234567890.123456789',
-          timestamp: Date.now(),
+          createdAt: new Date(),
           metadata: {},
         },
         {
@@ -117,7 +117,7 @@ describe('EntityResolver', () => {
           entityName: 'Token Contract',
           entityType: 'contract',
           transactionId: '0.0.456@1234567890.123456789',
-          timestamp: Date.now(),
+          createdAt: new Date(),
           metadata: {},
         },
       ];
@@ -148,7 +148,7 @@ describe('EntityResolver', () => {
           entityName: 'My Account',
           entityType: 'account',
           transactionId: '0.0.123@1234567890.123456789',
-          timestamp: Date.now(),
+          createdAt: new Date(),
           metadata: {},
         },
       ];
@@ -168,7 +168,7 @@ describe('EntityResolver', () => {
           entityName: 'Test Account',
           entityType: 'account',
           transactionId: '0.0.123@1234567890.123456789',
-          timestamp: Date.now(),
+          createdAt: new Date(),
           metadata: {},
         },
       ];
@@ -195,7 +195,7 @@ describe('EntityResolver', () => {
           entityName: 'Account 1',
           entityType: 'account',
           transactionId: '0.0.111@1234567890.123456789',
-          timestamp: Date.now(),
+          createdAt: new Date(),
           metadata: {},
         },
         {
@@ -211,7 +211,7 @@ describe('EntityResolver', () => {
           entityName: 'Token 1',
           entityType: 'token',
           transactionId: '0.0.333@1234567890.123456789',
-          timestamp: Date.now(),
+          createdAt: new Date(),
           metadata: {},
         },
       ];
@@ -381,7 +381,7 @@ describe('EntityResolver', () => {
           entityName: longName,
           entityType: 'account',
           transactionId: '0.0.123@1234567890.123456789',
-          timestamp: Date.now(),
+          createdAt: new Date(),
           metadata: {},
         },
       ];
@@ -403,7 +403,7 @@ describe('EntityResolver', () => {
           entityName: 'Special@#$%^&*()',
           entityType: 'account',
           transactionId: '0.0.123@1234567890.123456789',
-          timestamp: Date.now(),
+          createdAt: new Date(),
           metadata: {},
         },
       ];
@@ -432,7 +432,7 @@ describe('EntityResolver', () => {
           entityName: undefined as any,
           entityType: 'account',
           transactionId: undefined as any,
-          timestamp: Date.now(),
+          createdAt: new Date(),
           metadata: {},
         },
       ];
