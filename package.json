@@ -1,6 +1,6 @@
 {
   "name": "@hashgraphonline/conversational-agent",
-  "version": "0.2.108",
+  "version": "0.2.109",
   "type": "module",
   "main": "./dist/cjs/index.cjs",
   "module": "./dist/esm/index.js",
@@ -99,9 +99,9 @@
   },
   "dependencies": {
     "@hashgraph/sdk": "^2.72.0",
-    "@hashgraphonline/hashinal-wc": "^1.0.104",
-    "@hashgraphonline/standards-agent-kit": "^0.2.142",
-    "@hashgraphonline/standards-sdk": "^0.0.196",
+    "@hashgraphonline/hashinal-wc": "^1.0.106",
+    "@hashgraphonline/standards-agent-kit": "^0.2.143",
+    "@hashgraphonline/standards-sdk": "^0.1.102",
     "@langchain/anthropic": "^0.3.27",
     "@langchain/core": "^0.3.75",
     "@langchain/openai": "^0.6.11",
