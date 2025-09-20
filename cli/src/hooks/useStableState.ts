@@ -1,6 +1,5 @@
 import {useReducer, useCallback, useMemo} from 'react';
-import {type Screen, type Message} from '../types';
-import {type MCPServerConfig} from '@hashgraphonline/conversational-agent';
+import {type Screen, type Message, type MCPServerConfig} from '../types';
 
 export interface AppState {
   screen: Screen;

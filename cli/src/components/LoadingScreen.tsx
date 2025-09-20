@@ -5,11 +5,11 @@ import {BRAND_COLORS} from '../types';
 
 export const LoadingScreen: React.FC = () => {
 	const {write} = useStdout();
-	
+
 	useEffect(() => {
 		write('\x1Bc');
 	}, [write]);
-	
+
 	return (
 		<Box flexDirection="column" alignItems="center" paddingY={4}>
 			<Box marginBottom={2}>

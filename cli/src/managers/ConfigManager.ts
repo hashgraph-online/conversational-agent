@@ -1,17 +1,19 @@
 import fs from 'fs';
 import path from 'path';
-import { Logger } from '@hashgraphonline/standards-sdk';
-import {MCPServers, type MCPServerConfig} from '@hashgraphonline/conversational-agent';
-import {type Config} from '../types';
+import {MCPServers, type MCPServerConfig, type Config, type Network} from '../types';
 
 export class ConfigManager {
   private static instance: ConfigManager;
   private _config: Config & {mcpServers: MCPServerConfig[]} | null = null;
   private _mcpServers: MCPServerConfig[] | null = null;
-  private logger: Logger;
+  private logger: { error: (...args: unknown[]) => void };
 
   private constructor() {
-    this.logger = new Logger({ module: 'ConfigManager' });
+    this.logger = {
+      error: (...args: unknown[]) => {
+        console.error('[ConfigManager]', ...args);
+      },
+    };
   }
 
   static getInstance(): ConfigManager {
@@ -101,10 +103,13 @@ export class ConfigManager {
           }
         });
 
+        const networkEnv = envVars['HEDERA_NETWORK'];
+        const network: Network = networkEnv === 'mainnet' ? 'mainnet' : 'testnet';
+
         return {
           accountId: envVars['HEDERA_ACCOUNT_ID'] || '',
           privateKey: envVars['HEDERA_PRIVATE_KEY'] || '',
-          network: (envVars['HEDERA_NETWORK'] as 'testnet' | 'mainnet') || 'testnet',
+          network,
           openAIApiKey: envVars['OPENAI_API_KEY'] || '',
         };
       }
@@ -157,7 +162,7 @@ export class ConfigManager {
     if (!this._config) {
       const envConfig = this.loadConfigFromEnv();
       const mcpServers = this.loadMCPConfig();
-      
+
       this._config = {
         accountId: props.accountId || envConfig.accountId,
         privateKey: props.privateKey || envConfig.privateKey,

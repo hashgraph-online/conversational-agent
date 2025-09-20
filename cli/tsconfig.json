@@ -1,20 +1,19 @@
 {
 	"compilerOptions": {
-		"module": "NodeNext",
-		"target": "ES2022",
-		"lib": ["ES2022"],
-		"outDir": "dist",
-		"sourceMap": false,
-		"esModuleInterop": true,
-		"declaration": true,
+		"outDir": "./dist/",
+		"noImplicitAny": true,
+		"module": "ESNext",
+		"target": "es2020",
 		"jsx": "react",
-		"strict": false,
-		"moduleResolution": "NodeNext",
-		"allowSyntheticDefaultImports": true,
+		"allowJs": true,
+		"moduleResolution": "Bundler",
+		"esModuleInterop": true,
 		"resolveJsonModule": true,
-		"skipLibCheck": true,
-		"forceConsistentCasingInFileNames": true
+		"declaration": true,
+		"declarationMap": true,
+		"sourceMap": true,
+		"lib": ["es2020", "dom"],
+		"skipLibCheck": true
 	},
-	"include": ["source"],
-	"exclude": ["node_modules", "dist"]
+	"include": ["src/**/*", "__tests__/**/*"]
 }

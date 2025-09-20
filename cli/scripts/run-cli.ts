@@ -4,12 +4,12 @@ import {fileURLToPath} from 'url';
 import {dirname, join} from 'path';
 import {access, constants} from 'fs/promises';
 import {spawn} from 'child_process';
-import { Logger } from '@hashgraphonline/standards-sdk';
+import {Logger} from '@hashgraphonline/standards-sdk';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const cliRoot = join(__dirname, '..');
-const distPath = join(cliRoot, 'dist', 'cli.js');
+const distPath = join(cliRoot, 'dist', 'cli');
 
 /**
  * Check if CLI is built
@@ -27,7 +27,7 @@ async function isBuilt() {
  * Install dependencies
  */
 function installDeps() {
-	const logger = new Logger({ module: 'CLI' });
+	const logger = new Logger({module: 'CLI'});
 	return new Promise((resolve, reject) => {
 		logger.info('📦 Installing CLI dependencies...');
 		const child = spawn('pnpm', ['install'], {
@@ -49,7 +49,7 @@ function installDeps() {
  * Build the CLI
  */
 function build() {
-	const logger = new Logger({ module: 'CLI' });
+	const logger = new Logger({module: 'CLI'});
 	return new Promise((resolve, reject) => {
 		logger.info('🔨 Building Conversational Agent CLI...');
 		const child = spawn('pnpm', ['build'], {
@@ -72,12 +72,14 @@ function build() {
  * Run the CLI
  */
 function runCli() {
+	build();
 	const projectRoot = join(__dirname, '..', '..');
-	const sourcePath = join(cliRoot, 'source', 'cli.tsx');
+	const sourcePath = join(cliRoot, 'src', 'cli.tsx');
 	const child = spawn('npx', ['tsx', sourcePath, ...process.argv.slice(2)], {
 		stdio: 'inherit',
 		env: {
 			...process.env,
+			DISABLE_LOGS: process.env.DISABLE_LOGS ?? 'true',
 			CONVERSATIONAL_AGENT_ROOT: projectRoot,
 		},
 	});
@@ -103,7 +105,7 @@ async function hasDependencies() {
  * Main function
  */
 async function main() {
-	const logger = new Logger({ module: 'CLI' });
+	const logger = new Logger({module: 'CLI'});
 	try {
 		if (!(await hasDependencies())) {
 			await installDeps();
@@ -116,7 +118,7 @@ async function main() {
 	}
 }
 
-main().catch((e) => {
-	const logger = new Logger({ module: 'CLI' });
+main().catch(e => {
+	const logger = new Logger({module: 'CLI'});
 	logger.error('Unhandled error in CLI:', e);
 });

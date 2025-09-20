@@ -3,7 +3,7 @@ import {
   Hbar,
   TransferTransaction,
 } from '@hashgraph/sdk';
-import BigNumber from 'bignumber.js';
+import BigNumber from 'bignumber';
 import { HederaAgentKit, BaseServiceBuilder } from 'hedera-agent-kit';
 import { HbarTransferParams } from './types';
 

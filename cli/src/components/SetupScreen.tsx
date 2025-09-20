@@ -4,7 +4,7 @@ import TextInput from 'ink-text-input';
 import SelectInput from 'ink-select-input';
 import {TerminalWindow} from './TerminalWindow';
 import {StatusBadge} from './StatusBadge';
-import {BRAND_COLORS, type Config} from '../types';
+import {BRAND_COLORS, type Config, type Network, type SelectItem} from '../types';
 
 interface Props {
   config: Config;
@@ -15,7 +15,25 @@ interface Props {
   onInitializeAgent: () => void;
 }
 
-const fields = ['accountId', 'privateKey', 'network', 'openAIApiKey'];
+type ConfigField = 'accountId' | 'privateKey' | 'network' | 'openAIApiKey';
+
+const hiddenValue = '••••••••';
+
+const fieldDescriptors: Array<{
+  key: ConfigField;
+  label: string;
+  mask?: boolean;
+}> = [
+  {key: 'accountId', label: 'Account ID:'},
+  {key: 'privateKey', label: 'Private Key:', mask: true},
+  {key: 'network', label: 'Network:'},
+  {key: 'openAIApiKey', label: 'OpenAI Key:', mask: true},
+];
+
+const networkOptions: SelectItem<Network>[] = [
+  {label: 'Testnet', value: 'testnet'},
+  {label: 'Mainnet', value: 'mainnet'},
+];
 
 /**
  * Setup screen for configuring credentials
@@ -30,10 +48,11 @@ export const SetupScreen: React.FC<Props> = ({
 }) => {
   useInput((_, key) => {
     if (key.tab && !key.shift) {
-      const nextField = (currentField + 1) % fields.length;
+      const nextField = (currentField + 1) % fieldDescriptors.length;
       onSetCurrentField(nextField);
     } else if (key.tab && key.shift) {
-      const prevField = currentField === 0 ? fields.length - 1 : currentField - 1;
+      const prevField =
+        currentField === 0 ? fieldDescriptors.length - 1 : currentField - 1;
       onSetCurrentField(prevField);
     }
   });
@@ -46,8 +65,8 @@ export const SetupScreen: React.FC<Props> = ({
           <Text>Configure your Hedera account credentials</Text>
         </Box>
 
-        {fields.map((field, index) => (
-          <Box key={field} marginY={1}>
+        {fieldDescriptors.map(({key, label, mask}, index) => (
+          <Box key={key} marginY={1}>
             <Box width={20}>
               <Text
                 color={
@@ -56,51 +75,46 @@ export const SetupScreen: React.FC<Props> = ({
                     : BRAND_COLORS.hedera.smoke
                 }
               >
-                {field === 'accountId' && 'Account ID:'}
-                {field === 'privateKey' && 'Private Key:'}
-                {field === 'network' && 'Network:'}
-                {field === 'openAIApiKey' && 'OpenAI Key:'}
+                {label}
               </Text>
             </Box>
             {currentField === index ? (
-              field === 'network' ? (
-                <SelectInput
-                  items={[
-                    {label: 'Testnet', value: 'testnet'},
-                    {label: 'Mainnet', value: 'mainnet'},
-                  ]}
-                  initialIndex={config.network === 'testnet' ? 0 : 1}
-                  onSelect={item => {
-                    onUpdateConfig('network', item.value as 'testnet' | 'mainnet');
-                    if (currentField < fields.length - 1) {
+              key === 'network' ? (
+                <SelectInput<Network>
+                  items={networkOptions}
+                  initialIndex={Math.max(
+                    0,
+                    networkOptions.findIndex(
+                      option => option.value === config.network,
+                    ),
+                  )}
+                  onSelect={({value}) => {
+                    onUpdateConfig('network', value);
+                    if (currentField < fieldDescriptors.length - 1) {
                       onSetCurrentField(currentField + 1);
                     }
                   }}
                 />
               ) : (
                 <TextInput
-                  value={config[field as keyof Config]}
-                  onChange={value => onUpdateConfig(field as keyof Config, value)}
+                  value={config[key]}
+                  onChange={value => onUpdateConfig(key, value)}
                   onSubmit={() => {
-                    if (currentField < fields.length - 1) {
+                    if (currentField < fieldDescriptors.length - 1) {
                       onSetCurrentField(currentField + 1);
                     } else {
                       onInitializeAgent();
                     }
                   }}
-                  mask={
-                    field === 'privateKey' || field === 'openAIApiKey'
-                      ? '*'
-                      : undefined
-                  }
+                  mask={mask ? '*' : undefined}
                 />
               )
             ) : (
               <Text color={BRAND_COLORS.hedera.smoke}>
-                {field === 'network'
-                  ? config[field]
-                  : config[field as keyof Config]
-                  ? '••••••••'
+                {key === 'network'
+                  ? config.network
+                  : config[key]
+                  ? hiddenValue
                   : '(not set)'}
               </Text>
             )}

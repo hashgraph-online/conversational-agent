@@ -2,7 +2,16 @@ import React from 'react';
 import {Box, Text} from 'ink';
 import SelectInput from 'ink-select-input';
 import Gradient from 'ink-gradient';
-import {BRAND_COLORS, type Config, type Screen} from '../types';
+import {BRAND_COLORS, type Config, type Screen, type SelectItem} from '../types';
+
+type WelcomeMenuValue = Screen | 'exit';
+
+const menuItems: SelectItem<WelcomeMenuValue>[] = [
+	{label: 'Start Chat', value: 'chat'},
+	{label: 'Configure', value: 'setup'},
+	{label: 'MCP Servers', value: 'mcp-config'},
+	{label: 'Exit', value: 'exit'},
+];
 
 /**
  * Welcome screen component
@@ -37,29 +46,24 @@ export const WelcomeScreen: React.FC<{
 		</Box>
 
 		<Box marginY={2}>
-			<SelectInput
-				items={[
-					{label: 'Start Chat', value: 'chat'},
-					{label: 'Configure', value: 'setup'},
-					{label: 'MCP Servers', value: 'mcp-config'},
-					{label: 'Exit', value: 'exit'},
-				]}
-				onSelect={item => {
-					if (item.value === 'exit') {
+			<SelectInput<WelcomeMenuValue>
+				items={menuItems}
+				onSelect={({value}) => {
+					if (value === 'exit') {
 						onExit();
-					} else if (item.value === 'chat') {
-						if (
-							config.accountId &&
-							config.privateKey &&
-							config.openAIApiKey
-						) {
+						return;
+					}
+
+					if (value === 'chat') {
+						if (config.accountId && config.privateKey && config.openAIApiKey) {
 							onInitializeAgent();
 						} else {
 							onSetScreen('setup');
 						}
-					} else {
-						onSetScreen(item.value as Screen);
+						return;
 					}
+
+					onSetScreen(value);
 				}}
 			/>
 		</Box>

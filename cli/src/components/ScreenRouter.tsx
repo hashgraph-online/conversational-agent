@@ -1,5 +1,4 @@
 import React from 'react';
-import {Newline} from 'ink';
 import {WelcomeScreen} from './WelcomeScreen';
 import {ChatScreen} from './ChatScreen';
 import {LoadingScreen} from './LoadingScreen';
@@ -33,10 +32,10 @@ export const ScreenRouter: React.FC<Props> = ({
           onSetScreen={actions.setScreen}
         />
       );
-      
+
     case 'loading':
       return <LoadingScreen />;
-      
+
     case 'setup':
       return (
         <SetupScreen
@@ -48,7 +47,7 @@ export const ScreenRouter: React.FC<Props> = ({
           onInitializeAgent={stableHandlers.initializeAgent}
         />
       );
-      
+
     case 'mcp-config':
       return (
         <MCPConfigScreen
@@ -61,7 +60,7 @@ export const ScreenRouter: React.FC<Props> = ({
           getMCPConfigPath={stableHandlers.getMCPConfigPath}
         />
       );
-      
+
     case 'chat':
       return (
         <ChatScreen
@@ -75,7 +74,7 @@ export const ScreenRouter: React.FC<Props> = ({
           logs={state.logs}
         />
       );
-      
+
     default:
       return null;
   }

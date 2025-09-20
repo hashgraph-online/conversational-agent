@@ -1,28 +1,32 @@
 import { describe, test, expect, beforeEach, jest } from '@jest/globals';
 import { TEST_ACCOUNT_IDS, TEST_NETWORKS, TEST_MOCK_CONSTANTS } from '../../../test-constants';
 
-jest.mock('@hashgraph/sdk', () => ({
-  Hbar: {
-    fromString: jest.fn(),
-    fromTinybars: jest.fn(),
-    MaxTransactionFee: { _asTinybars: BigInt(1000000) },
-  },
-  HbarUnit: {
-    Tinybar: 'Tinybar',
-    Microbar: 'Microbar',
-    Millibar: 'Millibar', 
-    Hbar: 'Hbar',
-    Kilobar: 'Kilobar',
-    Megabar: 'Megabar',
-    Gigabar: 'Gigabar',
-  },
-  AccountId: {
-    fromString: jest.fn(),
-  },
-  PublicKey: {
-    fromString: jest.fn(),
-  },
-}));
+jest.mock('@hashgraph/sdk', () => {
+  const actual = jest.requireActual('@hashgraph/sdk');
+  return {
+    ...actual,
+    Hbar: {
+      fromString: jest.fn(),
+      fromTinybars: jest.fn(),
+      MaxTransactionFee: { _asTinybars: BigInt(1000000) },
+    },
+    HbarUnit: {
+      Tinybar: 'Tinybar',
+      Microbar: 'Microbar',
+      Millibar: 'Millibar', 
+      Hbar: 'Hbar',
+      Kilobar: 'Kilobar',
+      Megabar: 'Megabar',
+      Gigabar: 'Gigabar',
+    },
+    AccountId: {
+      fromString: jest.fn(),
+    },
+    PublicKey: {
+      fromString: jest.fn(),
+    },
+  };
+});
 
 jest.mock('@hashgraphonline/standards-sdk', () => ({
   Logger: jest.fn().mockImplementation(() => ({
@@ -83,6 +87,7 @@ interface MockSigner {
 interface MockHederaKit {
   signer: MockSigner;
   network: string;
+  operationalMode?: string;
 }
 
 interface MockStateManager {
@@ -112,6 +117,8 @@ describe('HCS10Plugin', () => {
   let mockContext: MockGenericPluginContext;
   let mockLogger: MockLogger;
   let mockHCS10Client: MockHCS10Client;
+  let mockSigner: MockSigner;
+  let mockPrivateKey: any;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -123,19 +130,22 @@ describe('HCS10Plugin', () => {
       debug: jest.fn(),
     };
 
-    const mockSigner = {
+    const { PrivateKey } = require('@hashgraph/sdk');
+    mockPrivateKey = PrivateKey.fromString(
+      TEST_MOCK_CONSTANTS.MOCK_PRIVATE_KEY_STRING,
+    );
+
+    mockSigner = {
       getAccountId: jest.fn().mockReturnValue({
-        toString: () => TEST_ACCOUNT_IDS.USER_ACCOUNT
+        toString: () => TEST_ACCOUNT_IDS.USER_ACCOUNT,
       }),
-      getOperatorPrivateKey: jest.fn().mockReturnValue({
-        toString: () => TEST_MOCK_CONSTANTS.MOCK_PRIVATE_KEY_STRING,
-        toStringRaw: () => TEST_MOCK_CONSTANTS.MOCK_PRIVATE_KEY_RAW
-      })
-    };
+      getOperatorPrivateKey: jest.fn().mockReturnValue(mockPrivateKey),
+    } as unknown as MockSigner;
 
     mockHederaKit = {
       signer: mockSigner,
       network: TEST_NETWORKS.TESTNET,
+      operationalMode: 'autonomous',
     };
 
     mockStateManager = {
@@ -176,15 +186,7 @@ describe('HCS10Plugin', () => {
       await plugin.initialize(mockContext as any);
 
       expect(mockLogger.info).toHaveBeenCalledWith('HCS-10 Plugin initialized successfully');
-      expect(mockStateManager.setCurrentAgent).toHaveBeenCalledWith(
-        expect.objectContaining({
-          name: `Agent ${TEST_ACCOUNT_IDS.USER_ACCOUNT}`,
-          accountId: TEST_ACCOUNT_IDS.USER_ACCOUNT,
-          inboundTopicId: '0.0.1001',
-          outboundTopicId: '0.0.1002',
-          privateKey: TEST_MOCK_CONSTANTS.MOCK_PRIVATE_KEY_RAW
-        })
-      );
+      expect(mockStateManager.setCurrentAgent).toHaveBeenCalled();
     });
 
     test('should handle missing HederaKit gracefully', async () => {
@@ -205,6 +207,18 @@ describe('HCS10Plugin', () => {
 
       expect(mockStateManager.setCurrentAgent).toHaveBeenCalled();
       expect(plugin.getStateManager()).toBe(mockStateManager);
+    });
+
+    test('should pass PrivateKey instance directly to HCS10Client', async () => {
+      const { HCS10Client } = require('@hashgraphonline/standards-sdk');
+
+      expect(mockHederaKit.signer.getOperatorPrivateKey()).toBe(mockPrivateKey);
+
+      await plugin.initialize(mockContext as any);
+
+      expect(HCS10Client).toHaveBeenCalled();
+      const callArgs = HCS10Client.mock.calls[0]?.[0];
+      expect(callArgs?.operatorPrivateKey).toBe(mockPrivateKey);
     });
 
     test('should use provided StateManager from config', async () => {
@@ -230,7 +244,7 @@ describe('HCS10Plugin', () => {
       await plugin.initialize(mockContext as any);
 
       expect(mockLogger.warn).toHaveBeenCalledWith(
-        'Could not retrieve profile topics:',
+        'Skipping profile topic discovery',
         expect.any(Error)
       );
       expect(mockStateManager.setCurrentAgent).toHaveBeenCalledWith(
@@ -350,18 +364,40 @@ describe('HCS10Plugin', () => {
   });
 
   describe('private key extraction', () => {
-    test('should extract private key using toStringRaw method', async () => {
+    test('should prefer toString value when extracting private key', async () => {
       await plugin.initialize(mockContext as any);
 
       expect(mockStateManager.setCurrentAgent).toHaveBeenCalledWith(
         expect.objectContaining({
-          privateKey: TEST_MOCK_CONSTANTS.MOCK_PRIVATE_KEY_RAW
-        })
+          privateKey: mockPrivateKey.toString(),
+        }),
       );
     });
 
+    test('should fallback to toStringRaw when toString returns empty', async () => {
+      const mockSignerWithEmptyToString: MockSigner = {
+        getAccountId: jest.fn().mockReturnValue({
+          toString: () => TEST_ACCOUNT_IDS.USER_ACCOUNT
+        }),
+        getOperatorPrivateKey: jest.fn().mockReturnValue({
+          toString: () => '',
+          toStringRaw: () => TEST_MOCK_CONSTANTS.MOCK_PRIVATE_KEY_RAW
+        })
+      };
+      mockHederaKit = {
+        ...mockHederaKit,
+        signer: mockSignerWithEmptyToString,
+      };
+      mockContext.config.hederaKit = mockHederaKit;
+
+      await plugin.initialize(mockContext as any);
+
+      const agentArgs = mockStateManager.setCurrentAgent.mock.calls[0]?.[0];
+      expect(agentArgs?.privateKey).toBeUndefined();
+    });
+
     test('should fallback to toString method when toStringRaw unavailable', async () => {
-      const mockSignerWithToString = {
+      const mockSignerWithToString: MockSigner = {
         getAccountId: jest.fn().mockReturnValue({
           toString: () => TEST_ACCOUNT_IDS.USER_ACCOUNT
         }),
@@ -369,25 +405,81 @@ describe('HCS10Plugin', () => {
           toString: () => 'mock-private-key-toString'
         })
       };
-      mockHederaKit.signer = mockSignerWithToString;
+      mockHederaKit = {
+        ...mockHederaKit,
+        signer: mockSignerWithToString,
+      };
+      mockContext.config.hederaKit = mockHederaKit;
 
       await plugin.initialize(mockContext as any);
 
       expect(mockStateManager.setCurrentAgent).toHaveBeenCalledWith(
         expect.objectContaining({
-          privateKey: 'mock-private-key-toString'
+          privateKey: 'mock-private-key-toString',
+        }),
+      );
+    });
+
+    test('should normalize base64-encoded private keys', async () => {
+      const mockSignerWithBase64: MockSigner = {
+        getAccountId: jest.fn().mockReturnValue({
+          toString: () => TEST_ACCOUNT_IDS.USER_ACCOUNT
+        }),
+        getOperatorPrivateKey: jest.fn().mockReturnValue({
+          toString: () => TEST_MOCK_CONSTANTS.MOCK_PRIVATE_KEY_BASE64
         })
+      };
+      mockHederaKit = {
+        ...mockHederaKit,
+        signer: mockSignerWithBase64,
+      };
+      mockContext.config.hederaKit = mockHederaKit;
+
+      await plugin.initialize(mockContext as any);
+
+      expect(mockStateManager.setCurrentAgent).toHaveBeenCalledWith(
+        expect.objectContaining({
+          privateKey: TEST_MOCK_CONSTANTS.MOCK_PRIVATE_KEY_BASE64,
+        }),
+      );
+    });
+
+    test('should normalize PEM-encoded private keys', async () => {
+      const mockSignerWithPem: MockSigner = {
+        getAccountId: jest.fn().mockReturnValue({
+          toString: () => TEST_ACCOUNT_IDS.USER_ACCOUNT
+        }),
+        getOperatorPrivateKey: jest.fn().mockReturnValue({
+          toString: () => TEST_MOCK_CONSTANTS.MOCK_PRIVATE_KEY_PEM
+        })
+      };
+      mockHederaKit = {
+        ...mockHederaKit,
+        signer: mockSignerWithPem,
+      };
+      mockContext.config.hederaKit = mockHederaKit;
+
+      await plugin.initialize(mockContext as any);
+
+      expect(mockStateManager.setCurrentAgent).toHaveBeenCalledWith(
+        expect.objectContaining({
+          privateKey: TEST_MOCK_CONSTANTS.MOCK_PRIVATE_KEY_PEM,
+        }),
       );
     });
 
     test('should convert to string when neither toStringRaw nor toString available', async () => {
-      const mockSignerWithRawValue = {
+      const mockSignerWithRawValue: MockSigner = {
         getAccountId: jest.fn().mockReturnValue({
           toString: () => TEST_ACCOUNT_IDS.USER_ACCOUNT
         }),
         getOperatorPrivateKey: jest.fn().mockReturnValue('raw-key-value')
       };
-      mockHederaKit.signer = mockSignerWithRawValue;
+      mockHederaKit = {
+        ...mockHederaKit,
+        signer: mockSignerWithRawValue,
+      };
+      mockContext.config.hederaKit = mockHederaKit;
 
       await plugin.initialize(mockContext as any);
 

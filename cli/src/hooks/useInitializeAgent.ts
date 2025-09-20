@@ -1,8 +1,7 @@
 import {useRef, useCallback} from 'react';
 import {ConfigManager} from '../managers/ConfigManager';
 import {AgentManager} from '../managers/AgentManager';
-import {type Config, type Screen, type Message} from '../types';
-import {type MCPServerConfig} from '@hashgraphonline/conversational-agent';
+import {type Config, type Screen, type Message, type MCPServerConfig} from '../types';
 
 interface InitializeAgentProps {
 	configManager: ConfigManager;

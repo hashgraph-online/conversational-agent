@@ -1,10 +1,8 @@
 import {
 	ConversationalAgent,
 	type ConversationalAgentOptions,
-	MCPServers,
-	type MCPServerConfig,
 } from '@hashgraphonline/conversational-agent';
-import {type Config, type Message} from '../types';
+import {MCPServers, type MCPServerConfig, type Config, type Message} from '../types';
 
 export class AgentManager {
 	private static instance: AgentManager;
@@ -57,7 +55,7 @@ export class AgentManager {
 			const agentConfig: ConversationalAgentOptions = {
 				accountId: config.accountId,
 				privateKey: config.privateKey,
-				network: config.network as 'testnet' | 'mainnet',
+				network: config.network,
 				openAIApiKey: config.openAIApiKey,
 				openAIModelName: 'gpt-4o-mini',
 				verbose: false,

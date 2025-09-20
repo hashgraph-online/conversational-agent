@@ -19,31 +19,13 @@ import {
   AcceptConnectionRequestTool,
   RetrieveProfileTool,
   ListUnapprovedConnectionRequestsTool,
+  RegisteredAgent,
 } from '@hashgraphonline/standards-agent-kit';
 import { HCS10Client } from '@hashgraphonline/standards-sdk';
+import { PrivateKey } from 'node_modules/@hashgraph/sdk/lib/Mnemonic';
 
 interface HCS10ClientManager {
   initializeConnectionsManager(client: HCS10Client): void;
-}
-
-/**
- * Extracts private key string from operator key
- */
-function extractPrivateKey(opKey: unknown): string {
-  const key = opKey as {
-    toString?: () => string;
-    toStringRaw?: () => string;
-  };
-  
-  if (typeof key?.toStringRaw === 'function') {
-    return key.toStringRaw();
-  }
-  
-  if (typeof key?.toString === 'function') {
-    return key.toString();
-  }
-  
-  return String(key);
 }
 
 function hasInitializeConnectionsManager(
@@ -89,30 +71,40 @@ export class HCS10Plugin extends BasePlugin {
         new OpenConvaiState();
 
       const accountId = hederaKit.signer.getAccountId().toString();
-      const isBytesMode = String(hederaKit.operationalMode || 'returnBytes') === 'returnBytes';
+      const isBytesMode =
+        String(hederaKit.operationalMode || 'returnBytes') === 'returnBytes';
       let inboundTopicId = '';
       let outboundTopicId = '';
 
-      if (!isBytesMode) {
-        try {
-          const opKey = hederaKit.signer.getOperatorPrivateKey();
-          const privateKey = extractPrivateKey(opKey);
+      let operatorPrivateKeyRef: PrivateKey =
+        hederaKit.signer.getOperatorPrivateKey();
+      let operatorPrivateKeySerialized: string | undefined;
 
-          const hcs10Client = new HCS10Client({
-            network: hederaKit.network as 'mainnet' | 'testnet',
-            operatorId: accountId,
-            operatorPrivateKey: privateKey,
-            logLevel: 'error',
-          });
+      try {
+        const resolved =
+          typeof operatorPrivateKeyRef?.toString === 'function'
+            ? operatorPrivateKeyRef.toString()
+            : '';
 
-          const profileResponse = await hcs10Client.retrieveProfile(accountId);
-          if (profileResponse.success && profileResponse.topicInfo) {
-            inboundTopicId = profileResponse.topicInfo.inboundTopic;
-            outboundTopicId = profileResponse.topicInfo.outboundTopic;
-          }
-        } catch (profileError) {
-          this.context.logger.warn('Skipping profile topic discovery', profileError);
+        operatorPrivateKeySerialized = resolved;
+
+        const hcs10Client = new HCS10Client({
+          network: hederaKit.network as 'mainnet' | 'testnet',
+          operatorId: accountId,
+          operatorPrivateKey: operatorPrivateKeyRef,
+          logLevel: 'error',
+        });
+
+        const profileResponse = await hcs10Client.retrieveProfile(accountId);
+        if (profileResponse.success && profileResponse.topicInfo) {
+          inboundTopicId = profileResponse.topicInfo.inboundTopic;
+          outboundTopicId = profileResponse.topicInfo.outboundTopic;
         }
+      } catch (profileError) {
+        this.context.logger.warn(
+          'Skipping profile topic discovery',
+          profileError
+        );
       }
 
       const agentRecord: Record<string, unknown> = {
@@ -121,39 +113,45 @@ export class HCS10Plugin extends BasePlugin {
         inboundTopicId,
         outboundTopicId,
       };
-      if (!isBytesMode) {
-        try {
-          const opKey = hederaKit.signer.getOperatorPrivateKey();
-          agentRecord.privateKey = extractPrivateKey(opKey);
-        } catch {}
+      if (!isBytesMode && operatorPrivateKeySerialized) {
+        agentRecord.privateKey = operatorPrivateKeySerialized;
       }
-      this.stateManager.setCurrentAgent(agentRecord as any);
+      this.stateManager.setCurrentAgent(
+        agentRecord as unknown as RegisteredAgent
+      );
 
       this.context.logger.info(
         `Set current agent: ${accountId} with topics ${inboundTopicId}/${outboundTopicId}`
       );
 
-      if (!isBytesMode && this.stateManager && !this.stateManager.getConnectionsManager()) {
+      if (
+        !isBytesMode &&
+        this.stateManager &&
+        !this.stateManager.getConnectionsManager()
+      ) {
         try {
-          const opKey = hederaKit.signer.getOperatorPrivateKey();
-          const privateKey = extractPrivateKey(opKey);
           const hcs10Client = new HCS10Client({
             network: hederaKit.network as 'mainnet' | 'testnet',
             operatorId: accountId,
-            operatorPrivateKey: privateKey,
+            operatorPrivateKey: operatorPrivateKeyRef ?? '',
             logLevel: 'error',
           });
 
           if (hasInitializeConnectionsManager(this.stateManager)) {
             this.stateManager.initializeConnectionsManager(hcs10Client);
           } else {
-            this.context.logger.warn('StateManager does not support connection manager initialization');
+            this.context.logger.warn(
+              'StateManager does not support connection manager initialization'
+            );
           }
           this.context.logger.info(
             'ConnectionsManager initialized in HCS10Plugin'
           );
         } catch (cmError) {
-          this.context.logger.warn('Could not initialize ConnectionsManager:', cmError);
+          this.context.logger.warn(
+            'Could not initialize ConnectionsManager:',
+            cmError
+          );
         }
       }
 

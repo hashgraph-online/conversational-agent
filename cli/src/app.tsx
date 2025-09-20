@@ -1,10 +1,11 @@
 import React from 'react';
 import {CLIApp} from './CLIApp';
+import {type Network} from './types';
 
 type Props = {
 	accountId?: string;
 	privateKey?: string;
-	network?: 'testnet' | 'mainnet';
+	network?: Network;
 	openAIApiKey?: string;
 };
 

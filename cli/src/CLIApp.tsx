@@ -5,12 +5,12 @@ import {ConfigManager} from './managers/ConfigManager';
 import {AgentManager} from './managers/AgentManager';
 import {useStableState} from './hooks/useStableState';
 import {useInitializeAgent} from './hooks/useInitializeAgent';
-import {type Config, type Message} from './types';
+import {type Config, type Message, type Network} from './types';
 
 interface Props {
 	accountId?: string;
 	privateKey?: string;
-	network?: 'testnet' | 'mainnet';
+	network?: Network;
 	openAIApiKey?: string;
 }
 

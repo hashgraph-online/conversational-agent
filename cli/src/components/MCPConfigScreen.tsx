@@ -4,8 +4,12 @@ import TextInput from 'ink-text-input';
 import SelectInput from 'ink-select-input';
 import {TerminalWindow} from './TerminalWindow';
 import {StatusBadge} from './StatusBadge';
-import {BRAND_COLORS, type Screen} from '../types';
-import {type MCPServerConfig} from '@hashgraphonline/conversational-agent';
+import {
+  BRAND_COLORS,
+  type Screen,
+  type MCPServerConfig,
+  type SelectItem,
+} from '../types';
 
 interface MCPConfig {
   enableFilesystem: boolean;
@@ -18,6 +22,43 @@ interface MCPConfig {
   newServerEnv: string;
   currentField: number;
 }
+
+type CustomFieldKey = 'newServerName' | 'newServerCommand' | 'newServerArgs' | 'newServerEnv';
+
+type MenuValue =
+  | {type: 'filesystem'}
+  | {type: 'filesystem-path'}
+  | {type: 'add-custom'}
+  | {type: 'save'}
+  | {type: 'back'}
+  | {type: 'custom'; index: number};
+
+const customFieldDescriptors: Array<{
+  key: CustomFieldKey;
+  label: string;
+  placeholder: string;
+}> = [
+  {
+    key: 'newServerName',
+    label: 'Server Name:',
+    placeholder: 'my-server',
+  },
+  {
+    key: 'newServerCommand',
+    label: 'Command:',
+    placeholder: 'npx',
+  },
+  {
+    key: 'newServerArgs',
+    label: 'Arguments (comma-separated):',
+    placeholder: '-y, @modelcontextprotocol/server-github',
+  },
+  {
+    key: 'newServerEnv',
+    label: 'Environment Variables (KEY=value, comma-separated):',
+    placeholder: 'MCP_LOG_LEVEL=info, GIT_SIGN_COMMITS=false',
+  },
+];
 
 interface Props {
   mcpConfig: MCPConfig;
@@ -83,30 +124,18 @@ export const MCPConfigScreen: React.FC<Props> = ({
   }
 
   if (mcpConfig.addingCustom) {
-    const customFields = [
-      'newServerName',
-      'newServerCommand',
-      'newServerArgs',
-      'newServerEnv',
-    ];
-    const fieldLabels = [
-      'Server Name:',
-      'Command:',
-      'Arguments (comma-separated):',
-      'Environment Variables (KEY=value, comma-separated):',
-    ];
-    const placeholders = [
-      'my-server',
-      'npx',
-      '-y, @modelcontextprotocol/server-github',
-      'MCP_LOG_LEVEL=info, GIT_SIGN_COMMITS=false',
-    ];
+    const customFieldUpdaters: Record<CustomFieldKey, (value: string) => void> = {
+      newServerName: value => onSetMcpConfig({newServerName: value}),
+      newServerCommand: value => onSetMcpConfig({newServerCommand: value}),
+      newServerArgs: value => onSetMcpConfig({newServerArgs: value}),
+      newServerEnv: value => onSetMcpConfig({newServerEnv: value}),
+    };
 
     return (
       <TerminalWindow title="Add Custom MCP Server">
         <Box flexDirection="column">
-          {customFields.map((field, index) => (
-            <Box key={field} marginY={1}>
+          {customFieldDescriptors.map(({key, label, placeholder}, index) => (
+            <Box key={key} marginY={1}>
               <Text
                 color={
                   mcpConfig.currentField === index
@@ -114,25 +143,26 @@ export const MCPConfigScreen: React.FC<Props> = ({
                     : BRAND_COLORS.hedera.smoke
                 }
               >
-                {fieldLabels[index]}
+                {label}
               </Text>
               {mcpConfig.currentField === index ? (
                 <TextInput
-                  value={mcpConfig[field as keyof MCPConfig] as string}
-                  onChange={value => onSetMcpConfig({[field]: value})}
+                  value={mcpConfig[key]}
+                  onChange={value => customFieldUpdaters[key](value)}
                   onSubmit={() => {
-                    if (index < customFields.length - 1) {
+                    if (index < customFieldDescriptors.length - 1) {
                       onSetMcpConfig({currentField: index + 1});
-                    } else if (
-                      mcpConfig.newServerName &&
-                      mcpConfig.newServerCommand
-                    ) {
+                      return;
+                    }
+
+                    if (mcpConfig.newServerName && mcpConfig.newServerCommand) {
                       const env: Record<string, string> = {};
+
                       if (mcpConfig.newServerEnv) {
                         mcpConfig.newServerEnv.split(',').forEach(envVar => {
-                          const [key, value] = envVar.trim().split('=');
-                          if (key && value) {
-                            env[key] = value;
+                          const [envKey, envValue] = envVar.trim().split('=');
+                          if (envKey && envValue) {
+                            env[envKey] = envValue;
                           }
                         });
                       }
@@ -163,11 +193,11 @@ export const MCPConfigScreen: React.FC<Props> = ({
                       onSaveMCPConfig();
                     }
                   }}
-                  placeholder={placeholders[index]}
+                  placeholder={placeholder}
                 />
               ) : (
                 <Text color={BRAND_COLORS.hedera.smoke}>
-                  {String(mcpConfig[field as keyof MCPConfig] || `(${placeholders[index]})`)}
+                  {mcpConfig[key] ? mcpConfig[key] : `(${placeholder})`}
                 </Text>
               )}
             </Box>
@@ -185,33 +215,33 @@ export const MCPConfigScreen: React.FC<Props> = ({
     );
   }
 
-  const menuItems = [
+  const menuItems: SelectItem<MenuValue>[] = [
     {
       label: `Filesystem Server: ${
         mcpConfig.enableFilesystem ? 'Enabled' : 'Disabled'
       }`,
-      value: 'filesystem',
+      value: {type: 'filesystem'},
     },
   ];
 
   if (mcpConfig.enableFilesystem) {
     menuItems.push({
       label: `Filesystem Path: ${mcpConfig.filesystemPath}`,
-      value: 'filesystem-path',
+      value: {type: 'filesystem-path'},
     });
   }
 
   mcpConfig.customServers.forEach((server, index) => {
     menuItems.push({
       label: `${server.name} (${server.command})`,
-      value: `custom-${index}`,
+      value: {type: 'custom', index},
     });
   });
 
   menuItems.push(
-    {label: 'Add Custom Server', value: 'add-custom'},
-    {label: 'Done (changes auto-saved)', value: 'save'},
-    {label: 'Back to Menu', value: 'back'},
+    {label: 'Add Custom Server', value: {type: 'add-custom'}},
+    {label: 'Done (changes auto-saved)', value: {type: 'save'}},
+    {label: 'Back to Menu', value: {type: 'back'}},
   );
 
   return (
@@ -222,29 +252,41 @@ export const MCPConfigScreen: React.FC<Props> = ({
           <Text>Configure Model Context Protocol servers</Text>
         </Box>
 
-        <SelectInput
+        <SelectInput<MenuValue>
           items={menuItems}
-          onSelect={item => {
-            if (item.value === 'filesystem') {
-              const enableFilesystem = !mcpConfig.enableFilesystem;
-              onSetMcpConfig({enableFilesystem});
-              onSaveMCPConfig();
-            } else if (item.value === 'filesystem-path') {
-              onSetEditingFilesystemPath(true);
-            } else if (item.value === 'add-custom') {
-              onSetMcpConfig({addingCustom: true});
-            } else if (item.value === 'save') {
-              onSaveMCPConfig();
-              onSetScreen('welcome');
-            } else if (item.value === 'back') {
-              onSetScreen('welcome');
-            } else if (item.value.startsWith('custom-')) {
-              const index = parseInt(item.value.replace('custom-', ''));
-              const newCustomServers = mcpConfig.customServers.filter(
-                (_, i) => i !== index,
-              );
-              onSetMcpConfig({customServers: newCustomServers});
-              onSaveMCPConfig();
+          onSelect={({value}) => {
+            switch (value.type) {
+              case 'filesystem': {
+                const enableFilesystem = !mcpConfig.enableFilesystem;
+                onSetMcpConfig({enableFilesystem});
+                onSaveMCPConfig();
+                return;
+              }
+              case 'filesystem-path': {
+                onSetEditingFilesystemPath(true);
+                return;
+              }
+              case 'add-custom': {
+                onSetMcpConfig({addingCustom: true, currentField: 0});
+                return;
+              }
+              case 'save': {
+                onSaveMCPConfig();
+                onSetScreen('welcome');
+                return;
+              }
+              case 'back': {
+                onSetScreen('welcome');
+                return;
+              }
+              case 'custom': {
+                const newCustomServers = mcpConfig.customServers.filter(
+                  (_, index) => index !== value.index,
+                );
+                onSetMcpConfig({customServers: newCustomServers});
+                onSaveMCPConfig();
+                return;
+              }
             }
           }}
         />

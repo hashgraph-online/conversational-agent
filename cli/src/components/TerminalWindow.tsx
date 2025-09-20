@@ -1,13 +1,6 @@
 import React from 'react';
 import {Box, Text} from 'ink';
-
-const BRAND_COLORS = {
-	blue: '#5599fe',
-	dark: '#3f4174',
-	hedera: {
-		smoke: '#8c8c8c',
-	},
-};
+import {BRAND_COLORS} from '../types';
 
 /**
  * Terminal window decoration component
