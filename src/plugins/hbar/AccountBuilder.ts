@@ -1,5 +1,5 @@
 import { AccountId, Hbar, TransferTransaction } from '@hashgraph/sdk';
-import BigNumber from 'bignumber';
+import BigNumber from 'bignumber.js';
 import { HederaAgentKit, BaseServiceBuilder } from 'hedera-agent-kit';
 import { HbarTransferParams } from './types';
 
