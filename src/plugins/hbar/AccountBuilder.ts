@@ -1,8 +1,4 @@
-import {
-  AccountId,
-  Hbar,
-  TransferTransaction,
-} from '@hashgraph/sdk';
+import { AccountId, Hbar, TransferTransaction } from '@hashgraph/sdk';
 import BigNumber from 'bignumber';
 import { HederaAgentKit, BaseServiceBuilder } from 'hedera-agent-kit';
 import { HbarTransferParams } from './types';
@@ -24,7 +20,7 @@ export class AccountBuilder extends BaseServiceBuilder {
   ): this {
     this.clearNotes();
     const transaction = new TransferTransaction();
-    
+
     if (!params.transfers || params.transfers.length === 0) {
       throw new Error('HbarTransferParams must include at least one transfer.');
     }
@@ -61,7 +57,7 @@ export class AccountBuilder extends BaseServiceBuilder {
             this.kit.userAccountId
           } to ${recipientAccountId.toString()}`
         );
-        
+
         this.addNote(
           `Configured HBAR transfer from your account (${
             this.kit.userAccountId
@@ -84,7 +80,7 @@ export class AccountBuilder extends BaseServiceBuilder {
         amount: BigNumber;
         hbar: Hbar;
       }> = [];
-      
+
       for (const transferInput of params.transfers) {
         const accountId =
           typeof transferInput.accountId === 'string'
@@ -99,7 +95,7 @@ export class AccountBuilder extends BaseServiceBuilder {
 
         const amountBigNum = new BigNumber(amountValue);
         const roundedAmount = amountBigNum.toFixed(8, BigNumber.ROUND_DOWN);
-        
+
         this.logger.info(
           `Processing transfer: ${amountValue} HBAR (rounded to ${roundedAmount}) for account ${accountId.toString()}`
         );
@@ -108,7 +104,7 @@ export class AccountBuilder extends BaseServiceBuilder {
         processedTransfers.push({
           accountId,
           amount: amountBigNum,
-          hbar: sdkHbarAmount
+          hbar: sdkHbarAmount,
         });
 
         const tinybarsContribution = sdkHbarAmount.toTinybars();
@@ -121,20 +117,24 @@ export class AccountBuilder extends BaseServiceBuilder {
         this.logger.warn(
           `Transfer sum not zero: ${netZeroInTinybars.toString()} tinybars off. Adjusting last transfer.`
         );
-        
+
         if (processedTransfers.length > 0) {
-          const lastTransfer = processedTransfers[processedTransfers.length - 1];
+          const lastTransfer =
+            processedTransfers[processedTransfers.length - 1];
           const adjustment = netZeroInTinybars.dividedBy(-100000000);
           const adjustedAmount = lastTransfer.amount.plus(adjustment);
-          const adjustedRounded = adjustedAmount.toFixed(8, BigNumber.ROUND_DOWN);
+          const adjustedRounded = adjustedAmount.toFixed(
+            8,
+            BigNumber.ROUND_DOWN
+          );
           lastTransfer.hbar = Hbar.fromString(adjustedRounded);
-          
+
           this.logger.info(
             `Adjusted last transfer for ${lastTransfer.accountId.toString()} to ${adjustedRounded} HBAR`
           );
         }
       }
-      
+
       for (const transfer of processedTransfers) {
         transaction.addHbarTransfer(transfer.accountId, transfer.hbar);
       }

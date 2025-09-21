@@ -1,5 +1,5 @@
-import { Client } from '@modelcontextprotocol/sdk/client/index';
-import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio';
+import { Client } from '@modelcontextprotocol/sdk/client/index.js';
+import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 import type { MCPServerConfig, MCPToolInfo, MCPConnectionStatus } from './types';
 import { Logger } from '@hashgraphonline/standards-sdk';
 import type { ContentStorage } from '../memory/content-storage';
@@ -56,10 +56,17 @@ export class MCPClientManager {
       this.clients.set(config.name, client);
 
       const toolsResponse = await client.listTools();
-      const toolsWithServer: MCPToolInfo[] = toolsResponse.tools.map(tool => ({
-        ...tool,
-        serverName: config.name,
-      }));
+      const toolsWithServer: MCPToolInfo[] = toolsResponse.tools.map((tool: unknown) => {
+        const t = tool as { description?: string } & Record<string, unknown>;
+        const { description, ...rest } = t;
+        const base = description !== undefined && typeof description === 'string'
+          ? { ...rest, description }
+          : { ...rest };
+        return {
+          ...(base as Omit<MCPToolInfo, 'serverName'>),
+          serverName: config.name,
+        } as MCPToolInfo;
+      });
 
       this.tools.set(config.name, toolsWithServer);
       this.logger.info(`Connected to MCP server ${config.name} with ${toolsWithServer.length} tools`);
