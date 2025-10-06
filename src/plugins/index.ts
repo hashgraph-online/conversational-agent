@@ -3,3 +3,4 @@ export { HCS2Plugin } from './hcs-2';
 export { InscribePlugin } from './inscribe';
 export { HbarPlugin } from './hbar/HbarPlugin';
 export * from './hbar';
+export { WebBrowserPlugin } from './web-browser/WebBrowserPlugin';

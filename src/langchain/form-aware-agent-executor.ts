@@ -979,9 +979,11 @@ export class FormAwareAgentExecutor extends AgentExecutor {
               '🔗 HASHLINK DETECTED: Processing HashLink response separately to preserve metadata'
             );
 
+            const parsedRecord = parsed as Record<string, unknown>;
             responseMetadata = {
               ...responseMetadata,
-              hashLinkBlock: (parsed as Record<string, unknown>).hashLinkBlock,
+              hashLinkBlock: parsedRecord.hashLinkBlock,
+              ...parsedRecord,
             };
 
             formattedOutput = ResponseFormatter.formatHashLinkResponse(parsed);
@@ -1003,6 +1005,7 @@ export class FormAwareAgentExecutor extends AgentExecutor {
             responseMetadata = {
               ...responseMetadata,
               hashLinkBlock: (parsed as Record<string, unknown>).hashLinkBlock,
+              ...parsed,
             };
           }
         } else {
@@ -1240,6 +1243,7 @@ Please fill out the form below to continue.`;
     }));
   }
 
+
   /**
    * Processes HashLink block responses from tools
    */
@@ -1251,11 +1255,7 @@ Please fill out the form below to continue.`;
 
       if (toolResponse.hashLinkBlock) {
         hashLinkBlock = toolResponse.hashLinkBlock;
-      } else if (
-        toolResponse.success &&
-        toolResponse.inscription &&
-        toolResponse.hashLinkBlock
-      ) {
+      } else if (toolResponse.success && toolResponse.hashLinkBlock) {
         hashLinkBlock = toolResponse.hashLinkBlock;
       }
 

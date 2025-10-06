@@ -26,6 +26,7 @@ import {
   SignerProviderRegistry,
 } from '@hashgraphonline/standards-agent-kit';
 import { HbarPlugin } from './plugins/hbar/HbarPlugin';
+import { WebBrowserPlugin } from './plugins/web-browser/WebBrowserPlugin';
 import { OpenConvaiState } from '@hashgraphonline/standards-agent-kit';
 import type { IStateManager } from '@hashgraphonline/standards-agent-kit';
 import { getSystemMessage } from './config/system-message';
@@ -83,6 +84,7 @@ export interface ConversationalAgentOptions {
   mirrorNodeConfig?: MirrorNodeConfig;
   disableLogging?: boolean;
   enabledPlugins?: string[];
+  disabledPlugins?: string[];
   toolFilter?: (tool: { name: string; namespace?: string }) => boolean;
   mcpServers?: MCPServerConfig[];
   walletExecutor?: (
@@ -133,6 +135,7 @@ export class ConversationalAgent {
   public hcs2Plugin: HCS2Plugin;
   public inscribePlugin: InscribePlugin;
   public hbarPlugin: HbarPlugin;
+  public webBrowserPlugin: WebBrowserPlugin;
   public stateManager: IStateManager;
   private options: ConversationalAgentOptions;
   public logger: Logger;
@@ -150,6 +153,7 @@ export class ConversationalAgent {
     this.hcs2Plugin = new HCS2Plugin();
     this.inscribePlugin = new InscribePlugin();
     this.hbarPlugin = new HbarPlugin();
+    this.webBrowserPlugin = new WebBrowserPlugin();
     this.logger = new Logger({
       module: 'ConversationalAgent',
       silent: options.disableLogging || false,
@@ -730,26 +734,34 @@ export class ConversationalAgent {
    * @returns Array of plugins to initialize with the agent
    */
   private preparePlugins(): BasePlugin[] {
-    const { additionalPlugins = [], enabledPlugins } = this.options;
+    const { additionalPlugins = [], enabledPlugins, disabledPlugins } = this.options;
 
-    const standardPlugins = [
+    const standardPlugins: BasePlugin[] = [
       this.hcs10Plugin,
       this.hcs2Plugin,
       this.inscribePlugin,
       this.hbarPlugin,
     ];
+    standardPlugins.push(this.webBrowserPlugin);
 
     const corePlugins = getAllHederaCorePlugins();
+    let pluginPool = [...standardPlugins, ...corePlugins];
 
     if (enabledPlugins) {
       const enabledSet = new Set(enabledPlugins);
-      const filteredPlugins = [...standardPlugins, ...corePlugins].filter(
-        (plugin) => enabledSet.has(plugin.id)
-      );
-      return [...filteredPlugins, ...additionalPlugins];
+      pluginPool = pluginPool.filter((plugin) => enabledSet.has(plugin.id));
     }
 
-    return [...standardPlugins, ...corePlugins, ...additionalPlugins];
+    if (disabledPlugins && disabledPlugins.length > 0) {
+      const disabledSet = new Set(disabledPlugins);
+      pluginPool = pluginPool.filter((plugin) => !disabledSet.has(plugin.id));
+    }
+
+    const additional = disabledPlugins && disabledPlugins.length > 0
+      ? additionalPlugins.filter((plugin) => !disabledPlugins.includes(plugin.id))
+      : additionalPlugins;
+
+    return [...pluginPool, ...additional];
   }
 
   /**
