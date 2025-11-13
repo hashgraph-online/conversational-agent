@@ -2,6 +2,7 @@ export { HCS10Plugin } from './plugins/hcs-10/HCS10Plugin';
 export { HCS2Plugin } from './plugins/hcs-2/HCS2Plugin';
 export { InscribePlugin } from './plugins/inscribe/InscribePlugin';
 export { HbarPlugin } from './plugins/hbar/HbarPlugin';
+export { SwarmPlugin, type SwarmConfig } from './plugins/community/swarm';
 export { HCS10Plugin as OpenConvAIPlugin } from './plugins/hcs-10/HCS10Plugin';
 export { ConversationalAgent } from './conversational-agent';
 export type { ConversationalAgentOptions } from './conversational-agent';

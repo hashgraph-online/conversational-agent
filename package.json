@@ -98,6 +98,8 @@
     "fsevents": "2.3.3"
   },
   "dependencies": {
+    "@ethereumjs/wallet": "^10.0.0",
+    "@ethersphere/bee-js": "^10.1.1",
     "@hashgraph/sdk": "^2.72.0",
     "@hashgraphonline/hashinal-wc": "^1.0.107",
     "@hashgraphonline/standards-agent-kit": "^0.2.164",

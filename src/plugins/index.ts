@@ -4,3 +4,4 @@ export { InscribePlugin } from './inscribe';
 export { HbarPlugin } from './hbar/HbarPlugin';
 export * from './hbar';
 export { WebBrowserPlugin } from './web-browser/WebBrowserPlugin';
+export { SwarmPlugin } from './community/swarm/SwarmPlugin';
