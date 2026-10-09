@@ -1,4 +1,4 @@
-import { DynamicStructuredTool } from '@langchain/core/tools';
+import { DynamicStructuredTool, type ToolRunnableConfig } from '@langchain/core/tools';
 import { ToolMessage } from '@langchain/core/messages';
 import { z } from 'zod';
 import type { MCPToolInfo, MCPServerConfig } from '../types';
@@ -41,7 +41,7 @@ export function convertMCPToolToLangChain(
     name: sanitizedName,
     description,
     schema: zodSchema,
-    func: async (input, _runManager, config) => {
+    func: async (input, _runManager, config?: ToolRunnableConfig) => {
       try {
         const result = await mcpManager.executeTool(
           tool.serverName,
