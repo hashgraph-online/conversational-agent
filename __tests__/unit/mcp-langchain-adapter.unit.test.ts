@@ -213,17 +213,63 @@ describe('MCP LangChain Adapter', () => {
       const error = new Error('Tool execution failed');
       mockMCPManager.executeTool.mockRejectedValue(error);
 
-      const result = await langchainTool.func({ param1: 'test' });
-
-      expect(result).toBe('Error executing MCP tool sample_tool: Tool execution failed');
+      await expect(langchainTool.func({ param1: 'test' })).rejects.toThrow(
+        'Error executing MCP tool sample_tool: Tool execution failed'
+      );
     });
 
     it('should handle unknown errors', async () => {
       mockMCPManager.executeTool.mockRejectedValue('Unknown error type');
 
-      const result = await langchainTool.func({ param1: 'test' });
+      await expect(langchainTool.func({ param1: 'test' })).rejects.toThrow(
+        'Error executing MCP tool sample_tool: Unknown error'
+      );
+    });
 
-      expect(result).toBe('Error executing MCP tool sample_tool: Unknown error');
+    it('preserves server tool errors in a correlated ToolMessage', async () => {
+      mockMCPManager.executeTool.mockResolvedValue({
+        isError: true,
+        content: [{ type: 'text', text: 'Invalid query' }],
+      });
+      const result = await langchainTool.invoke({
+        type: 'tool_call', id: 'failed-call', name: langchainTool.name,
+        args: { param1: 'test' },
+      });
+      expect(result).toMatchObject({
+        status: 'error', tool_call_id: 'failed-call', name: langchainTool.name,
+        content: 'Error executing MCP tool sample_tool: Invalid query',
+      });
+      expect(mockContentStore.storeContent).not.toHaveBeenCalled();
+    });
+
+    it('marks transport failures as errors for correlated calls', async () => {
+      mockMCPManager.executeTool.mockRejectedValue(new Error('Connection lost'));
+      const result = await langchainTool.invoke({
+        type: 'tool_call', id: 'transport-call', name: langchainTool.name,
+        args: { param1: 'test' },
+      });
+      expect(result).toMatchObject({
+        status: 'error', tool_call_id: 'transport-call',
+        content: 'Error executing MCP tool sample_tool: Connection lost',
+      });
+    });
+
+    it('rejects direct invocations when the server reports a tool error', async () => {
+      mockMCPManager.executeTool.mockResolvedValue({
+        isError: true,
+        content: [{ type: 'text', text: 'Invalid query' }],
+      });
+      await expect(langchainTool.invoke({ param1: 'test' })).rejects.toThrow('Invalid query');
+    });
+
+    it('supplies a diagnostic for a tool error without text', async () => {
+      mockMCPManager.executeTool.mockResolvedValue({ isError: true, content: [] });
+      const result = await langchainTool.invoke({
+        type: 'tool_call', id: 'empty-error', name: langchainTool.name,
+        args: { param1: 'test' },
+      });
+      expect(result).toMatchObject({ status: 'error', tool_call_id: 'empty-error' });
+      expect(result.content).toContain('MCP server reported a tool error');
     });
   });
 
