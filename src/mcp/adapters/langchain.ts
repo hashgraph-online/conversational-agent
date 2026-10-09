@@ -1,4 +1,5 @@
-import { DynamicStructuredTool } from '@langchain/core/tools';
+import { DynamicStructuredTool, type ToolRunnableConfig } from '@langchain/core/tools';
+import { ToolMessage } from '@langchain/core/messages';
 import { z } from 'zod';
 import type { MCPToolInfo, MCPServerConfig } from '../types';
 import type { MCPClientManager } from '../mcp-client-manager';
@@ -40,7 +41,7 @@ export function convertMCPToolToLangChain(
     name: sanitizedName,
     description,
     schema: zodSchema,
-    func: async (input) => {
+    func: async (input, _runManager, config?: ToolRunnableConfig) => {
       try {
         const result = await mcpManager.executeTool(
           tool.serverName,
@@ -77,6 +78,15 @@ export function convertMCPToolToLangChain(
           responseText = JSON.stringify(result);
         }
 
+        if (
+          result &&
+          typeof result === 'object' &&
+          'isError' in result &&
+          result.isError === true
+        ) {
+          throw new Error(responseText || 'MCP server reported a tool error');
+        }
+
         const responseBuffer = Buffer.from(responseText, 'utf8');
 
         const MCP_REFERENCE_THRESHOLD = 10 * 1024;
@@ -105,7 +115,17 @@ export function convertMCPToolToLangChain(
       } catch (error) {
         const errorMessage =
           error instanceof Error ? error.message : 'Unknown error';
-        return `Error executing MCP tool ${tool.name}: ${errorMessage}`;
+        const content = `Error executing MCP tool ${tool.name}: ${errorMessage}`;
+        if (config?.toolCall?.id) {
+          return new ToolMessage({
+            content,
+            name: sanitizedName,
+            tool_call_id: config.toolCall.id,
+            status: 'error',
+          });
+        }
+        // Direct calls lack a tool-call ID; let the caller handle the failure.
+        throw new Error(content);
       }
     },
   });

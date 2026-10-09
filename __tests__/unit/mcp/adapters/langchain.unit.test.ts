@@ -147,8 +147,9 @@ describe('LangChain MCP Adapter', () => {
 
       mockMCPManager.executeTool.mockRejectedValueOnce(new Error('Tool failed'));
       
-      const result = await langchainTool.func({});
-      expect(result).toContain('Error executing MCP tool error_tool: Tool failed');
+      await expect(langchainTool.func({})).rejects.toThrow(
+        'Error executing MCP tool error_tool: Tool failed'
+      );
     });
 
     test('should handle array results from MCP tools', async () => {
